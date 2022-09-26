@@ -349,14 +349,64 @@ When run as a script or daemon outside of docker it's expected that the CertDepl
 1. Ensure your `source` directory exists, is owned by the user the client is running as, and that only that user can read the contents of that directory.
 1. Ensure the `destination` directory exists and is writable by the user the client is running as.
 1. Start the daemon.
-    ```
+    ```sh
     certdeploy-client --daemon
     ```
 
-##### Systemd
-```{todo} Write and document systemd service and timer
+##### Systemd Daemon
+To run the client as a daemon with systemd the following example unit can be used.
+
+/usr/local/lib/systemd/system/certdeploy-client.service
 ```
-Systemd service and timer coming soon.
+[Unit]
+Description=Certdeploy Client Daemon
+After=network.target
+
+[Service]
+Type=exec
+ExecStart=/usr/local/bin/certdeploy-client --daemon
+
+[Install]
+WantedBy=multi-user.target
+```
+
+The instructions above for configuring the daemon apply here. Except for the "Start the daemon" step which should be replaced with the following commands.
+```sh
+systemctl enable certdeploy-client.service
+systemctl start certdeploy-client.service
+```
+
+##### Systemd Timer
+If only syncronization between directories is needed these two systemd units can be used to run the client as a script every hour.
+
+/usr/local/lib/systemd/system/certdeploy-client.service
+```
+[Unit]
+Description=Certdeploy Client
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/certdeploy-client
+```
+
+/usr/local/lib/systemd/system/certdeploy-client.timer
+```
+[Unit]
+Description=CertDeploy Client Timer
+
+[Timer]
+OnUnitActiveSec=1h
+Unit=certdeploy-client.service
+
+[Install]
+WantedBy=timers.target
+```
+
+The instructions in the "Cron Job" section above can be followed until the "Add a cron entry ..." step which should be replaced with the following.
+```sh
+systemctl enable certdeploy-client.timer
+```
 
 ##### Docker
 1. Create a config directory ``mkdir conf``.
@@ -375,7 +425,7 @@ Systemd service and timer coming soon.
       server_pubkey_filename: /etc/certdeploy/server_key.pub
     ```
 1. Start the daemon.
-    ```
+    ```sh
     docker run -d -v $(pwd)/conf:/etc/certdeploy -v shared_certs:/certdeploy/certs haxwithaxe/certdeploy-client
     ```
     Where ``shared_certs`` is a docker volume shared with other containers that need access to the certs.
