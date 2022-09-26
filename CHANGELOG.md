@@ -8,5 +8,4 @@
 
 - Fixed some logging
 - Filled out the CONTRIBUTING.md
-* Cleaned up testing some
-
+- Cleaned up testing some
