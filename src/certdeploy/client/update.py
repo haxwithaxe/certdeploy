@@ -38,8 +38,8 @@ def update_docker_container(container: DockerContainer,
                 raise error from err
             log.error(error, exc_info=err)
         else:
-            log.debug('Docker container updated: names=%s, filters=%s',
-                      match.get('Names'), container.filters)
+            log.info('Docker container updated: names=%s, filters=%s',
+                     match.get('Names'), container.filters)
 
 
 def update_docker_service(service: DockerService, client_config: ClientConfig):
