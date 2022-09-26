@@ -1,0 +1,11 @@
+version: "3.9"
+
+
+services:
+
+  hello:
+    image: alpine:latest
+    entrypoint: ["/bin/sh",  "-c", "while true; do sleep 600; done"]
+    deploy:
+      mode: replicated
+      replicas: 1

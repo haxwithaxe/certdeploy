@@ -1,0 +1,21 @@
+---
+
+source: /certdeploy/staging
+destination: /certdeploy/certs
+update_delay: 10s
+docker_url: "unix://var/run/docker.sock"
+update_services:
+  - type: systemd
+    name: mock-systemd.service
+  - type: docker_service
+    filters:
+      name: certdeploytest_hello
+  - type: docker_container
+    name: hello
+  - type: script
+    name: "/bin/true"
+log_level: INFO
+sftpd:
+  listen_port: 22222
+  privkey_filename: /etc/certdeploy/client_key
+  server_pubkey_filename: /etc/certdeploy/server_key.pub

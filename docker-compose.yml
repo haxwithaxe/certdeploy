@@ -1,0 +1,16 @@
+version: "3.9"
+
+
+services:
+
+  server:
+    image: certdeploy-server:latest
+    build:
+      context: .
+      dockerfile: ./docker/server/Dockerfile
+
+  client:
+    image: certdeploy-client:latest
+    build:
+      context: .
+      dockerfile: ./docker/client/Dockerfile

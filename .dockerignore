@@ -1,0 +1,7 @@
+docker-compose.yml
+tests/docker/*.sh
+tests/docker/*.yml
+tests/docker/client
+tests/docker/output
+tests/docker/server
+\.*

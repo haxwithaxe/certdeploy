@@ -1,0 +1,7 @@
+---
+# Example minimal client config
+source: /certdeploy/staging
+destination: /cerdeploy/certs
+sftpd:
+  privkey_file: /etc/certdeploy/client_key
+  server_pubkey_file: /etc/certdeploy/server_key.pub

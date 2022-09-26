@@ -1,0 +1,9 @@
+---
+privkey_filename: /etc/certdeploy/server_key
+client_configs:
+  - address: certdeploy_test_noop_client
+    port: 22222
+    pubkey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP+H3Nk/9uSa7LHNt8fvCPKKkNFnVE5SGC5tnhtf6/OK
+    path: ''
+    domains:
+      - example.com

@@ -1,0 +1,9 @@
+---
+# Example minimal server config
+private_key_file: /etc/certdeploy/server_key
+client_configs:
+  - address: 1.2.3.4
+    pubkey_file: /etc/certdeploy/1.2.3.4_pubkey
+    path: /certdeploy/staging
+    domains:
+      - example.com
