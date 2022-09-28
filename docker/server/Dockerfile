@@ -38,6 +38,6 @@ RUN apk add --no-cache --virtual .build-deps \
         git \
     && pip install certbot \
     && pip install -e ./src \
-    && ln -s /usr/local/bin/certdeploy-server-hook /etc/letsencrypt/renewal-hooks/deploy/certdeploy-hook \
+    && ln -s /usr/local/bin/certdeploy-server /etc/letsencrypt/renewal-hooks/deploy/certdeploy-hook \
     && apk del .build-deps \
     && rm -rf ${HOME}/.cargo
