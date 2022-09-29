@@ -1,0 +1,22 @@
+---
+
+source: /certdeploy/staging
+destination: /certdeploy/certs
+update_delay: 1s
+update_services:
+  - type: script
+    name: /scripts/fail.sh
+  - type: script
+    name: "false"
+  - type: script
+    name: /scripts/hello.sh
+  - type: script
+    name: "../scripts/hello.sh"
+  - type: script
+    name: "true"
+log_level: INFO
+fail_fast: true
+sftpd:
+  listen_port: 22222
+  privkey_filename: /etc/certdeploy/client_key
+  server_pubkey_filename: /etc/certdeploy/server_key.pub
