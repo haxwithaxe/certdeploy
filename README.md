@@ -135,7 +135,7 @@ When run as a script (`--renew`) or daemon outside of docker it's expected that 
 ### Installation
 The recommended way to use the server is to have it running in a docker container. This image has Certbot baked in and automatically runs `certbot renew` on a schedule.
 
-#### Configure
+#### Docker
 1. Create a directory to put the configs in and enter it. For example `mkdir conf && cd conf`.
 1. Generate server key pair `ssh-keygen -t ed25519 -f server_key` Don't enter a password. CertDeploy doesn't support password files.
 1. Create a `server.yml` with the clients. For now we'll assume you have the pubkey for the first client.
@@ -170,9 +170,25 @@ The recommended way to use the server is to have it running in a docker containe
     ```
 
 #### Install in an existing system
-```{todo} Document the install process
-```
-Not supported yet. Look at the ``docker/server/Dockerfile`` and you can probably figure it out.
+1. Create a directory to put the configs in and enter it. For example `sudo mkdir /etc/certdeploy && cd /etc/certdeploy`.
+1. Generate server key pair `sudo ssh-keygen -t ed25519 -f server_key` Don't enter a password. CertDeploy doesn't support password files.
+1. Create a `server.yml` with the clients. For now we'll assume you have the pubkey for the first client.
+    ```yaml
+    ---
+    private_key_file: /etc/certdeploy/server_key
+    client_configs:
+      - address: <your client ip or hostname>
+        pubkey: <your client's pubkey without the comment>
+        domains:
+          - <the domain name that this client needs certs for>
+    check_renew:
+      every: week
+    ```
+1. Install CertDeploy `sudo pip install certdeploy`.
+1. Install the CertDeploy CertBot hook.
+    ```
+    sudo ln -s /usr/local/bin/certdeploy-server /etc/letsencrypt/renewal-hooks/deploy/certdeploy-hook
+    ```
 
 ## The Client
 
