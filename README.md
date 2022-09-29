@@ -263,8 +263,9 @@ update_services:
   - type: docker_service
     name: ingress_nginx
   - type: docker_service
-    label:
-      - restart_on_cert_update
+    filters:
+      label:
+        - restart_on_cert_update
   - type: docker_container
     name: web_nginx_1
   - type: docker_container
