@@ -9,3 +9,10 @@
 - Fixed some logging
 - Filled out the CONTRIBUTING.md
 - Cleaned up testing some
+
+## Version 0.1.2 (alpha)
+- Added/removed some files included/excluded by mistake
+- Added server install docs
+- Added systemd unit examples
+- Fixed debug log call that should have been an info log call in the Docker update code.
+- Other documentation fixes
