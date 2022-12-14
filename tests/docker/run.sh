@@ -116,8 +116,8 @@ docker_up() {
 teardown_debug_nobuild() {
 	# Not printing a header to allow silent use.
 	# Strip out debug and nobuild settings.
-	sed -i '/^.*#NOBUILD_TESTING$/d' "$DOCKER_TEST_ROOT/docker-compose.yml"
-	sed -i '/^.*#DEBUG_TESTING$/d' "$DOCKER_TEST_ROOT/docker-compose.yml"
+	sed -i '/^.*#_NOBUILD_TESTING$/d' "$DOCKER_TEST_ROOT/docker-compose.yml"
+	sed -i '/^.*#_DEBUG_TESTING$/d' "$DOCKER_TEST_ROOT/docker-compose.yml"
 }
 
 
@@ -416,14 +416,14 @@ for arg in $@; do
 		nobuild)
 			header 1 "Using nobuild mode"
 			# Add volume entries pointing the image src directory to the repo
-			sed -i '/^.*#NOBUILD_TESTING$/d' "$DOCKER_TEST_ROOT/docker-compose.yml"
-			sed -i 's/volumes:$/&\n      - "..\/..\/src:\/certdeploy\/src\/src" #NOBUILD_TESTING/' "$DOCKER_TEST_ROOT/docker-compose.yml"
+			sed -i '/^.*#_NOBUILD_TESTING$/d' "$DOCKER_TEST_ROOT/docker-compose.yml"
+			sed -i 's/volumes:$/&\n      - "..\/..\/src:\/certdeploy\/src\/src" #_NOBUILD_TESTING/' "$DOCKER_TEST_ROOT/docker-compose.yml"
 			;;
 		debug)
 			header 1 "Using debug mode"
 			# Add environment variable to enable debug logging
-			sed -i '/^.*#DEBUG_TESTING$/d' "$DOCKER_TEST_ROOT/docker-compose.yml"
-			sed -i 's/environment:$/&\n      CERTDEPLOY_LOG_LEVEL: DEBUG  #DEBUG_TESTING/' "$DOCKER_TEST_ROOT/docker-compose.yml"
+			sed -i '/^.*#_DEBUG_TESTING$/d' "$DOCKER_TEST_ROOT/docker-compose.yml"
+			sed -i 's/environment:$/&\n      CERTDEPLOY_LOG_LEVEL: DEBUG  #_DEBUG_TESTING/' "$DOCKER_TEST_ROOT/docker-compose.yml"
 			;;
 		teardown)
 			header 2 "Restoring the docker-compose.yml"

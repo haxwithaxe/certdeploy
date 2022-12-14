@@ -58,23 +58,23 @@ repos:
     - id: no_debug_comments
       name: No Debug Comments
       language: pygrep
-      entry: '(^[ \t]*#DEBUG|  #DEBUG[A-Z_]*$)'
+      entry: '("""|#) ?DEBUG'
       types:
         - file
-      fail_fast: true
+      fail_fast: false
     - id: no_fixme_comments
-      name: No Fixme Comments
+      name: No FIXME Comments
       language: pygrep
-      entry: '#FIXME'
+      entry: '("""|#) ?FIXME'
       types:
         - file
       exclude: .pre-commit-config.yaml
-      fail_fast: true
+      fail_fast: false
     - id: no_testing_comments
       name: No Testing Comments
       language: pygrep
-      entry: '#[A-Z0-9_]*TEST'
+      entry: '("""|#) ?[A-Z0-9_]*TEST'
       types:
         - file
       exclude: '(^.pre-commit-config.yaml|^tests/docker/run.sh)'
-      fail_fast: true
+      fail_fast: false
