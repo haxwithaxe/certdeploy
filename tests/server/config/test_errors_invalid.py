@@ -60,3 +60,48 @@ def test_fails_invalid_client_pubkey(tmp_server_config: callable,
     with pytest.raises(ConfigError) as err:
         ServerConfig.load(config_filename)
     assert 'Invalid value for `pubkey`: ' in str(err)
+
+
+def test_fails_invalid_push_mode(tmp_server_config: callable):
+    config_filename, src_config = tmp_server_config(
+        push_mode='Invalid push_mode'
+    )
+    with pytest.raises(ConfigError) as err:
+        ServerConfig.load(config_filename)
+    assert 'Invalid value "Invalid push_mode" for `push_mode`' in str(err)
+
+
+def test_fails_invalid_push_interval(tmp_server_config: callable):
+    config_filename, src_config = tmp_server_config(
+        push_interval=-1
+    )
+    with pytest.raises(ConfigError) as err:
+        ServerConfig.load(config_filename)
+    assert 'Invalid value "-1" for `push_interval`' in str(err)
+
+
+def test_fails_invalid_push_retries(tmp_server_config: callable):
+    config_filename, src_config = tmp_server_config(
+        push_retries=-1
+    )
+    with pytest.raises(ConfigError) as err:
+        ServerConfig.load(config_filename)
+    assert 'Invalid value "-1" for `push_retries`' in str(err)
+
+
+def test_fails_invalid_push_retry_interval(tmp_server_config: callable):
+    config_filename, src_config = tmp_server_config(
+        push_retry_interval=-1
+    )
+    with pytest.raises(ConfigError) as err:
+        ServerConfig.load(config_filename)
+    assert 'Invalid value "-1" for `push_retry_interval`' in str(err)
+
+
+def test_fails_invalid_join_timeout(tmp_server_config: callable):
+    config_filename, src_config = tmp_server_config(
+        join_timeout=-1
+    )
+    with pytest.raises(ConfigError) as err:
+        ServerConfig.load(config_filename)
+    assert 'Invalid value "-1" for `join_timeout`' in str(err)

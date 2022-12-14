@@ -69,6 +69,33 @@ pass_if_output() {
 	exit 1
 }
 
+#######################################
+# Error out if the command given is too
+#   slow or too quick
+# Arguments:
+#	1: Minimum seconds the command should take.
+#   2: Maximum seconds the command should take.
+#   3 ... N: The command to run.
+#######################################
+pass_if_timely() {
+	local min_seconds="$1"
+	shift
+	local max_seconds="$1"
+	shift
+	local start_time=$(date +%s)
+	"$@"
+	local end_time=$(date +%s)
+	local runtime=$(( $end_time - $start_time ))
+	if [[ "$runtime" -lt "$min_seconds" ]]; then
+		error_message "Command took less than $min_seconds seconds to complete: $runtime sec"
+		exit 1
+	fi
+	if [[ "$runtime" -gt "$max_seconds" ]]; then
+		error_message "Command took more than $max_seconds seconds to complete: $runtime sec"
+		exit 1
+	fi
+}
+
 
 docker_up_d() {
 	set -x
@@ -144,12 +171,95 @@ test_simple_server_and_clients() {
 	success_message "Passed: Client logs should not have any error messages"
 }
 
+test_simple_parallel_server() {
+	header 3 "Setup: Start clients"
+	setup_docker_services ${DOCKER_TEST_ROOT}/stack.yml $DOCKER_SWARM_STACK_NAME
+	docker_up_d docker_service_client docker_container_client script_client systemd_client hello
+	header 4 "Wait for the containers to start: 40 seconds"
+	sleep 40
+	header 3 "Test: server"
+	# Fails on any error
+	docker_up server_parallel | \
+		fail_if_output 'ERROR:certdeploy-server'
+	success_message "Passed: Test: server"
+	header 4 "Wait for the services to be updated: 40 seconds"
+	sleep 40
+	header 3 "Verify client behavior"
+	header 4 "hello container uptime should be less than 40 seconds"
+	# Only checking for less than a minute but ideally this should check for less
+	#   than the wait time after the server is started
+	set -x
+	docker container ls --format '{{.Names}} {{.Status}}' --filter 'name=^hello$' | \
+		pass_if_output 'seconds' 1
+	set +x
+	success_message "Passed: hello container uptime should be less than 40 seconds"
+	header 4 "${DOCKER_SWARM_STACK_NAME}_hello service uptime should be less than 40 seconds"
+	sleep 5 # Waiting a little more for the service to finish updating.
+	set -x
+	docker service ps \
+		--filter 'desired-state=running' \
+		--format '{{.Name}} {{.CurrentState}}' \
+		"${DOCKER_SWARM_STACK_NAME}_hello" | \
+		pass_if_output 'seconds ago' 1
+	set +x
+	success_message "Passed: ${DOCKER_SWARM_STACK_NAME}_hello service uptime should be less than 40 seconds"
+	header 4 "Client logs should not have any error messages"
+	# Fails on any error
+	set -x
+	docker-compose logs docker_service_client docker_container_client script_client systemd_client | \
+		fail_if_output 'ERROR:certdeploy-client'
+	set +x
+	success_message "Passed: Client logs should not have any error messages"
+}
+
+
+test_retry_parallel_server() {
+	header 3 "Test: server retries failed connections"
+	# Expect 6 error messages
+	header 3 "Test: server finishes in about 10-15 seconds"
+	# Expect the pushes (2 retries, 5 sec retry interval, 2 clients, and some 1s ticks) to run in parallel
+	pass_if_timely 9 27 docker_up server_retry_parallel || exit 1 | \
+		pass_if_output 'ERROR:certdeploy-server:Error syncing with .* \[Errno -2\] Name does not resolve' 6
+	success_message "Passed: server finishes in less than 10-15 seconds"
+	success_message "Passed: server retries failed connections"
+}
+
+
+test_client_retry_server() {
+	header 3 "Test: server retries failed connections per client"
+	# Expect exactly 3 log messages that indicate attempts to sync not 11
+	#   2 initial attempts and one retry instead of 11 retries in server config
+	docker_up server_client_retry | \
+		pass_if_output 'ERROR:certdeploy-server:Error syncing with .* \[Errno -2\] Name does not resolve' 3
+	success_message "Passed: server retries failed connections per client"
+}
+
+
+test_retry_serial_server() {
+	header 3 "Test: server finishes in about 20-25 seconds"
+	# Expect 4 error messages
+	# Expect the pushes (1 retry, 10 sec retry interval, 2 clients, and some 1s ticks) to run in series
+	pass_if_timely 19 27 docker_up server_retry_serial || exit 1 | \
+		pass_if_output 'ERROR:certdeploy-server:Error syncing with .* \[Errno -2\] Name does not resolve' 4
+	success_message "Passed: server finishes in about 20-25 seconds"
+}
+
+
+test_push_interval_server() {
+	header 3 "Test: server finishes in about 10-15 seconds"
+	# Expect 2 error messages
+	# Expect the pushes (0 retry, 0 sec retry interval, 2 clients, 5 sec push_interval) to run in series
+	pass_if_timely 9 17 docker_up server_push_interval || exit 1 | \
+		pass_if_output 'ERROR:certdeploy-server:Error syncing with .* \[Errno -2\] Name does not resolve' 2
+	success_message "Passed: server finishes in about 10-15 seconds"
+}
+
 
 test_certbot_passthrough_only() {
 	header 3 "Test: certbot_passthrough_server"
 	# /entrypoint.sh --help is called so checking for certbot --help text
 	docker_up certbot_passthrough_server | \
-		fail_if_output 'ERROR:certdeploy-server' | \
+		fail_if_output 'ERROR:certdeploy-server' || exit 1 | \
 		pass_if_output 'certbot \[SUBCOMMAND\] \[options\] \[-d DOMAIN\] \[-d DOMAIN\]' 1
 }
 
@@ -258,6 +368,31 @@ test_all() {
 	header 2 "Test mixed: simple server and clients"
 	test_simple_server_and_clients
 	success_message "Passed: Test mixed: simple server and clients"
+	teardown_test_env 2> /dev/null
+
+	header 2 "Test server: parallel push"
+	test_simple_parallel_server
+	success_message "Passed: Test server: parallel push"
+	teardown_test_env 2> /dev/null
+
+	header 2 "Test server: parallel push retry twice"
+	test_retry_parallel_server
+	success_message "Passed: Test server: parallel push retry twice"
+	teardown_test_env 2> /dev/null
+
+	header 2 "Test server: server uses retry_interval from client config"
+	test_client_retry_server
+	success_message "Passed: Test server: server uses retry_interval from client config"
+	teardown_test_env 2> /dev/null
+
+	header 2 "Test server: server pushes certs in series"
+	test_retry_serial_server
+	success_message "Passed: Test server: server pushes certs in series"
+	teardown_test_env 2> /dev/null
+
+	header 2 "Test server: server pushes certs at an interval"
+	test_push_interval_server
+	success_message "Passed: Test server: server pushes certs at an interval"
 	teardown_test_env 2> /dev/null
 
 	header 2 "Test clients: fail fast"

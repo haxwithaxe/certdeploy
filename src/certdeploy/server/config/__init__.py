@@ -18,8 +18,6 @@ class ServerConfig(Server):
             if 'got an unexpected keyword argument' in str(err):
                 raise ConfigError(f'Invalid config option: {err}') from err
             raise
-        if not os.path.isfile(self.privkey_filename):
-            raise ConfigError('The config `privkey_filename` must be a file.')
         self.clients = []
         if self.client_configs:
             for client_config in self.client_configs:

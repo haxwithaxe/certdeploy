@@ -11,7 +11,7 @@ from .renew import renew_certs
 from .server import Server
 
 
-def _run(config, daemon, renew, lineage, domains):
+def _run(config, daemon, renew, push, lineage, domains):
     if renew:
         log.debug('Running renew')
         renew_certs(config)
@@ -25,7 +25,11 @@ def _run(config, daemon, renew, lineage, domains):
                   f'lineage: {lineage}, domains: {domains}', file=sys.stderr)
             sys.exit(1)
         domains = domains.split()
-        Server(config).sync(lineage, domains)
+        server = Server(config)
+        server.sync(lineage, domains)
+        if push:
+            log.debug('Running manual push without a running daemon')
+            server.serve_forever(one_shot=True)
 
 
 def _typer_main(  # pylint: disable=too-many-arguments
@@ -35,12 +39,13 @@ def _typer_main(  # pylint: disable=too-many-arguments
         domains: str = typer.Option('', envvar='RENEWED_DOMAINS'),
         daemon: bool = typer.Option(False, envvar='CERTDEPLOY_SERVER_DAEMON'),
         renew: bool = typer.Option(False, envvar='CERTDEPLOY_RENEW_ONLY'),
+        push: bool = typer.Option(False, envvar='CERTDEPOLY_PUSH_ONLY'),
         log_level: LogLevel = typer.Option(None, envvar='CERTDEPLOY_LOG_LEVEL')
 ):
     try:
         conf = ServerConfig.load(config)
         log.setLevel(log_level or conf.log_level)
-        _run(conf, daemon, renew, lineage, domains)
+        _run(conf, daemon, renew, push, lineage, domains)
     except Exception as err:  # pylint: disable=broad-except
         log.error(err, exc_info=err)
         sys.exit(1)

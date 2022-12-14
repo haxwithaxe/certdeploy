@@ -8,9 +8,54 @@ services:
     volumes:
       - "./server/:/etc/certdeploy"
       - "./server/etc-letsencrypt:/etc/letsencrypt"
-    entrypoint: ["certdeploy-server", "--lineage", "/etc/letsencrypt/live/example.com", "--domains", "example.com"]
+    entrypoint: ["certdeploy-server", "--lineage", "/etc/letsencrypt/live/example.com", "--domains", "example.com", "--push"]
     environment:
       CERTDEPLOY_SERVER_CONFIG: /etc/certdeploy/server_basic.yml
+
+  server_parallel:
+    image: certdeploy-server:latest
+    volumes:
+      - "./server/:/etc/certdeploy"
+      - "./server/etc-letsencrypt:/etc/letsencrypt"
+    entrypoint: ["certdeploy-server", "--lineage", "/etc/letsencrypt/live/example.com", "--domains", "example.com", "--push"]
+    environment:
+      CERTDEPLOY_SERVER_CONFIG: /etc/certdeploy/server_parallel_basic.yml
+
+  server_push_interval:
+    image: certdeploy-server:latest
+    volumes:
+      - "./server/:/etc/certdeploy"
+      - "./server/etc-letsencrypt:/etc/letsencrypt"
+    entrypoint: ["certdeploy-server", "--lineage", "/etc/letsencrypt/live/example.com", "--domains", "example.com", "--push"]
+    environment:
+      CERTDEPLOY_SERVER_CONFIG: /etc/certdeploy/server_push_interval.yml
+
+  server_retry_serial:
+    image: certdeploy-server:latest
+    volumes:
+      - "./server/:/etc/certdeploy"
+      - "./server/etc-letsencrypt:/etc/letsencrypt"
+    entrypoint: ["certdeploy-server", "--lineage", "/etc/letsencrypt/live/example.com", "--domains", "example.com", "--push"]
+    environment:
+      CERTDEPLOY_SERVER_CONFIG: /etc/certdeploy/server_serial_retry.yml
+
+  server_retry_parallel:
+    image: certdeploy-server:latest
+    volumes:
+      - "./server/:/etc/certdeploy"
+      - "./server/etc-letsencrypt:/etc/letsencrypt"
+    entrypoint: ["certdeploy-server", "--lineage", "/etc/letsencrypt/live/example.com", "--domains", "example.com", "--push"]
+    environment:
+      CERTDEPLOY_SERVER_CONFIG: /etc/certdeploy/server_parallel_retry.yml
+
+  server_client_retry:
+    image: certdeploy-server:latest
+    volumes:
+      - "./server/:/etc/certdeploy"
+      - "./server/etc-letsencrypt:/etc/letsencrypt"
+    entrypoint: ["certdeploy-server", "--lineage", "/etc/letsencrypt/live/example.com", "--domains", "example.com", "--push"]
+    environment:
+      CERTDEPLOY_SERVER_CONFIG: /etc/certdeploy/server_client_retry.yml
 
   certbot_passthrough_server:
     image: certdeploy-server:latest
@@ -44,7 +89,7 @@ services:
     volumes:
       - "./server/:/etc/certdeploy"
       - "./server/etc-letsencrypt:/etc/letsencrypt"
-    entrypoint: ["certdeploy-server", "--config", "/etc/certdeploy/server_fail_fast.yml", "--lineage", "/etc/letsencrypt/live/example.com", "--domains", "example.com"]
+    entrypoint: ["certdeploy-server", "--config", "/etc/certdeploy/server_fail_fast.yml", "--lineage", "/etc/letsencrypt/live/example.com", "--domains", "example.com", "--push"]
     environment:
       CERTDEPLOY_SERVER_CONFIG: /etc/certdeploy/server_fail_fast.yml
 
@@ -53,7 +98,7 @@ services:
     volumes:
       - "./server/:/etc/certdeploy"
       - "./server/etc-letsencrypt:/etc/letsencrypt"
-    entrypoint: ["certdeploy-server", "--lineage", "/etc/letsencrypt/live/example.com", "--domains", "example.com"]
+    entrypoint: ["certdeploy-server", "--lineage", "/etc/letsencrypt/live/example.com", "--domains", "example.com", "--push"]
     environment:
       CERTDEPLOY_SERVER_CONFIG: /etc/certdeploy/server_fail_fast_runner.yml
 

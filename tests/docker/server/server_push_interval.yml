@@ -1,5 +1,9 @@
 ---
 privkey_filename: /etc/certdeploy/server_key
+push_mode: serial
+push_retries: 0
+push_interval: 5
+push_retry_interval: 0
 client_configs:
   - address: no.such.client.local
     port: 12345
@@ -14,5 +18,4 @@ client_configs:
     path: /certdeploy/staging
     domains:
       - example.com
-fail_fast: true
 queue_dir: /certdeploy

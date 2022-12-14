@@ -27,7 +27,14 @@ def tmp_server_config(tmp_path_factory: pytest.TempPathFactory,
         renew_at=':00',
         renew_exec='test_certbot',
         renew_args=['test_renew'],
-        renew_timeout=None
+        renew_timeout=None,
+        push_mode='parallel',
+        push_interval=7,
+        push_retries=11,
+        push_retry_interval=41,
+        join_timeout=371,
+        # Has to be a real dir writable by the test user
+        queue_dir='/tmp'
     )
 
     def set_config(**conf):
