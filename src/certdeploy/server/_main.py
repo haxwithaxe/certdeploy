@@ -4,7 +4,6 @@ import sys
 import typer
 
 from .. import DEFAULT_SERVER_CONFIG, LogLevel
-from . import daemon as Daemon
 from . import log
 from .config import ServerConfig
 from .renew import renew_certs
@@ -17,7 +16,7 @@ def _run(config, daemon, renew, push, lineage, domains):
         renew_certs(config)
     elif daemon:
         log.debug('Running daemon')
-        Daemon.serve_forever(config)
+        Server(config).serve_forever()
     else:
         log.debug('Running manual push or hook')
         if not lineage or not domains:
