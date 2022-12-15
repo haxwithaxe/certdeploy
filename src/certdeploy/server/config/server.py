@@ -145,15 +145,15 @@ class Server:
     def __post_init__(self):
         if not os.path.isfile(self.privkey_filename):
             raise ConfigInvalidPath('privkey_filename', self.privkey_filename,
-                                    exist=True, is_type='file')
+                                    is_type='file')
         if not os.path.isdir(self.queue_dir):
-            raise ConfigInvalidPath('queue_dir', self.queue_dir, exist=True,
+            raise ConfigInvalidPath('queue_dir', self.queue_dir,
                                     is_type='directory')
         try:
             open(os.path.join(self.queue_dir, 'test'), 'w').close()
         except OSError as err:
-            raise ConfigInvalidPath('queue_dir', self.queue_dir, exist=True,
-                                    writable=True, is_type='directory') from err
+            raise ConfigInvalidPath('queue_dir', self.queue_dir, writable=True,
+                                    is_type='directory') from err
         else:
             os.remove(os.path.join(self.queue_dir, 'test'))
         if not PushMode.validate(self.push_mode):

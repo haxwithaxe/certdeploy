@@ -4,7 +4,7 @@ import re
 import shutil
 from typing import Union
 
-from ...errors import ConfigError
+from ...errors import ConfigError, ConfigInvalid, ConfigInvalidNumber
 from .. import log
 
 _DOCKER_NAME_RE = re.compile(r'[a-z0-9_.-]+', flags=re.I)
@@ -57,9 +57,8 @@ class Service:
     def _validate_timeout(self, timeout: Union[float, int]
                           ) -> Union[float, int]:
         if timeout is not None and not isinstance(timeout, (float, int)):
-            raise ConfigError(f'Invalid value {timeout} for `timeout` for '
-                              f'service {self.name}. `timeout` must'
-                              ' be a number or `null`.')
+            raise ConfigInvalidNumber('timeout', timeout, optional=True,
+                                      config_desc=f'service {self.name}')
         # If timeout is an int or float (it's int float or None given the above)
         #   use it otherwise use the default (self.timeout). This is needed for
         #   DockerContainer. Otherwise this could just return timeout.
@@ -130,7 +129,8 @@ class DockerService(Service):  # pylint: disable=too-few-public-methods
         if name is None:
             return name
         if not name or not _DOCKER_NAME_RE.match(name.strip()):
-            raise ConfigError(f'Invalid docker {self._type} name: {name}')
+            raise ConfigInvalid('name', name,
+                                config_desc=f'docker {self._type} config')
         return name.strip()
 
 
@@ -170,7 +170,7 @@ class Script(Service):  # pylint: disable=too-few-public-methods
 
     def _validate_name(self, name: str) -> str:
         if not name:
-            raise ConfigError(f'Invalid script name "{name}"')
+            raise ConfigInvalid('name', name, config_desc='script config')
         return name
 
 
@@ -194,10 +194,11 @@ class SystemdUnit(Service):  # pylint: disable=too-few-public-methods
             return self.action
         if action.lower().strip() in _SYSTEMCTL_ACTIONS:
             return action.lower().strip()
-        raise ConfigError(f'Invalid `action` value for service {self.name}: '
-                          f'{action}')
+        raise ConfigInvalid('action', action,
+                            config_desc=f'service {self.name}')
 
     def _validate_name(self, name: str) -> str:
         if not name or not _SYSTEMD_UNIT_NAME_RE.match(name.strip()):
-            raise ConfigError(f'Invalid systemd update service name: {name}')
+            raise ConfigInvalid('name', name,
+                                config_desc='systemd update service config')
         return name.strip()

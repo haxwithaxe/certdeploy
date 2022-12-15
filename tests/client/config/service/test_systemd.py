@@ -61,7 +61,8 @@ def test_fails_invalid_name_values(tmp_client_config: callable):
         )
         with pytest.raises(ConfigError) as err:
             ClientConfig.load(config_filename)
-        assert f'Invalid systemd update service name: {bad_name}' in str(err)
+        assert (f'Invalid value "{bad_name}" for systemd update '
+                f'service config `name`.' in str(err))
 
 
 def test_fails_null_name_values(tmp_client_config: callable):
@@ -73,7 +74,8 @@ def test_fails_null_name_values(tmp_client_config: callable):
     )
     with pytest.raises(ConfigError) as err:
         ClientConfig.load(config_filename)
-    assert 'Invalid systemd update service name: None' in str(err)
+    assert ('Invalid value "None" for systemd update service config `name`.' in
+            str(err))
 
 
 def test_fails_missing_name_values(tmp_client_config: callable,
@@ -86,4 +88,5 @@ def test_fails_missing_name_values(tmp_client_config: callable,
     )
     with pytest.raises(ConfigError) as err:
         ClientConfig.load(config_filename)
-    assert 'Invalid systemd update service name: None' in str(err)
+    assert ('Invalid value "None" for systemd update service config `name`.' in
+            str(err))

@@ -3,7 +3,7 @@ import os
 import re
 from typing import Any
 
-from ...errors import ConfigError
+from ...errors import ConfigError, ConfigInvalid, ConfigInvalidPath
 from .client import Config, SFTPDConfig
 from .service import Service
 
@@ -35,11 +35,10 @@ class ClientConfig(Config):  # pylint: disable=too-few-public-methods
                 raise ConfigError('Invalid config option: {err}') from err
             raise
         if not os.path.isdir(self.source):
-            raise ConfigError('The config `source` must be a directory: '
-                              f'{self.source}')
+            raise ConfigInvalidPath('source', self.source, is_type='directory')
         if not os.path.isdir(self.destination):
-            raise ConfigError('The config `destination` must be a directory: '
-                              f'{self.destination}')
+            raise ConfigInvalidPath('destination', self.destination,
+                                    is_type='directory')
         self.services = [Service.load(s) for s in self.update_services]
         try:
             self.sftpd_config = SFTPDConfig(**self.sftpd)
@@ -53,13 +52,11 @@ class ClientConfig(Config):  # pylint: disable=too-few-public-methods
             matches = _DURATION_RE.findall(self.update_delay)
             # something to match against but no matches is bad
             if not matches:
-                raise ConfigError(f'Invalid value "{self.update_delay}" for '
-                                  '`update_delay`.')
+                raise ConfigInvalid('update_delay', self.update_delay)
             try:
                 for match in matches:
                     seconds += (float(match[0]) *
                                 _DURATION_FACTORS[match[1]])
             except TypeError as err:
-                raise ConfigError(f'Invalid value "{self.update_delay}" for '
-                                  '`update_delay`.') from err
+                raise ConfigInvalid('update_delay', self.update_delay) from err
         self.update_delay_seconds = int(seconds)

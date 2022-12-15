@@ -113,4 +113,4 @@ def test_fails_missing_name_values(tmp_client_config: callable,
     )
     with pytest.raises(ConfigError) as err:
         ClientConfig.load(config_filename)
-    assert 'Invalid script name "None"' in str(err)
+    assert 'Invalid value "None" for script config `name`.' in str(err)

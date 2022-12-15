@@ -13,7 +13,8 @@ def test_config_invalid_source(tmp_path: pathlib.Path):
             destination=tmp_path,
             source='/dev/null'
         )
-    assert 'The config `source` must be a directory: ' in str(err)
+    assert ('Invalid value "/dev/null" for `source`. `source` must be a '
+            'directory that exists.') in str(err)
 
 
 def test_config_invalid_destination(tmp_path: pathlib.Path):
@@ -22,7 +23,8 @@ def test_config_invalid_destination(tmp_path: pathlib.Path):
             destination='/dev/null',
             source=tmp_path
         )
-    assert 'The config `destination` must be a directory: ' in str(err)
+    assert ('Invalid value "/dev/null" for `destination`. `destination` must be'
+            ' a directory that exists.') in str(err)
 
 
 def test_config_invalid_sftpd_config_key(tmp_path: pathlib.Path):

@@ -20,7 +20,8 @@ class ConfigInvalid(ConfigError):
             super().__init__(f'Invalid value "{value}" for {config_desc}'
                              f'`{key}`. `{key}` must {must}.')
         else:
-            super().__init__(f'Invalid value "{value}" for `{key}`.')
+            super().__init__(f'Invalid value "{value}" for {config_desc}'
+                             f'`{key}`.')
 
 
 class ConfigInvalidNumber(ConfigInvalid):
@@ -71,7 +72,7 @@ class ConfigInvalidChoice(ConfigInvalid):
 
 class ConfigInvalidPath(ConfigInvalid):
 
-    def __init__(self, key, value, exist=False, writable=False,
+    def __init__(self, key, value, exist=True, writable=False,
                  bad_format=False, is_type='', config_desc=''):
         if bad_format:
             super().__init__(key, value,
