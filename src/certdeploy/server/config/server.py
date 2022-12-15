@@ -6,7 +6,13 @@ from dataclasses import dataclass, field
 from typing import Any, Optional, Union
 
 from ... import LogLevel
-from ...errors import ConfigError, ConfigErrorInvalid
+from ...errors import (
+    ConfigError,
+    ConfigInvalid,
+    ConfigInvalidChoice,
+    ConfigInvalidNumber,
+    ConfigInvalidPath
+)
 from ._validation import is_int, is_optional_float
 
 _UNITS = ('minute', 'hour', 'day', 'week')
@@ -138,55 +144,42 @@ class Server:
 
     def __post_init__(self):
         if not os.path.isfile(self.privkey_filename):
-            raise ConfigError('The config `privkey_filename` must be a file.')
+            raise ConfigInvalidPath('privkey_filename', self.privkey_filename,
+                                    exist=True, is_type='file')
         if not os.path.isdir(self.queue_dir):
-            raise ConfigError('The config `queue_dir` must be an existing '
-                              'directory.')
+            raise ConfigInvalidPath('queue_dir', self.queue_dir, exist=True,
+                                    is_type='directory')
         try:
             open(os.path.join(self.queue_dir, 'test'), 'w').close()
         except OSError as err:
-            raise ConfigError(f'`queue_dir` ({self.queue_dir}) must be writable'
-                              ' by CertDeploy.') from err
+            raise ConfigInvalidPath('queue_dir', self.queue_dir, exist=True,
+                                    writable=True, is_type='directory') from err
         else:
             os.remove(os.path.join(self.queue_dir, 'test'))
         if not PushMode.validate(self.push_mode):
-            raise ConfigErrorInvalid(
+            raise ConfigInvalidChoice(
                 'push_mode',
                 self.push_mode,
-                must_be=f'{PushMode.SERIAL.value} or {PushMode.PARALLEL.value}'
+                choices=[PushMode.SERIAL.value, PushMode.PARALLEL.value]
             )
         self.push_mode = PushMode(self.push_mode)
         if not is_int(self.push_interval, 0):
-            raise ConfigErrorInvalid(
-                'push_interval',
-                self.push_interval,
-                must_be='an integer greater than or equal to 0'
-            )
+            raise ConfigInvalidNumber('push_interval', self.push_interval,
+                                      is_type=int, ge=0)
         if not is_int(self.push_retries, 0):
-            raise ConfigErrorInvalid(
-                'push_retries',
-                self.push_retries,
-                must_be='an integer greater than or equal to 0'
-            )
+            raise ConfigInvalidNumber('push_retries', self.push_retries,
+                                      is_type=int, ge=0)
         if not is_int(self.push_retry_interval, 0):
-            raise ConfigErrorInvalid(
-                'push_retry_interval',
-                self.push_retry_interval,
-                must_be='an integer greater than or equal to 0'
-            )
+            raise ConfigInvalidNumber('push_retry_interval',
+                                      self.push_retry_interval, is_type=int,
+                                      ge=0)
         if not is_optional_float(self.join_timeout, 0):
-            raise ConfigErrorInvalid(
-                'join_timeout',
-                self.join_timeout,
-                must_be='an float greater than or equal to 0'
-            )
+            raise ConfigInvalidNumber('join_timeout', self.join_timeout,
+                                      is_type='float or integer', ge=0)
         if not is_int(self.renew_every, 1):
-            raise ConfigErrorInvalid(
-                'renew_every',
-                self.renew_every,
-                must_be='an integer greater than 0 if it is set'
-            )
+            raise ConfigInvalidNumber('renew_every', self.renew_every,
+                                      is_type=int, optional=True, gt=0)
         self.renew_unit = _normalize_unit(self.renew_unit, self.renew_every)
         if self.renew_unit in _WEEKDAYS and self.renew_every != 1:
-            raise ConfigError('`renew_unit` cannot be a weekday if '
-                              '`renew_every` is set and not 1.')
+            raise ConfigInvalid('renew_unit', self.renew_unit, must=' not be a '
+                                'weekday if `renew_every` is set and not 1.')

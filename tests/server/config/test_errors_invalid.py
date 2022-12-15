@@ -20,7 +20,8 @@ def test_fails_nonexistent_privkey(tmp_server_config: callable):
     )
     with pytest.raises(ConfigError) as err:
         ServerConfig.load(config_filename)
-    assert 'The config `privkey_filename` must be a file.' in str(err)
+    assert ('Invalid value "/nonexistent/privkey" for '
+            '`privkey_filename`.') in str(err)
 
 
 def test_fails_missing_client_configs(tmp_server_config: callable):
