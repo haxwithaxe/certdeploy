@@ -124,7 +124,8 @@ teardown_debug_nobuild() {
 teardown_test_env() {
 	header 2 Teardown Testing Environment
 	set -x
-	docker-compose stop || true
+	#docker-compose stop || true
+	docker-compose down -v || true
 	docker-compose rm --force || true
 	set +x
 }
@@ -212,6 +213,24 @@ test_simple_parallel_server() {
 	success_message "Passed: Client logs should not have any error messages"
 }
 
+
+test_just_push_server() {
+	header 3 "Test: server does nothing"
+	docker_up server_just_push | \
+		fail_if_output 'ERROR:certdeploy-server:'
+	success_message "Passed: server does nothing"
+}
+
+test_push_existing_queue_server() {
+	header 3 "Setup: Populate queue"
+	docker_up_d server_just_queue
+	# Testing that the server *tries* to push the queue not that it successfully pushes
+	header 3 "Test: server fails to connect to client"
+	# Fails on any error
+	docker_up server_just_push | \
+		pass_if_output 'ERROR:certdeploy-server:Error syncing with .* \[Errno -2\] Name does not resolve' 1
+	success_message "Passed: Test: server fails to connect to client"
+}
 
 test_retry_parallel_server() {
 	header 3 "Test: server retries failed connections"
@@ -348,6 +367,16 @@ test_all() {
 	success_message "Passed: Test server: entrypoint acts like certbot image"
 	teardown_test_env 2> /dev/null
 
+	header 2 "Test server: just push"
+	test_just_push_server
+	success_message "Passed: Test server: just push"
+	teardown_test_env 2> /dev/null
+
+	header 2 "Test server: pushes existing queue"
+	test_push_existing_queue_server
+	success_message "Passed: Test server: pushes existing queue"
+	teardown_test_env 2> /dev/null
+
 	header 2 "Test server: renew certs (mock certbot)"
 	test_renew_only
 	success_message "Passed: Test server: renew certs (mock certbot)"
@@ -417,7 +446,7 @@ for arg in $@; do
 			header 1 "Using nobuild mode"
 			# Add volume entries pointing the image src directory to the repo
 			sed -i '/^.*#_NOBUILD_TESTING$/d' "$DOCKER_TEST_ROOT/docker-compose.yml"
-			sed -i 's/volumes:$/&\n      - "..\/..\/src:\/certdeploy\/src\/src" #_NOBUILD_TESTING/' "$DOCKER_TEST_ROOT/docker-compose.yml"
+			sed -i 's/^    volumes:$/&\n      - "..\/..\/src:\/certdeploy\/src\/src" #_NOBUILD_TESTING/' "$DOCKER_TEST_ROOT/docker-compose.yml"
 			;;
 		debug)
 			header 1 "Using debug mode"

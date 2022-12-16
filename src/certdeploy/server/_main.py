@@ -19,13 +19,14 @@ def _run(config, daemon, renew, push, lineage, domains):
         Server(config).serve_forever()
     else:
         log.debug('Running manual push or hook')
-        if not lineage or not domains:
+        if (not lineage or not domains) and not push:
             print('Could not find lineage or domains.',
                   f'lineage: {lineage}, domains: {domains}', file=sys.stderr)
             sys.exit(1)
-        domains = domains.split()
         server = Server(config)
-        server.sync(lineage, domains)
+        if domains and lineage:
+            domains = domains.split()
+            server.sync(lineage, domains)
         if push:
             log.debug('Running manual push without a running daemon')
             server.serve_forever(one_shot=True)

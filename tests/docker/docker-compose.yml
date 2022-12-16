@@ -1,6 +1,10 @@
 version: "3.9"
 
 
+volumes:
+  certdeploy_test_just_push_vol: {}
+
+
 services:
 
   server:
@@ -11,6 +15,26 @@ services:
     entrypoint: ["certdeploy-server", "--lineage", "/etc/letsencrypt/live/example.com", "--domains", "example.com", "--push"]
     environment:
       CERTDEPLOY_SERVER_CONFIG: /etc/certdeploy/server_basic.yml
+
+  server_just_push:
+    image: certdeploy-server:latest
+    volumes:
+      - "./server/:/etc/certdeploy"
+      - "./server/etc-letsencrypt:/etc/letsencrypt"
+      - "certdeploy_test_just_push_vol:/certdeploy/queue_dir"
+    entrypoint: ["certdeploy-server", "--push"]
+    environment:
+      CERTDEPLOY_SERVER_CONFIG: /etc/certdeploy/server_just_push.yml
+
+  server_just_queue:
+    image: certdeploy-server:latest
+    volumes:
+      - "./server/:/etc/certdeploy"
+      - "./server/etc-letsencrypt:/etc/letsencrypt"
+      - "certdeploy_test_just_push_vol:/certdeploy/queue_dir"
+    entrypoint: ["certdeploy-server", "--lineage", "/etc/letsencrypt/live/example.com", "--domains", "example.com"]
+    environment:
+      CERTDEPLOY_SERVER_CONFIG: /etc/certdeploy/server_just_push.yml
 
   server_parallel:
     image: certdeploy-server:latest
