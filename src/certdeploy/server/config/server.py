@@ -128,7 +128,7 @@ class Server:
     * Any other positive integer is used as the number of seconds between
         attempts to push certs to this client.
     """
-    join_timeout: Optional[float] = 60
+    join_timeout: Optional[float] = None
     """The number of seconds to wait while joining `PushWorker` threads.
     Defaults to 60 seconds.
 
