@@ -16,3 +16,9 @@
 - Added systemd unit examples
 - Fixed debug log call that should have been an info log call in the Docker update code.
 - Other documentation fixes
+
+## Version 0.2.0 (alpha)
+- Added the ability to retry pushing to clients
+- As a side effect of the above, the server has a busier main loop so it may use more resources
+- Added asynchronous pushing to clients (also a side effect of retying)
+- Changed error output to be more uniform
