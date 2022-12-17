@@ -19,4 +19,3 @@ client_configs:
     domains:
       - example.com
     push_retries: 1
-queue_dir: /certdeploy

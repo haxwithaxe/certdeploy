@@ -15,4 +15,3 @@ client_configs:
     domains:
       - example.com
 fail_fast: true
-queue_dir: /certdeploy

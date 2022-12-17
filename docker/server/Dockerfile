@@ -3,6 +3,7 @@ ARG TARGET_ARCH=amd64
 FROM ${TARGET_ARCH}/python:3.10-alpine
 
 ENTRYPOINT [ "/entrypoint.sh" ]
+RUN mkdir -p /var/run/certdeploy
 
 COPY ./docker/server/entrypoint.sh /entrypoint.sh
 RUN chmod 700 /entrypoint.sh

@@ -7,4 +7,3 @@ client_configs:
     path: ''
     domains:
       - example.com
-queue_dir: /certdeploy

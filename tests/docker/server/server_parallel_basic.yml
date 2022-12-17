@@ -29,4 +29,3 @@ client_configs:
     path: /certdeploy/staging
     domains:
       - example.com
-queue_dir: /certdeploy
