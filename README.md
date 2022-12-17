@@ -16,13 +16,14 @@ This tool can be used in a few different ways:
 
 ## The Server
 There are three parts to the server.
-1. The certbot hook, which is run by Certbot as a deploy hook.
+1. The certbot hook, which is run by Certbot as a deploy hook. This queues updates to be pushed to clients.
 1. The command, which can be used to push certs to clients directly or try to renew certs immediately. This is useful for testing setups.
-1. The daemon, which runs ``certbot renew`` on an interval (and indirectly ``certdeploy-server`` as a hook when certs are renewed). This is optional, but is the default in the server docker container.
+1. The daemon, which runs ``certbot renew`` on an interval (and indirectly ``certdeploy-server`` as a hook when certs are renewed). It also processes the push queue. This is optional, but is the default in the server docker container.
 
 ### Commandline Options for the command/daemon
 * `--lineage` - The path of a lineage (eg `/etc/letsencrypt/live/example.com`). This is mutually exclusive with `--daemon`.
 * `--domains` - A space separated list of domains as a single string (eg `"www.example.com example.com"`). This is mutually exclusive with `--daemon`.
+* `--push` - Run the daemon only until the queue is empty and all pushes have been processed. When used with `--lineage` and `--domains` it populates the queue and then runs the daemon until the push is complete.
 * `--config` - The path to the config file.
 * `--daemon` - Run the daemon. Without this option the server command will run once and exit.
 * `--renew` - Run the cert renewal part of the daemon once and exit.
@@ -36,11 +37,15 @@ To run these in the running docker container prefix the commands with `docker co
     ```
 * Run the command to force deploying certs. Where `/etc/letsencrypt/live/` is the path to the lineages. Certbot puts it there by default. The server script can only handle one lineage at a time.
     ```
-    certdeploy-server --lineage /etc/letsencrypt/live/example.com --domains "www.example.com example.com"
+    certdeploy-server --push --lineage /etc/letsencrypt/live/example.com --domains "www.example.com example.com"
     ```
-* Run the command to try to renew certs.
+* Run the command to try to renew certs. This will not cause the certs to be pushed to clients unless the daemon is running or is run after the CertDeploy deploy hook is run.
     ```
     certdeploy-server --renew
+    ```
+* Run the command to push an existing push queue, but without adding to the queue.
+    ```
+    certdeploy-server --push
     ```
 
 ### Enviroment Variables
@@ -49,6 +54,7 @@ Commandline options override environment variables.
 * ``CERTDEPLOY_SERVER_DAEMON`` - If set to `true` it is the equivalent of ``--daemon``.
 * ``CERTDEPLOY_SERVER_CONFIG`` - The path to the server config file. Equivalent to ``--config``.
 * ``CERTDEPLOY_LOG_LEVEL`` - The log level. Equivalent to ``--log-level``.
+* ``CERTDEPOLY_PUSH_ONLY`` - If set to `true` it is the equivalent of ``--push``.
 
 #### Hook Environment Variables
 The hook (``certdeploy-server`` when it's run by Certbot) expects the following environmental variables from Certbot in addition to the optional ``CERTDEPLOY_SERVER_CONFIG`` and ``CERTDEPLOY_LOG_LEVEL`` as described above.
@@ -69,6 +75,13 @@ The following are daemon specific configs.
 * `renew_at` (optional) - The time of day to check for new certs. Formatted ``HH:MM``. Defaults to ``null`` which is equivalent to the current time.
 * `renew_exec` (optional) - The path of the `certbot` executable. If for some reason `certbot` isn't in the `$PATH` this lets the full path be given. This is also useful for testing. The `tests/docker/mock/mock-certbot.sh` script in the repository can be mounted in the container and the path given with this option. That way settings can be tested without spamming [Let's Encrypt](https://letsencrypt.org/).
 * `renew_args` (optional) - A list of arguments to pass to `certbot` when attempting to renew certs. Defaults to ``['renew']``.
+* `push_mode` (optional) - The mode used to push certs to clients. This must be `serial` or `parallel`. Defaults to `serial`.
+* `push_interval` (optional) - The number of seconds to wait between pushing to clients. This must be a positive integer or `0`. 0 disables the delay. Defaults to `0`.
+* `push_retries` (optional) - The number of times to retry pushing certs to clients. This must be a positive integer or `0`. `0` disables retries. Defaults to `1` (1 initial attempt and one retry). This can be overridden on a client by client basis.
+* `push_retry_interval` (optional) - The delay in seconds between retrying to push certs to clients. This must be an positive integer or `0`. 0 disables the delay between retries. Defaults to `30`.
+* `join_timeout` (optional) - The number of seconds to wait while joining push threads. This must be a positive number or ``null``. ``null`` disables the timeout. Defaults to `None`. Set this to help identify the cause of hung pushes.
+* `queue_dir` (optional) - The directory where the queue and the lock file will be stored. Defaults to ``/var/run/certdeploy``.
+
 
 ##### Scheduling Examples
 * The default behavior is to try to renew once a day which is equivalent to the following.
@@ -89,6 +102,23 @@ The following are daemon specific configs.
     renew_unit: monday
     ```
 
+
+##### Push Retry Examples
+* Wait 30 seconds between initial attempts to push to clients.
+    ```yaml
+    push_interval: 30
+    ```
+* Retry pushing to clients after an hour (3600 seconds).
+    ```yaml
+    push_retry_interval: 3600
+    ```
+* Retry pushing to clients after an hour and retry every hour 12 times.
+    ```yaml
+    push_retry_interval: 3600
+    push_retries: 12
+    ```
+
+
 #### Client Connection Settings
 * `address` - The client address (IP address or hostname).
 * `domains` - A list of domains that this client needs certs for.
@@ -99,6 +129,25 @@ The following are daemon specific configs.
 * `needs_chain` (optional) - If this is `true` the `chain.pem` from the relevant lineages will be copied to this client. Defaults to `false`.
 * `needs_fullchain` (optional) - If this is `true` the `fullchain.pem` from the relevant lineages will be copied to this client. Defaults to `true`.
 * `needs_privkey` (optional) - If this is `true` the `privkey.pem` from the relevant lineages will be copied to this client. Defaults to `true`.
+* `push_retries` (optional) - The number of times to retry connecting to this client. This must be a positive integer or `0` if set. If set, it overrides the server's `push_retries` value for this client. `0` will cause the server to only try to push once (no retries). Defaults to ``null``.
+* `push_retry_interval` (optional) - The interval in seconds to wait between retries for this client. This must be a positive integer or `0` if set. If set, it overrides the server's `push_retry_interval` value for this client. Defaults to ``null``.
+
+
+##### Client Connection Examples
+* Override the push retries and retry interval for just one client.
+    ```yaml
+    client_configs:
+      - address: 1.2.3.4
+        pubkey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP+H3Nk/9uSa7LHNt8fvCPKKkNFnVE5SGC5tnthf6/OK
+        domains:
+          - example.com
+        push_retries: 42
+        push_retry_interval: 3600
+      - address: 5.6.7.8
+        pubkey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEuhX3Q690lnBhpfGHOs0j4CuCxE3E3jekWehvHRmVKt
+        domains:
+          - example.net
+    ```
 
 #### Examples
 
@@ -115,13 +164,12 @@ client_configs:
 ```
 
 ##### Daemon
-This can be given to `certdeploy-server` along with the `--daemon` option or as part of the docker image to run `certbot renew` every Monday at 9:00AM and deploy new certs for `example.com` to `1.2.3.4`.
+This can be given to `certdeploy-server` along with the `--daemon` option or as part of the [docker image](https://hub.docker.com/r/haxwithaxe/certdeploy-server) to run `certbot renew` every Monday at 9:00AM and deploy new certs for `example.com` to `1.2.3.4`.
 ```yaml
 ---
 privkey_filename: /etc/certdeploy/server_key
-check_renew:
-  every: monday
-  at: 09:00
+renew_every: monday
+renew_at: 09:00
 client_configs:
   - address: 1.2.3.4
     pubkey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP+H3Nk/9uSa7LHNt8fvCPKKkNFnVE5SGC5tnthf6/OK
@@ -130,10 +178,10 @@ client_configs:
 ```
 
 #### Server Security Considerations
-When run as a script (`--renew`) or daemon outside of docker it's expected that the CertDeploy server will run as root or a user that has permission to run Certbot to run ``certbot renew``. Because it can run arbitrary code (via the `renew_exec` and `renew_args` configs) and distributes your TLS certs, it is very strongly recommended that the config file is globally read only or readable only by the user running the server, and writable only by root or at most only by the user that runs the server.
+When run as a script (`--renew`) or daemon outside of docker it's expected that the CertDeploy server will run as root or a user that has permission to run ``certbot renew``. Because it can run arbitrary code (via the `renew_exec` and `renew_args` configs) and distributes your TLS certs, it is very strongly recommended that the config file is globally read only or readable only by the user running the server, and writable only by root or at most only by the user that runs the server. Similarly (but less so) the push queue can be used to force the server to push certs or files that are where the given lineage should be. Putting the queue file in a place where other users can get to it doesn't directly create a security hole but it can be combined with other potential problems to distribute or exfiltrate data.
 
 ### Installation
-The recommended way to use the server is to have it running in a docker container. This image has Certbot baked in and automatically runs `certbot renew` on a schedule.
+The recommended way to use the server is to have it running in a docker container. The [server image](https://hub.docker.com/r/haxwithaxe/certdeploy-server) has Certbot baked in and automatically runs `certbot renew` on a schedule.
 
 #### Docker
 1. Create a directory to put the configs in and enter it. For example `mkdir conf && cd conf`.
