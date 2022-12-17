@@ -446,7 +446,7 @@ for arg in $@; do
 			header 1 "Using nobuild mode"
 			# Add volume entries pointing the image src directory to the repo
 			sed -i '/^.*#_NOBUILD_TESTING$/d' "$DOCKER_TEST_ROOT/docker-compose.yml"
-			sed -i 's/^    volumes:$/&\n      - "..\/..\/src:\/certdeploy\/src\/src" #_NOBUILD_TESTING/' "$DOCKER_TEST_ROOT/docker-compose.yml"
+			sed -i 's/^    volumes:$/&\n      - "..\/..\/src\/certdeploy:\/usr\/local\/lib\/python3.10\/site-packages\/certdeploy" #_NOBUILD_TESTING/' "$DOCKER_TEST_ROOT/docker-compose.yml"
 			;;
 		debug)
 			header 1 "Using debug mode"

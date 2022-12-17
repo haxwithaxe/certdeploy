@@ -10,7 +10,7 @@ COPY ./docker/client/entrypoint.sh /entrypoint.sh
 RUN chmod 700 /entrypoint.sh
 COPY ./docker/client/conf /etc/certdeploy
 RUN mkdir -p /certdeploy/certs /certdeploy/staging
-COPY . /certdeploy/src
+COPY ./dist /certdeploy/dist
 
 WORKDIR /certdeploy
 
@@ -24,6 +24,6 @@ RUN apk add --no-cache --virtual .build-deps \
         python3-dev \
         cargo \
         git \
-    && pip install -e ./src \
+    && pip install /certdeploy/dist/certdeploy-*.whl \
     && apk del .build-deps \
-    && rm -rf ${HOME}/.cargo
+    && rm -rf ${HOME}/.cargo /certdeploy/dist

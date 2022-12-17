@@ -22,3 +22,7 @@
 - As a side effect of the above, the server has a busier main loop so it may use more resources
 - Added asynchronous pushing to clients (also a side effect of retying)
 - Changed error output to be more uniform
+
+## Version 0.2.1 (alpha)
+- Removed a lot cruft from the docker images
+- Removed a lot cruft from the sdist

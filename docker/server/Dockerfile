@@ -8,7 +8,7 @@ RUN mkdir -p /var/run/certdeploy
 COPY ./docker/server/entrypoint.sh /entrypoint.sh
 RUN chmod 700 /entrypoint.sh
 RUN mkdir /certdepoly
-COPY . /certdeploy/src
+COPY ./dist /certdeploy/dist
 COPY ./docker/server/conf /etc/certdeploy
 RUN mkdir -p /etc/letsencrypt/renewal-hooks/deploy
 
@@ -38,7 +38,7 @@ RUN apk add --no-cache --virtual .build-deps \
         cargo \
         git \
     && pip install certbot \
-    && pip install -e ./src \
+    && pip install /certdeploy/dist/certdeploy-*.whl \
     && ln -s /usr/local/bin/certdeploy-server /etc/letsencrypt/renewal-hooks/deploy/certdeploy-hook \
     && apk del .build-deps \
-    && rm -rf ${HOME}/.cargo
+    && rm -rf ${HOME}/.cargo /certdeploy/dist
