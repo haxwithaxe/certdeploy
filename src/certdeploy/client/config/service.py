@@ -120,7 +120,7 @@ class DockerService(Service):  # pylint: disable=too-few-public-methods
         super().__init__(config)
         if not self.name and not self.filters:
             raise ConfigError('Either `filters` or `name` must be given in '
-                              '`docker_{self._type}` configs. Got: {config}.')
+                              f'`docker_{self._type}` configs. Got: {config}.')
         if self.name and not self.filters:
             # Match the exact name as given
             self.filters = {'name': f'^{self.name}$'}

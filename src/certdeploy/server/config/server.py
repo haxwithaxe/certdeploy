@@ -48,7 +48,7 @@ class PushMode(enum.Enum):
     @classmethod
     def __call__(cls, value):
         if not cls.validate(value):
-            raise ValueError('\'{value}\' is not a valid {cls.__name__}')
+            raise ValueError(f'\'{value}\' is not a valid {cls.__name__}')
         if isinstance(value, str):
             super().__call__(value.lower())
         super().__call__(value)
@@ -181,5 +181,5 @@ class Server:
                                       is_type=int, optional=True, gt=0)
         self.renew_unit = _normalize_unit(self.renew_unit, self.renew_every)
         if self.renew_unit in _WEEKDAYS and self.renew_every != 1:
-            raise ConfigInvalid('renew_unit', self.renew_unit, must=' not be a '
-                                'weekday if `renew_every` is set and not 1.')
+            raise ConfigInvalid('renew_unit', self.renew_unit, must=' not be a'
+                                ' weekday if `renew_every` is set and not 1.')

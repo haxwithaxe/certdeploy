@@ -32,7 +32,7 @@ class ClientConfig(Config):  # pylint: disable=too-few-public-methods
             super().__init__(*args, **kwargs)
         except TypeError as err:
             if 'got an unexpected keyword argument' in str(err):
-                raise ConfigError('Invalid config option: {err}') from err
+                raise ConfigError(f'Invalid config option: {err}') from err
             raise
         if not os.path.isdir(self.source):
             raise ConfigInvalidPath('source', self.source, is_type='directory')
@@ -44,7 +44,9 @@ class ClientConfig(Config):  # pylint: disable=too-few-public-methods
             self.sftpd_config = SFTPDConfig(**self.sftpd)
         except TypeError as err:
             if 'got an unexpected keyword argument' in str(err):
-                raise ConfigError('Invalid SFTPD config option: {err}') from err
+                raise ConfigError(
+                    f'Invalid SFTPD config option: {err}'
+                    ) from err
             raise
         seconds = 0
         # `null` in the config is eqivalent to 0s
