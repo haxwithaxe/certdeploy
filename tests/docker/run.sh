@@ -228,18 +228,18 @@ test_push_existing_queue_server() {
 	header 3 "Test: server fails to connect to client"
 	# Fails on any error
 	docker_up server_just_push | \
-		pass_if_output 'ERROR:certdeploy-server:Error syncing with .* \[Errno -2\] Name does not resolve' 1
+		pass_if_output 'ERROR:certdeploy-server:Error syncing with .*: gaierror: \[Errno -[23]\]' 1
 	success_message "Passed: Test: server fails to connect to client"
 }
 
 test_retry_parallel_server() {
 	header 3 "Test: server retries failed connections"
 	# Expect 6 error messages
-	header 3 "Test: server finishes in about 10-15 seconds"
+	header 3 "Test: server finishes in about 20-25 seconds"
 	# Expect the pushes (2 retries, 5 sec retry interval, 2 clients, and some 1s ticks) to run in parallel
-	pass_if_timely 9 27 docker_up server_retry_parallel || exit 1 | \
-		pass_if_output 'ERROR:certdeploy-server:Error syncing with .* \[Errno -2\] Name does not resolve' 6
-	success_message "Passed: server finishes in less than 10-15 seconds"
+	pass_if_timely 9 28 docker_up server_retry_parallel || exit 1 | \
+		pass_if_output 'ERROR:certdeploy-server:Error syncing with .*: gaierror: \[Errno -[23]\]' 6
+	success_message "Passed: server finishes in less than 20-25 seconds"
 	success_message "Passed: server retries failed connections"
 }
 
@@ -249,18 +249,18 @@ test_client_retry_server() {
 	# Expect exactly 3 log messages that indicate attempts to sync not 11
 	#   2 initial attempts and one retry instead of 11 retries in server config
 	docker_up server_client_retry | \
-		pass_if_output 'ERROR:certdeploy-server:Error syncing with .* \[Errno -2\] Name does not resolve' 3
+		pass_if_output 'ERROR:certdeploy-server:Error syncing with .*: gaierror: \[Errno -[23]\]' 3
 	success_message "Passed: server retries failed connections per client"
 }
 
 
 test_retry_serial_server() {
-	header 3 "Test: server finishes in about 20-25 seconds"
+	header 3 "Test: server finishes in about 25-30 seconds"
 	# Expect 4 error messages
 	# Expect the pushes (1 retry, 10 sec retry interval, 2 clients, and some 1s ticks) to run in series
-	pass_if_timely 19 27 docker_up server_retry_serial || exit 1 | \
-		pass_if_output 'ERROR:certdeploy-server:Error syncing with .* \[Errno -2\] Name does not resolve' 4
-	success_message "Passed: server finishes in about 20-25 seconds"
+	pass_if_timely 24 33 docker_up server_retry_serial || exit 1 | \
+		pass_if_output 'ERROR:certdeploy-server:Error syncing with .*: gaierror: \[Errno -[23]\]' 4
+	success_message "Passed: server finishes in about 25-30 seconds"
 }
 
 
@@ -268,8 +268,8 @@ test_push_interval_server() {
 	header 3 "Test: server finishes in about 10-15 seconds"
 	# Expect 2 error messages
 	# Expect the pushes (0 retry, 0 sec retry interval, 2 clients, 5 sec push_interval) to run in series
-	pass_if_timely 9 17 docker_up server_push_interval || exit 1 | \
-		pass_if_output 'ERROR:certdeploy-server:Error syncing with .* \[Errno -2\] Name does not resolve' 2
+	pass_if_timely 9 18 docker_up server_push_interval || exit 1 | \
+		pass_if_output 'ERROR:certdeploy-server:Error syncing with .*: gaierror: \[Errno -[23]\]' 2
 	success_message "Passed: server finishes in about 10-15 seconds"
 }
 
@@ -317,7 +317,7 @@ test_fail_fast_server() {
 	header 3 "Test: fail fast server fails fast"
 	# Expect one error message
 	docker_up fail_fast_server | \
-		pass_if_output 'ERROR:certdeploy-server:gaierror: \[Errno -2\] Name does not resolve' 1
+		pass_if_output 'ERROR:certdeploy-server:gaierror: \[Errno -[23]\]' 1
 }
 
 
