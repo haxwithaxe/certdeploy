@@ -26,3 +26,9 @@
 ## Version 0.2.1 (alpha)
 - Removed a lot cruft from the docker images
 - Removed a lot cruft from the sdist
+
+## Version 0.2.2 (alpha)
+- Bumped dependency version
+- Fixed missing f's on some f-strings
+- Changed tests to match different performance
+- Changed tests to match paramiko errors
