@@ -7,7 +7,7 @@ RUN mkdir -p /var/run/certdeploy
 
 COPY ./docker/server/entrypoint.sh /entrypoint.sh
 RUN chmod 700 /entrypoint.sh
-RUN mkdir /certdepoly
+RUN mkdir /certdeploy
 COPY ./dist /certdeploy/dist
 COPY ./docker/server/conf /etc/certdeploy
 RUN mkdir -p /etc/letsencrypt/renewal-hooks/deploy
