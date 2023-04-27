@@ -270,6 +270,9 @@ class PushWorker(Thread):
                     time.sleep(self._retry_interval)
                 except Exception as err:
                     self._exception = err
+                    log.error('Error syncing with %s:%s: %s',
+                              self._client.address, self._client.port,
+                              format_error(err), exc_info=err)
                     return  # End the thread
                 else:
                     log.info('Pushed %s to %s in %s attempts',
