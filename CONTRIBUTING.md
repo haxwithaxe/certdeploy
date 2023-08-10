@@ -129,6 +129,8 @@ conda create -n certdeploy python=3 six virtualenv pytest pytest-cov
 conda activate certdeploy
 ```
 
+The tests require `docker-compose`. Docker-compose v2 does not have a python interface so you'll need to install it independently.
+
 ### Clone the repository
 
 1. Create an user account on GitHub if you do not already have one.
