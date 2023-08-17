@@ -67,3 +67,11 @@ repos:
         - file
       exclude: '(^.pre-commit-config.yaml|^tests/docker/run.sh)'
       fail_fast: false
+    - id: default_potato_buffer
+      name: POTATO_BUFFER must be set to 0
+      language: pygrep
+      entry: 'POTATO_BUFFER=[^0]'
+      types:
+        - file
+      files: 'tests/docker/run.sh'
+      fail_fast: false
