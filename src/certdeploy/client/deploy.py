@@ -5,7 +5,7 @@ import re
 import shutil
 
 from . import log
-from .config import Config
+from .config import ClientConfig
 from .errors import InvalidKey
 
 # Match a valid privkey.pem
@@ -37,7 +37,29 @@ def validate_keys(*path: os.PathLike):
             raise InvalidKey(full_path)
 
 
-def deploy(config: Config) -> bool:
+def needs_update(source_filename, dest_filename) -> bool:
+    """Verify that `dest_filename` needs to be updated.
+
+    Arguments:
+        source: The incoming cert file.
+        dest: The previously deployed cert file.
+
+    Returns:
+        bool: `True` if `dest_filename` does not exist or if `dest_filename`
+              exists and is not the same as `source_filename`.
+    """
+    if os.path.exists(dest_filename):
+        with open(source_filename, 'rb') as src_file:
+            source_text = src_file.read()
+        with open(dest_filename, 'rb') as dest_file:
+            dest_text = dest_file.read()
+        if source_text == dest_text:
+            return False
+        return True
+    return True
+
+
+def deploy(config: ClientConfig) -> bool:
     """Deploy the certificates.
 
     Returns `True` if new certificates were deployed.
@@ -45,18 +67,23 @@ def deploy(config: Config) -> bool:
     update = False
     if not os.listdir(config.source):
         return False
-    # Do not move invalid key files.
     for lineage in os.listdir(config.source):
         log.debug('Found lineage: %s', lineage)
         if not os.path.isdir(os.path.join(config.source, lineage)):
             continue
+        # Do not move invalid key files.
         validate_keys(config.source, lineage)
         # Move the lineages to the destination
         dest_dir = os.path.join(config.destination, lineage)
         os.makedirs(dest_dir, exist_ok=True)
-        for cert in glob.glob(os.path.join(config.source, lineage, '*.pem')):
+        for source_filename in glob.glob(
+            os.path.join(config.source, lineage, '*.pem')
+        ):
+            dest_filename = os.path.join(dest_dir,
+                                         os.path.basename(source_filename))
+            if not needs_update(source_filename, dest_filename):
+                continue
             update = True
-            filename = os.path.join(dest_dir, os.path.basename(cert))
-            shutil.move(cert, filename)
-            log.debug('Moved "%s" to "%s"', cert, filename)
+            shutil.move(source_filename, dest_filename)
+            log.debug('Moved "%s" to "%s"', source_filename, dest_filename)
     return update
