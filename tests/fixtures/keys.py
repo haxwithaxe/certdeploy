@@ -1,5 +1,7 @@
+"""PKI data generation fixtures."""
 
 import io
+import pathlib
 
 import paramiko
 import pytest
@@ -25,11 +27,28 @@ def _keypairgen() -> tuple[str, str]:
 
 @pytest.fixture(scope='function')
 def pubkeygen() -> callable:
+    """Generate a pubkey string."""
+
     def _pubkeygen() -> str:
         return _keypairgen()[1]
+
     return _pubkeygen
 
 
 @pytest.fixture(scope='function')
 def keypairgen() -> callable:
+    """Generate key pairs as pairs of strings."""
     return _keypairgen
+
+
+@pytest.fixture(scope='function')
+def keypairgen_privkey_file(tmp_path: pathlib.Path) -> callable:
+    """Generate a key pair with a private key file."""
+
+    def _with_privkey_file() -> tuple[str, str, pathlib.Path]:
+        privkey, pubkey = _keypairgen()
+        privkey_path = tmp_path.joinpath('privkey')
+        privkey_path.write_bytes(privkey.encode())
+        return privkey, pubkey, privkey_path
+
+    return _with_privkey_file
