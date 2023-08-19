@@ -87,7 +87,7 @@ def free_port() -> callable:
                 sock.close()
                 return port
             except OSError:
-                pass
+                port += 1
         raise NoFeePort()
 
     return _get_free_port
