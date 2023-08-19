@@ -59,16 +59,18 @@ class MockClientTCPServer(threading.Thread):
 
 @pytest.fixture()
 def mock_fail_client(free_port: callable) -> callable:
-    """A single mock CertDeploy client factory."""
-    _port = free_port()
-    server = MockClientTCPServer()
+    """A mock CertDeploy client factory."""
+    servers = []
 
-    def _serve(address: str, port: int = _port
-               ) -> tuple[int, MockClientTCPServer]:
+    def _serve(address: str, port: int = None
+               ) -> MockClientTCPServer:
+        server = MockClientTCPServer()
+        servers.append(server)
         server.address = address
-        server.port = port
+        server.port = port or free_port()
         server.start()
-        return port, server
+        return server
 
     yield _serve
-    server.stop()
+    for server in servers:
+        server.stop()
