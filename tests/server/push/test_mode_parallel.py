@@ -1,4 +1,4 @@
-"""Tests for the `retry_mode` configs set to 'serial'."""
+"""Tests for the `retry_mode` config set to 'parallel'."""
 
 from certdeploy.server.config import ServerConfig
 from certdeploy.server.config.server import PushMode
@@ -13,8 +13,10 @@ def test_push_mode_parallel_pushes_all_at_once(
         client_conn_config_factory: callable,
         lineage_factory: callable
 ):
-    """Verify that the `push_mode` server config set to `serial` pushes to
-    clients one at a time.
+    """Verify that the `push_mode` server config set to `parallel` pushes to
+    clients all at once.
+
+    This also effectively tests the `push_interval` config option.
     """
     ## Define some reused variables
     push_retry_count = 0
