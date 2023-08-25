@@ -1,6 +1,7 @@
 """Tests for the `retry_mode` configs set to 'serial'."""
 
 from certdeploy.server.config import ServerConfig
+from certdeploy.server.config.server import PushMode
 from certdeploy.server.server import Server
 
 MAX_SECONDS_OFF = 1
@@ -45,7 +46,8 @@ def test_push_mode_serial_pushes_one_at_a_time(
     server_config_filename, _ = tmp_server_config(
         client_configs=[client_config0, client_config1],
         push_retries=push_retry_count,
-        push_interval=push_interval
+        push_interval=push_interval,
+        push_mode=PushMode.SERIAL.value
     )
     server_config = ServerConfig.load(server_config_filename)
     ## Make something to test
