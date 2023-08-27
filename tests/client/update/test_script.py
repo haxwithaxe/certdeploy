@@ -7,7 +7,7 @@ from certdeploy.client.config.service import Script
 from certdeploy.client.update import update_script
 
 
-def test_updates_docker_container_by_name(
+def test_updates_with_script(
         tmp_client_config: callable,
         tmp_script: tuple[pathlib.Path, pathlib.Path]
 ):
