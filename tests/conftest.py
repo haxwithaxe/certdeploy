@@ -9,10 +9,7 @@
 
 
 import pytest  # noqa: F401
-from fixtures.client_config import (  # noqa: F401
-    sftpd_config,
-    tmp_client_config
-)
+from fixtures.client_config import tmp_client_config  # noqa: F401
 from fixtures.docker_container import (  # noqa: F401
     ContainerStatus,
     ContainerWrapper,
@@ -24,6 +21,7 @@ from fixtures.keys import (  # noqa: F401
     pubkeygen
 )
 from fixtures.mock_fail_client import mock_fail_client  # noqa: F401
+from fixtures.script import tmp_script  # noqa: F401
 from fixtures.server_config import (  # noqa: F401
     client_conn_config_factory,
     tmp_server_config
