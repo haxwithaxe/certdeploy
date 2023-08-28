@@ -3,7 +3,6 @@
 Both the server and client connection configs.
 """
 
-from certdeploy.server.config import ServerConfig
 from certdeploy.server.server import Server
 
 MAX_SECONDS_OFF = 1
@@ -35,12 +34,11 @@ def test_retries_on_server_interval_is_timely(
         domains=[lineage_name]
     )
     ## Setup server
-    server_config_filename, _ = tmp_server_config(
+    server_config = tmp_server_config(
         client_configs=[client_config],
         push_retries=push_retry_count,
         push_retry_interval=push_retry_interval,
     )
-    server_config = ServerConfig.load(server_config_filename)
     ## Make something to test
     server = Server(server_config)
     server.sync(lineage_path, [lineage_name])
@@ -86,12 +84,11 @@ def test_retries_on_client_interval_is_timely(
         push_retry_interval=client_push_retry_interval
     )
     ## Setup server
-    server_config_filename, _ = tmp_server_config(
+    server_config = tmp_server_config(
         client_configs=[client_config],
         push_retries=push_retry_count,
         push_retry_interval=push_retry_interval,
     )
-    server_config = ServerConfig.load(server_config_filename)
     ## Make something to test
     server = Server(server_config)
     server.sync(lineage_path, [lineage_name])

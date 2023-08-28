@@ -3,8 +3,8 @@ from certdeploy.server.config import ServerConfig
 from certdeploy.server.config.server import PushMode
 
 
-def test_loads_valid_server(tmp_server_config: callable):
-    config_filename, src_config = tmp_server_config()
+def test_loads_valid_server(tmp_server_config_file: callable):
+    config_filename, src_config = tmp_server_config_file()
     config = ServerConfig.load(config_filename)
     assert config.privkey_filename == src_config['privkey_filename']
     assert config.client_configs == src_config['client_configs']
@@ -24,32 +24,36 @@ def test_loads_valid_server(tmp_server_config: callable):
     assert config.queue_dir == src_config['queue_dir']
 
 
-def test_loads_valid_server_push_mode_serial(tmp_server_config: callable):
-    config_filename, _ = tmp_server_config(
+def test_loads_valid_server_push_mode_serial(tmp_server_config_file: callable):
+    config_filename, _ = tmp_server_config_file(
         push_mode='serial'
     )
     config = ServerConfig.load(config_filename)
     assert config.push_mode == PushMode.SERIAL
 
 
-def test_loads_valid_server_push_mode_parallel(tmp_server_config: callable):
-    config_filename, _ = tmp_server_config(
+def test_loads_valid_server_push_mode_parallel(
+        tmp_server_config_file: callable
+):
+    config_filename, _ = tmp_server_config_file(
         push_mode='parallel'
     )
     config = ServerConfig.load(config_filename)
     assert config.push_mode == PushMode.PARALLEL
 
 
-def test_loads_valid_server_push_interval_zero(tmp_server_config: callable):
-    config_filename, _ = tmp_server_config(
+def test_loads_valid_server_push_interval_zero(
+        tmp_server_config_file: callable
+):
+    config_filename, _ = tmp_server_config_file(
         push_interval=0
     )
     config = ServerConfig.load(config_filename)
     assert config.push_interval == 0
 
 
-def test_loads_valid_server_push_retries_zero(tmp_server_config: callable):
-    config_filename, _ = tmp_server_config(
+def test_loads_valid_server_push_retries_zero(tmp_server_config_file: callable):
+    config_filename, _ = tmp_server_config_file(
         push_retries=0
     )
     config = ServerConfig.load(config_filename)
@@ -57,33 +61,34 @@ def test_loads_valid_server_push_retries_zero(tmp_server_config: callable):
 
 
 def test_loads_valid_server_push_retry_interval_zero(
-        tmp_server_config: callable
+        tmp_server_config_file: callable
 ):
-    config_filename, _ = tmp_server_config(
+    config_filename, _ = tmp_server_config_file(
         push_retry_interval=0
     )
     config = ServerConfig.load(config_filename)
     assert config.push_retry_interval == 0
 
 
-def test_loads_valid_server_join_timeout_none(tmp_server_config: callable):
-    config_filename, _ = tmp_server_config(
+def test_loads_valid_server_join_timeout_none(tmp_server_config_file: callable):
+    config_filename, _ = tmp_server_config_file(
         join_timeout=None
     )
     config = ServerConfig.load(config_filename)
     assert config.join_timeout is None
 
 
-def test_loads_valid_server_join_timeout_int(tmp_server_config: callable):
-    config_filename, _ = tmp_server_config(
+def test_loads_valid_server_join_timeout_int(tmp_server_config_file: callable):
+    config_filename, _ = tmp_server_config_file(
         join_timeout=1
     )
     config = ServerConfig.load(config_filename)
     assert config.join_timeout == 1
 
 
-def test_loads_valid_client(tmp_server_config: callable, pubkeygen: callable):
-    config_filename, src_config = tmp_server_config(
+def test_loads_valid_client(tmp_server_config_file: callable,
+                            pubkeygen: callable):
+    config_filename, src_config = tmp_server_config_file(
         client_configs=[dict(
             address='1.2.3.4',
             domains=['test.example.com'],
@@ -114,9 +119,9 @@ def test_loads_valid_client(tmp_server_config: callable, pubkeygen: callable):
     assert client.push_retry_interval == src_client['push_retry_interval']
 
 
-def test_loads_valid_client_push_retries_none(tmp_server_config: callable,
+def test_loads_valid_client_push_retries_none(tmp_server_config_file: callable,
                                               pubkeygen: callable):
-    config_filename, _ = tmp_server_config(
+    config_filename, _ = tmp_server_config_file(
         client_configs=[dict(
             address='1.2.3.4',
             domains=['test.example.com'],
@@ -129,9 +134,9 @@ def test_loads_valid_client_push_retries_none(tmp_server_config: callable,
     assert client.push_retries is None
 
 
-def test_loads_valid_client_push_retries_zero(tmp_server_config: callable,
+def test_loads_valid_client_push_retries_zero(tmp_server_config_file: callable,
                                               pubkeygen: callable):
-    config_filename, _ = tmp_server_config(
+    config_filename, _ = tmp_server_config_file(
         client_configs=[dict(
             address='1.2.3.4',
             domains=['test.example.com'],
@@ -145,10 +150,10 @@ def test_loads_valid_client_push_retries_zero(tmp_server_config: callable,
 
 
 def test_loads_valid_client_push_retry_interval_none(
-        tmp_server_config: callable,
+        tmp_server_config_file: callable,
         pubkeygen: callable
 ):
-    config_filename, _ = tmp_server_config(
+    config_filename, _ = tmp_server_config_file(
         client_configs=[dict(
             address='1.2.3.4',
             domains=['test.example.com'],
@@ -162,10 +167,10 @@ def test_loads_valid_client_push_retry_interval_none(
 
 
 def test_loads_valid_client_push_retry_interval_zero(
-        tmp_server_config: callable,
+        tmp_server_config_file: callable,
         pubkeygen: callable
 ):
-    config_filename, _ = tmp_server_config(
+    config_filename, _ = tmp_server_config_file(
         client_configs=[dict(
             address='1.2.3.4',
             domains=['test.example.com'],

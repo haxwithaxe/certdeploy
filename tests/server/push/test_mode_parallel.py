@@ -1,6 +1,5 @@
 """Tests for the `retry_mode` config set to 'parallel'."""
 
-from certdeploy.server.config import ServerConfig
 from certdeploy.server.config.server import PushMode
 from certdeploy.server.server import Server
 
@@ -47,13 +46,12 @@ def test_push_mode_parallel_pushes_all_at_once(
         push_retries=push_retry_count
     )
     ## Setup Server
-    server_config_filename, _ = tmp_server_config(
+    server_config = tmp_server_config(
         client_configs=[client_config0, client_config1],
         push_retries=push_retry_count,
         push_interval=push_interval,
         push_mode=PushMode.PARALLEL.value
     )
-    server_config = ServerConfig.load(server_config_filename)
     ## Make something to test
     server = Server(server_config)
     server.sync(lineage_path, [lineage_name])
