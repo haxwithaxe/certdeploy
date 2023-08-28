@@ -4,9 +4,9 @@ from certdeploy.client.config import ClientConfig
 from certdeploy.client.config.client import SFTPDConfig
 
 
-def test_config_base_kitchen_sink(tmp_client_config: callable):
+def test_config_base_kitchen_sink(tmp_client_config_file: callable):
     # Setting update_delay here since we're checking update_delay_seconds
-    config_filename, src_config = tmp_client_config(update_delay='10s')
+    config_filename, src_config = tmp_client_config_file(update_delay='10s')
     config = ClientConfig.load(config_filename)
     assert config.destination == src_config['destination']
     assert config.source == src_config['source']
@@ -20,9 +20,9 @@ def test_config_base_kitchen_sink(tmp_client_config: callable):
     assert config.update_delay_seconds == 10
 
 
-def test_config_sftpd_kitchen_sink(tmp_client_config: callable,
+def test_config_sftpd_kitchen_sink(tmp_client_config_file: callable,
                                    pubkeygen: callable):
-    config_filename, src_config = tmp_client_config(
+    config_filename, src_config = tmp_client_config_file(
         sftpd=dict(
             listen_port=22222,
             listen_address='1.2.3.4',

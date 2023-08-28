@@ -6,7 +6,7 @@ from certdeploy.client.config import ClientConfig
 from certdeploy.errors import ConfigError
 
 
-def test_accepts_valid_name(tmp_client_config: callable):
+def test_accepts_valid_name(tmp_client_config_file: callable):
     """Verify the valid values for the `systemd` update service type are
     accepted.
     """
@@ -26,7 +26,7 @@ def test_accepts_valid_name(tmp_client_config: callable):
         'a_unit_name.scope'
     ]
     for name in names:
-        config_filename, _ = tmp_client_config(
+        config_filename, _ = tmp_client_config_file(
             update_services=[
                 dict(type='systemd', name=name)
             ]
@@ -35,7 +35,7 @@ def test_accepts_valid_name(tmp_client_config: callable):
         assert config.services[0].name == name
 
 
-def test_fails_invalid_name_values(tmp_client_config: callable):
+def test_fails_invalid_name_values(tmp_client_config_file: callable):
     """Verify ConfigError is thrown for `name` values that are invalid.
 
     This is an exhaustive set of invalid names but these are important when it
@@ -54,7 +54,7 @@ def test_fails_invalid_name_values(tmp_client_config: callable):
         'bad_character_*.service'
     ]
     for bad_name in bad_names:
-        config_filename, _ = tmp_client_config(
+        config_filename, _ = tmp_client_config_file(
             update_services=[
                 dict(type='systemd', name=bad_name)
             ]
@@ -65,9 +65,9 @@ def test_fails_invalid_name_values(tmp_client_config: callable):
                 f'service config `name`.' in str(err))
 
 
-def test_fails_null_name_values(tmp_client_config: callable):
+def test_fails_null_name_values(tmp_client_config_file: callable):
     """Verify ConfigError is thrown for `name` values that are null."""
-    config_filename, _ = tmp_client_config(
+    config_filename, _ = tmp_client_config_file(
         update_services=[
             dict(type='systemd', name=None)
         ]
@@ -78,10 +78,10 @@ def test_fails_null_name_values(tmp_client_config: callable):
             str(err))
 
 
-def test_fails_missing_name_values(tmp_client_config: callable,
+def test_fails_missing_name_values(tmp_client_config_file: callable,
                                    tmpdir: py.path.local):
     """Verify ConfigError is thrown for `name` values that are missing."""
-    config_filename, _ = tmp_client_config(
+    config_filename, _ = tmp_client_config_file(
         update_services=[
             dict(type='systemd')
         ]

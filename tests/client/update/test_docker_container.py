@@ -4,12 +4,11 @@ import time
 import pytest
 from conftest import ContainerStatus
 
-from certdeploy.client.config import ClientConfig
 from certdeploy.client.config.service import DockerContainer
 from certdeploy.client.update import update_docker_container
 
 
-@pytest.mark.oper
+@pytest.mark.docker
 def test_updates_docker_container_by_name(
         canned_docker_container: callable,
         tmp_client_config: callable
@@ -17,10 +16,10 @@ def test_updates_docker_container_by_name(
     """Verify the client can update a container based on the container's
     name.
     """
-    config_path, _ = tmp_client_config(
-        docker_url='unix://var/run/docker.sock'
+    client_config = tmp_client_config(
+        docker_url='unix://var/run/docker.sock',
+        fail_fast=True
     )
-    client_config = ClientConfig.load(config_path)
     canned = canned_docker_container()
     # Take the before measurement
     started_at = canned.started_at
@@ -38,16 +37,16 @@ def test_updates_docker_container_by_name(
     assert restarted_at != started_at
 
 
-@pytest.mark.oper
+@pytest.mark.docker
 def test_updates_docker_container_by_filter(
         canned_docker_container: callable,
         tmp_client_config: callable
 ):
     """Verify that the client can update a container based on filters."""
-    config_path, _ = tmp_client_config(
-        docker_url='unix://var/run/docker.sock'
+    client_config = tmp_client_config(
+        docker_url='unix://var/run/docker.sock',
+        fail_fast=True
     )
-    client_config = ClientConfig.load(config_path)
     canned = canned_docker_container()
     # Take the before measurement
     started_at = canned.started_at

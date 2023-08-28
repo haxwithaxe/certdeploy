@@ -9,7 +9,7 @@ from certdeploy.client.config.service import Script
 from certdeploy.errors import ConfigError
 
 
-def test_accepts_absolute_name_values(tmp_client_config: callable,
+def test_accepts_absolute_name_values(tmp_client_config_file: callable,
                                       tmpdir: py.path.local):
     """Verify the valid values for the `script` update service type are
     accepted.
@@ -18,7 +18,7 @@ def test_accepts_absolute_name_values(tmp_client_config: callable,
     # Not running it but it's got to be written to so might as well make is
     #   real
     abs_test_script.write('#!/bin/sh\n/bin/true')
-    config_filename, src_config = tmp_client_config(
+    config_filename, _ = tmp_client_config_file(
         update_services=[
             dict(type='script', name=str(abs_test_script))
         ]
@@ -30,7 +30,7 @@ def test_accepts_absolute_name_values(tmp_client_config: callable,
     assert test_service.script_path == ref_service.script_path
 
 
-def test_accepts_relative_name_values(tmp_client_config: callable,
+def test_accepts_relative_name_values(tmp_client_config_file: callable,
                                       tmpdir: py.path.local):
     """Verify the valid values for the `script` update service type are
     accepted.
@@ -44,7 +44,7 @@ def test_accepts_relative_name_values(tmp_client_config: callable,
     #   real
     abs_test_script.write('#!/bin/sh\n/bin/true')
     with tmpdir.as_cwd():
-        config_filename, src_config = tmp_client_config(
+        config_filename, _ = tmp_client_config_file(
             # In the order Systemd lists them
             update_services=[
                 dict(type='script', name=abs_test_script.basename)
@@ -57,13 +57,13 @@ def test_accepts_relative_name_values(tmp_client_config: callable,
         assert test_service.script_path == str(abs_test_script)
 
 
-def test_accepts_valid_name_values(tmp_client_config: callable):
+def test_accepts_valid_name_values(tmp_client_config_file: callable):
     """Verify the valid values for the `script` update service type are
     accepted.
     """
     true_exec_path = shutil.which('true')
     assert true_exec_path, '`true` is not in PATH. This test will always fail.'
-    config_filename, src_config = tmp_client_config(
+    config_filename, _ = tmp_client_config_file(
         update_services=[
             dict(type='script', name='true'),
         ]
@@ -75,7 +75,7 @@ def test_accepts_valid_name_values(tmp_client_config: callable):
     assert test_service.script_path == true_exec_path
 
 
-def test_fails_invalid_name_values(tmp_client_config: callable,
+def test_fails_invalid_name_values(tmp_client_config_file: callable,
                                    tmpdir: py.path.local):
     """Verify ConfigError is thrown for `name` values that are a relative path
     or command, and not in PATH or working directory.
@@ -90,7 +90,7 @@ def test_fails_invalid_name_values(tmp_client_config: callable,
     # Running in the tmpdir even though this isn't testing relative names
     #   because we just verified the script isn't in it.
     with tmpdir.as_cwd():
-        config_filename, src_config = tmp_client_config(
+        config_filename, _ = tmp_client_config_file(
             update_services=[
                 dict(type='script', name=abs_test_script.basename)
             ]
@@ -101,12 +101,12 @@ def test_fails_invalid_name_values(tmp_client_config: callable,
                 f'{abs_test_script.basename} not found.') in str(err)
 
 
-def test_fails_missing_name_values(tmp_client_config: callable,
+def test_fails_missing_name_values(tmp_client_config_file: callable,
                                    tmpdir: py.path.local):
     """Verify ConfigError is thrown for `name` values that are a relative path
     or command, and not in PATH or working directory.
     """
-    config_filename, src_config = tmp_client_config(
+    config_filename, _ = tmp_client_config_file(
         update_services=[
             dict(type='script', name=None)
         ]

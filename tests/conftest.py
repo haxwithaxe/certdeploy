@@ -9,7 +9,10 @@
 
 
 import pytest  # noqa: F401
-from fixtures.client_config import tmp_client_config  # noqa: F401
+from fixtures.client_config import (  # noqa: F401
+    tmp_client_config,
+    tmp_client_config_file
+)
 from fixtures.docker_container import (  # noqa: F401
     ContainerStatus,
     ContainerWrapper,
@@ -26,4 +29,5 @@ from fixtures.server_config import (  # noqa: F401
     client_conn_config_factory,
     tmp_server_config
 )
+from fixtures.systemd import SystemdFlags, tmp_systemd_service  # noqa: F401
 from fixtures.utils import free_port, lineage_factory  # noqa: F401
