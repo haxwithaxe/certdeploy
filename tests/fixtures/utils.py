@@ -1,6 +1,8 @@
 """Random small fixtures."""
 import pathlib
 import socket
+import stat
+from dataclasses import dataclass
 
 import pytest
 
@@ -41,6 +43,33 @@ class NoFeePort(Exception):
     """A descriptive exception for when no free port is found."""
 
     pass
+
+
+@dataclass
+class Script:
+
+    path: pathlib.Path
+    flag_file: pathlib.Path = None
+
+
+@pytest.fixture()
+def tmp_script(tmp_path_factory: pytest.TempPathFactory) -> callable:
+    """Return an executable script."""
+
+    def _script(name, template, **format_kwargs) -> Script:
+        tmp_path = tmp_path_factory.mktemp('tmp_script')
+        flag_file_path = tmp_path.joinpath('flag')
+        script_path = tmp_path.joinpath(name)
+        script_path.write_text(template.format(flag_file_path=flag_file_path,
+                                               **format_kwargs))
+        script_path.chmod(
+            stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH |  # a+r
+            stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH |  # a+x
+            stat.S_IWUSR  # Allow the teardown to remove the script
+        )
+        return Script(script_path, flag_file_path)
+
+    return _script
 
 
 @pytest.fixture()
