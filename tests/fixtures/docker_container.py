@@ -49,7 +49,7 @@ class ContainerWrapper:
             name (str): The container name. If this is given any other
                 containers with the same name will be purged before creating
                 this new container.
-            kwargs: See docs for `docker.containers.create`.
+            kwargs: See docs for `docker.client.containers.create`.
         """
         if 'name' in kwargs:
             self._teardown_old(kwargs['name'])
