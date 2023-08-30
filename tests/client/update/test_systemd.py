@@ -1,10 +1,11 @@
+"""Tests for `certdeploy.client.update.update_systemd_unit`."""
 
 import pytest
-from conftest import SystemdFlags
+from fixtures.systemd import SystemdFlags
 
 from certdeploy.client.config.service import SystemdUnit
+from certdeploy.client.errors import SystemdError
 from certdeploy.client.update import update_systemd_unit
-from certdeploy.errors import CertDeployError
 
 
 def test_restarts_systemd_service(tmp_client_config: callable,
@@ -55,7 +56,7 @@ def test_fails_fast_when_systemd_service_fails(tmp_client_config: callable,
         fail_fast=True,
         systemd_exec=str(mock_systemctl.path)
     )
-    with pytest.raises(CertDeployError):
+    with pytest.raises(SystemdError):
         update_systemd_unit(
             SystemdUnit({'name': unit_name, 'action': 'reload'}),
             client_config
