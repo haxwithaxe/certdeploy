@@ -1,6 +1,7 @@
 """A mock CertDeploy client fixture.
 
-This mock client is just a dumb TCP server to any calls to it should fail.
+This mock client is just a TCP server with some instrumentation. It should
+cause any calls to it to fail on the server side.
 """
 
 import datetime
@@ -35,6 +36,7 @@ class MockClientTCPServer(threading.Thread):
     @property
     def log(self):
         """The logs of the times the server was accessed.
+
         Also stops this mock client.
         """
         self.stop()
@@ -46,9 +48,11 @@ class MockClientTCPServer(threading.Thread):
         self.join()
 
     def _log_request(self):
+        """Log the current date and time."""
         self._log.append(datetime.datetime.now())
 
     def run(self):
+        """Run the main loop."""
         handler = _tcp_handler_factory(self._log_request)
         with socketserver.TCPServer((self.address, self.port),
                                     handler) as server:
@@ -59,18 +63,18 @@ class MockClientTCPServer(threading.Thread):
 
 @pytest.fixture()
 def mock_fail_client(free_port: callable) -> callable:
-    """A mock CertDeploy client factory."""
-    servers = []
+    """Return a mock CertDeploy client factory."""
+    mock_clients = []
 
-    def _serve(address: str, port: int = None
-               ) -> MockClientTCPServer:
-        server = MockClientTCPServer()
-        servers.append(server)
-        server.address = address
-        server.port = port or free_port()
-        server.start()
-        return server
+    def _mock_fail_client(address: str, port: int = None
+                          ) -> MockClientTCPServer:
+        client = MockClientTCPServer()
+        mock_clients.append(client)
+        client.address = address
+        client.port = port or free_port()
+        client.start()
+        return client
 
-    yield _serve
-    for server in servers:
-        server.stop()
+    yield _mock_fail_client
+    for client in mock_clients:
+        client.stop()

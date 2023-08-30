@@ -14,18 +14,13 @@ def test_retries_on_server_interval_is_timely(
         client_conn_config_factory: callable,
         lineage_factory: callable
 ):
-    """Verify that the `retry_interval` server config produces retries on an
-    interval.
-    """
-    ## Define some reused variables
+    """Verify that the `push_retry_interval` retries on the given interval."""
+    ## Define some variables to avoid magic values
     push_retry_count = 1
     total_push_attempts = push_retry_count + 1
     push_retry_interval = 3
     client_address = '127.0.0.1'
     lineage_name = 'lineage.test'
-    # The filename doesn't matter because it will never get far enough to
-    #   matter.
-    lineage_path = str(lineage_factory(lineage_name, ['doesnotmatter.pem']))
     ## Setup client
     client_server = mock_fail_client(client_address)
     client_config = client_conn_config_factory(
@@ -39,9 +34,14 @@ def test_retries_on_server_interval_is_timely(
         push_retries=push_retry_count,
         push_retry_interval=push_retry_interval,
     )
-    ## Make something to test
+    ## Setup lineage
+    # The filename doesn't matter because it will never get far enough to
+    #   matter.
+    lineage_path = str(lineage_factory(lineage_name, ['doesnotmatter.pem']))
+    ## Setup test
     server = Server(server_config)
     server.sync(lineage_path, [lineage_name])
+    ## Run test
     server.serve_forever(one_shot=True)
     ## Collect results
     client_access_log = client_server.log
@@ -62,19 +62,14 @@ def test_retries_on_client_interval_is_timely(
         client_conn_config_factory: callable,
         lineage_factory: callable
 ):
-    """Verify that the `retry_interval` client config produces retries on that
-    interval and overrides the server config.
-    """
-    ## Define some reused variables
+    """Verify that the client `push_retry_interval` overrides the server."""
+    ## Define some variables to avoid magic values
     push_retry_count = 1
     total_push_attempts = push_retry_count + 1
     client_push_retry_interval = 3
     push_retry_interval = client_push_retry_interval + MAX_SECONDS_OFF + 2
     client_address = '127.0.0.1'
     lineage_name = 'lineage.test'
-    # The filename doesn't matter because it will never get far enough to
-    #   matter.
-    lineage_path = str(lineage_factory(lineage_name, ['doesnotmatter.pem']))
     ## Setup client
     client_server = mock_fail_client(client_address)
     client_config = client_conn_config_factory(
@@ -89,9 +84,14 @@ def test_retries_on_client_interval_is_timely(
         push_retries=push_retry_count,
         push_retry_interval=push_retry_interval,
     )
-    ## Make something to test
+    ## Setup lineage
+    # The filename doesn't matter because it will never get far enough to
+    #   matter.
+    lineage_path = str(lineage_factory(lineage_name, ['doesnotmatter.pem']))
+    ## Setup test
     server = Server(server_config)
     server.sync(lineage_path, [lineage_name])
+    ## Run test
     server.serve_forever(one_shot=True)
     ## Collect results
     client_access_log = client_server.log

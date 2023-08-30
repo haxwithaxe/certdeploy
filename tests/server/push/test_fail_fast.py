@@ -13,12 +13,11 @@ def test_fail_fast_on_serial_push(
         lineage_factory: callable
 ):
     """Verify that the `fail_fast` config causes early exit."""
-    ## Define some reused variables
+    ## Define some variables to avoid magic values
     client_address = '127.0.0.1'
     lineage_name = 'lineage.test'
-    # The filename doesn't matter because it will never get far enough to
-    #   matter.
-    lineage_path = str(lineage_factory(lineage_name, ['doesnotmatter.pem']))
+    # Set to more than one to verify the server fails on the first error
+    push_retries = 3
     ## Setup client
     client0_server = mock_fail_client(client_address)
     client0_config = client_conn_config_factory(
@@ -36,13 +35,20 @@ def test_fail_fast_on_serial_push(
     server_config = tmp_server_config(
         client_configs=[client0_config, client1_config],
         fail_fast=True,
-        push_mode=PushMode.SERIAL.value
+        push_mode=PushMode.SERIAL.value,
+        push_retries=push_retries
     )
-    ## Make something to test
+    ## Setup the lineage
+    # The filename doesn't matter because it will never get far enough to
+    #   matter.
+    lineage_path = str(lineage_factory(lineage_name, ['doesnotmatter.pem']))
+    ## Setup test
     server = Server(server_config)
     server.sync(lineage_path, [lineage_name])
+    ## Run test
     with pytest.raises(paramiko.ssh_exception.SSHException) as err:
         server.serve_forever(one_shot=True)
+    ## Verify results
     # Server raises the right exception given the mock client
     assert 'Error reading SSH protocol banner' in str(err)
     # First client has a connection attempt
@@ -63,12 +69,11 @@ def test_fail_fast_on_parallel_push(
     finish so quickly against the mock clients. The first one to be joined
     will raise an exception.
     """
-    ## Define some reused variables
+    ## Define some variables to avoid magic values
     client_address = '127.0.0.1'
     lineage_name = 'lineage.test'
-    # The filename doesn't matter because it will never get far enough to
-    #   matter.
-    lineage_path = str(lineage_factory(lineage_name, ['doesnotmatter.pem']))
+    # Set to more than one to verify the server fails on the first error
+    push_retries = 3
     ## Setup client
     client0_server = mock_fail_client(client_address)
     client0_config = client_conn_config_factory(
@@ -86,13 +91,20 @@ def test_fail_fast_on_parallel_push(
     server_config = tmp_server_config(
         client_configs=[client0_config, client1_config],
         fail_fast=True,
-        push_mode=PushMode.PARALLEL.value
+        push_mode=PushMode.PARALLEL.value,
+        push_retries=push_retries
     )
-    ## Make something to test
+    ## Setup the lineage
+    # The filename doesn't matter because it will never get far enough to
+    #   matter.
+    lineage_path = str(lineage_factory(lineage_name, ['doesnotmatter.pem']))
+    ## Setup test
     server = Server(server_config)
     server.sync(lineage_path, [lineage_name])
+    ## Run test
     with pytest.raises(paramiko.ssh_exception.SSHException) as err:
         server.serve_forever(one_shot=True)
+    ## Verify the results
     # Server raises the right exception given the mock client
     assert 'Error reading SSH protocol banner' in str(err)
     # First client has a connection attempt

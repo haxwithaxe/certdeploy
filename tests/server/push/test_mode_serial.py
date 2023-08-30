@@ -1,4 +1,4 @@
-"""Tests for the `retry_mode` configs set to 'serial'."""
+"""Tests for the `push_mode` configs set to `serial`."""
 
 from certdeploy.server.config.server import PushMode
 from certdeploy.server.server import Server
@@ -12,19 +12,14 @@ def test_push_mode_serial_pushes_one_at_a_time(
         client_conn_config_factory: callable,
         lineage_factory: callable
 ):
-    """Verify that the `push_mode` server config set to `serial` pushes to
-    clients one at a time.
-    """
-    ## Define some reused variables
+    """Verify that `serial` `push_mode` pushes to clients one at a time."""
+    ## Define some variables to avoid magic values
     push_retry_count = 0
     total_push_attempts = 1  # Per client
     # Just to get some definite distance between times
     push_interval = MAX_SECONDS_OFF + 3
     client_address = '127.0.0.1'
     lineage_name = 'lineage.test'
-    # The filename doesn't matter because it will never get far enough to
-    #   matter.
-    lineage_path = str(lineage_factory(lineage_name, ['doesnotmatter.pem']))
     ## Setup client0
     client_server0 = mock_fail_client(client_address)
     client_config0 = client_conn_config_factory(
@@ -48,9 +43,14 @@ def test_push_mode_serial_pushes_one_at_a_time(
         push_interval=push_interval,
         push_mode=PushMode.SERIAL.value
     )
-    ## Make something to test
+    ## Setup lineage
+    # The filename doesn't matter because it will never get far enough to
+    #   matter.
+    lineage_path = str(lineage_factory(lineage_name, ['doesnotmatter.pem']))
+    ## Setup test
     server = Server(server_config)
     server.sync(lineage_path, [lineage_name])
+    ## Run test
     server.serve_forever(one_shot=True)
     ## Collect the results
     client0_access_log = client_server0.log

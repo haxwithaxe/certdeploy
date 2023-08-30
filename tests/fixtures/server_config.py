@@ -1,3 +1,4 @@
+"""Fixtures for generating temporary CertDeploy server configs."""
 
 import pathlib
 
@@ -8,6 +9,15 @@ from certdeploy.server.config import ServerConfig
 
 
 def _client_conn_config(pubkey: str, conf: dict = None) -> dict:
+    """Generate a minimal dict to pass as a client connection config.
+
+    Arguments:
+        pubkey: A pubkey string.
+        conf (optional): A dict of configs to be eventually passed to
+            `ClientConnection`.
+    Returns:
+        dict: A minimal client connection config updated with `conf`.
+    """
     _conf = dict(
         address='test_client_address',
         domains=['example.com'],
@@ -20,9 +30,15 @@ def _client_conn_config(pubkey: str, conf: dict = None) -> dict:
 
 @pytest.fixture(scope='function')
 def client_conn_config_factory(pubkeygen: callable) -> callable:
-    """Generate dicts to go into `client_configs`."""
+    """Generate dicts to go into the `client_configs` section."""
 
     def _client_conn_config_factory(**conf) -> dict:
+        """Return a `dict` representing a client connection config.
+
+        Keyword Arguments:
+            conf: Key value pairs to be included in or override the values to
+                be passed to `ClientConnection`.
+        """
         return _client_conn_config(pubkeygen(), conf)
 
     return _client_conn_config_factory
@@ -30,6 +46,16 @@ def client_conn_config_factory(pubkeygen: callable) -> callable:
 
 def _server_config(tmp_path: pathlib.Path, pubkey: str, privkey: str,
                    conf: dict = None):
+    """Generate a minimal CertDeploy server config updated with `conf`.
+
+    Arguments:
+        tmp_path: The temporary directory to put the config file and private
+            key file in.
+        pubkey: A pubkey string.
+        privkey: A privkey string.
+        conf (optional): A `dict` of arguments to eventually be passed to
+            `ServerConfig`.
+    """
     queue_dir = tmp_path.joinpath('queue')
     queue_dir.mkdir()
     server_key = tmp_path.joinpath('server_key')
@@ -51,13 +77,20 @@ def _server_config(tmp_path: pathlib.Path, pubkey: str, privkey: str,
 @pytest.fixture(scope='function')
 def tmp_server_config_file(tmp_path_factory: pytest.TempPathFactory,
                            keypairgen: callable) -> callable:
-    """Generate a full server config and config file.
+    """Generate a full CertDeploy server config and matching config file.
 
     This sets all the possible values to non-default values to help test the
     ServerConfig.
     """
 
-    def _get_config(**conf):
+    def _tmp_server_config_file(**conf):
+        """Generate a full CertDeploy server config and matching config file.
+
+        Notice:
+            This sets all the possible values to non-default values to help
+            test `ServerConfig`. The `ServerConfig` tests are the only place
+            this fixture should be used.
+        """
         tmp_path = tmp_path_factory.mktemp('server_config')
         privkey, _ = keypairgen()
         _, pubkey = keypairgen()
@@ -79,19 +112,25 @@ def tmp_server_config_file(tmp_path_factory: pytest.TempPathFactory,
         _conf.update(conf)
         return _server_config(tmp_path, pubkey, privkey, _conf)
 
-    return _get_config
+    return _tmp_server_config_file
 
 
 @pytest.fixture(scope='function')
 def tmp_server_config(tmp_path_factory: pytest.TempPathFactory,
                       keypairgen: callable) -> callable:
-    """Generate a full server config and config file."""
+    """Return a `ServerConfig` factory."""
 
-    def _get_config(**conf):
+    def _tmp_server_config(**conf):
+        """Return a minimal `ServerConfig` with the additions of `conf`.
+
+        Keyword Arguments:
+            conf: Key value pairs corresponding to the possible arguments of
+                `ServerConfig`.
+        """
         tmp_path = tmp_path_factory.mktemp('server_config')
         privkey, _ = keypairgen()
         _, pubkey = keypairgen()
         config_path, _ = _server_config(tmp_path, pubkey, privkey, conf)
         return ServerConfig.load(config_path)
 
-    return _get_config
+    return _tmp_server_config

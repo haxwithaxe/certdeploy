@@ -1,31 +1,23 @@
-"""Tests for the `push_interval` configs.
-
-Both the server and client connection configs.
-"""
+"""Tests for the `push_interval` config."""
 
 from certdeploy.server.server import Server
 
 MAX_SECONDS_OFF = 1
 
 
-def test_tries_on_server_interval_is_timely(
+def test_tries_on_interval(
         mock_fail_client: callable,
         tmp_server_config: callable,
         client_conn_config_factory: callable,
         lineage_factory: callable
 ):
-    """Verify that the `push_interval` server config produces tries on an
-    interval.
-    """
-    ## Define some reused variables
+    """Verify that the `push_interval` tries on an interval."""
+    ## Define some variables to avoid magic values
     push_interval = 1
     push_retry_count = 0
     total_push_attempts = 1
     client_address = '127.0.0.1'
     lineage_name = 'lineage.test'
-    # The filename doesn't matter because it will never get far enough to
-    #   matter.
-    lineage_path = str(lineage_factory(lineage_name, ['doesnotmatter.pem']))
     ## Setup client
     client0_server = mock_fail_client(client_address)
     client0_config = client_conn_config_factory(
@@ -45,9 +37,14 @@ def test_tries_on_server_interval_is_timely(
         push_retries=push_retry_count,
         push_interval=push_interval
     )
-    ## Make something to test
+    ## Setup lineage
+    # The filename doesn't matter because it will never get far enough to
+    #   matter.
+    lineage_path = str(lineage_factory(lineage_name, ['doesnotmatter.pem']))
+    ## Setup test
     server = Server(server_config)
     server.sync(lineage_path, [lineage_name])
+    ## Run test
     server.serve_forever(one_shot=True)
     ## Collect results
     client0_access_log = client0_server.log

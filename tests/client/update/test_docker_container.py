@@ -6,6 +6,7 @@ from conftest import ContainerStatus
 
 from certdeploy.client.config.service import DockerContainer
 from certdeploy.client.update import update_docker_container
+from certdeploy.errors import CertDeployError
 
 
 @pytest.mark.docker
@@ -62,3 +63,21 @@ def test_updates_docker_container_by_filter(
     # Take the after measurement
     restarted_at = canned.started_at
     assert restarted_at != started_at
+
+
+@pytest.mark.docker
+def test_fail_fast_docker_container(
+        canned_docker_container: callable,
+        tmp_client_config: callable
+):
+    """Verify that the client fails fast."""
+    client_config = tmp_client_config(
+        docker_url='unix://var/run/docker.sock',
+        fail_fast=True
+    )
+    # Do the thing under test
+    with pytest.raises(CertDeployError):
+        update_docker_container(
+            DockerContainer({'filters': {'name': 'doesn\'t exist'}}),
+            client_config
+        )

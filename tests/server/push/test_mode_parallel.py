@@ -12,12 +12,11 @@ def test_push_mode_parallel_pushes_all_at_once(
         client_conn_config_factory: callable,
         lineage_factory: callable
 ):
-    """Verify that the `push_mode` server config set to `parallel` pushes to
-    clients all at once.
+    """Verify that the `parallel` `push_mode` pushes to clients all at once.
 
     This also effectively tests the `push_interval` config option.
     """
-    ## Define some reused variables
+    ## Define some variables to avoid magic values
     push_retry_count = 0
     total_push_attempts = 1  # Per client
     # The max time buffer allowed + arbitrary seconds + the push retries per
@@ -26,9 +25,6 @@ def test_push_mode_parallel_pushes_all_at_once(
     push_interval = MAX_SECONDS_OFF + 5 + push_retry_count * 2
     client_address = '127.0.0.1'
     lineage_name = 'lineage.test'
-    # The filename doesn't matter because it will never get far enough to
-    #   matter.
-    lineage_path = str(lineage_factory(lineage_name, ['doesnotmatter.pem']))
     ## Setup client0
     client_server0 = mock_fail_client(client_address)
     client_config0 = client_conn_config_factory(
@@ -52,9 +48,14 @@ def test_push_mode_parallel_pushes_all_at_once(
         push_interval=push_interval,
         push_mode=PushMode.PARALLEL.value
     )
-    ## Make something to test
+    ## Setup lineage
+    # The filename doesn't matter because it will never get far enough to
+    #   matter.
+    lineage_path = str(lineage_factory(lineage_name, ['doesnotmatter.pem']))
+    ## Setup test
     server = Server(server_config)
     server.sync(lineage_path, [lineage_name])
+    ## Run test
     server.serve_forever(one_shot=True)
     ## Collect the results
     client0_access_log = client_server0.log

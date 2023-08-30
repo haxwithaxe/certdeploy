@@ -1,3 +1,4 @@
+"""Docker container fixtures and utilities."""
 
 import enum
 import re
@@ -12,6 +13,7 @@ import docker
 
 
 class ContainerStatus(enum.Enum):
+    """Container status strings."""
 
     CREATED = 'created'
     RESTARTING = 'restarting'
@@ -22,14 +24,10 @@ class ContainerStatus(enum.Enum):
 
 
 class ContainerWrapper:
-    """A wrapper around docker.models.Container.
+    """A wrapper around `docker.models.containers.Container`.
 
     `docker.models.containers.Container` attributes are that are not overridden
     are accessible as attributes of instances of this class.
-
-    Attributes:
-        started_at: The date and time that the container last reached the
-                    `running` state.
 
     Arguments:
         client: The docker API client.
@@ -49,10 +47,9 @@ class ContainerWrapper:
 
         Keyword Arguments:
             name (str): The container name. If this is given any other
-                        containers with the same name will be purged
-                        before creating this new container.
-
-        See docs for `docker.containers.create`.
+                containers with the same name will be purged before creating
+                this new container.
+            kwargs: See docs for `docker.containers.create`.
         """
         if 'name' in kwargs:
             self._teardown_old(kwargs['name'])
@@ -64,9 +61,9 @@ class ContainerWrapper:
 
         Arguments:
             wait: If `True` then this will wait for the container to be
-                  in the `running` state.
+                in the `running` state.
             timeout: The number of seconds to wait before giving up on waiting
-                     for the container to start. Defaults to 60.
+                for the container to start. Defaults to 60.
 
         See docs for `docker.models.containers.Container.start`.
         """
@@ -81,7 +78,7 @@ class ContainerWrapper:
         Arguments:
             status: The desired status of the container.
             timeout: The number of seconds to wait before giving up on the
-                     status.
+                status.
         """
         status = status.value if isinstance(status, ContainerStatus) else status
         countdown = int(timeout / self._wait_timeout_interval)
@@ -105,6 +102,7 @@ class ContainerWrapper:
 
     @property
     def started_at(self) -> datetime:
+        """When the container last reached the `running` state."""
         self._container.reload()
         if self._container.status == ContainerStatus.CREATED.value:
             return None
@@ -124,13 +122,17 @@ class ContainerWrapper:
         old.remove(force=True)
 
     def __getattr__(self, attr: Any) -> Any:
+        """Passthrough any attribute requests.
+
+        Passthrough requests that `self._container` can provide.
+        """
         if hasattr(self._container, attr):
             return getattr(self._container, attr)
         raise AttributeError(attr)
 
 
 def _canned_docker_container(started: bool) -> ContainerWrapper:
-    """Returns a `docker.models.containers.Container`.
+    """Return a canned container.
 
     The container is a very minimal container that does nothing. It's suitable
     for testing the client's ability to manage Docker containers.
@@ -141,7 +143,7 @@ def _canned_docker_container(started: bool) -> ContainerWrapper:
     canned = ContainerWrapper(docker.from_env())
     canned.create(
         'alpine:latest',
-        name='hello',
+        name='certdeploy_test_container',
         entrypoint=['/bin/sh', '-c', 'while true; do sleep 600; done'],
         labels={'certdeploy_test': 'hello'}
     )
@@ -152,7 +154,7 @@ def _canned_docker_container(started: bool) -> ContainerWrapper:
 
 @pytest.fixture(scope='function')
 def canned_docker_container() -> callable:
-    """Returns a precanned `ContainerWrapper` factory.
+    """Return a canned `ContainerWrapper` factory.
 
     The container is a vert minimal container that does nothing. It's suitable
     for testing the client's ability to manage Docker containers.
@@ -160,6 +162,14 @@ def canned_docker_container() -> callable:
     containers = []
 
     def _canned_container(started: bool = True) -> ContainerWrapper:
+        """Return a canned `ContainerWrapper`.
+
+        Arguments:
+            started: If `True` the container is started on creation.
+
+        Returns:
+            ContainerWrapper: A canned container.
+        """
         canned = _canned_docker_container(started=started)
         containers.append(canned)
         return canned
