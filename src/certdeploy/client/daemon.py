@@ -203,7 +203,6 @@ class _Update(threading.Thread):
         """Reset the delay of the execution of the update.
 
         Resets the delay to "now" plus the delay interval.
-
         """
         delta = datetime.timedelta(seconds=self._config.update_delay_seconds)
         now = datetime.datetime.now()
