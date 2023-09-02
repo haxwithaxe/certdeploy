@@ -63,14 +63,15 @@ def _server_config(tmp_path: pathlib.Path, client_keypair: KeyPair,
         server_keypair (KeyPair, optional): A keypair for the CertDeploy server.
         conf (dict, optional): A `dict` of arguments to eventually be passed to
             `ServerConfig`.
+
+    Returns:
+        ConfigContext: A filled out context.
     """
     queue_dir = tmp_path.joinpath('queue')
     queue_dir.mkdir()
     server_keypair.update(path=tmp_path)
     if not server_keypair.privkey_name:
         server_keypair.update(privkey_name=SERVER_KEY_NAME)
-    if not server_keypair.pubkey_name:
-        server_keypair.update(pubkey_name=f'{SERVER_KEY_NAME}.pub')
     config_path = tmp_path.joinpath('server.yml')
     config = dict(
         privkey_filename=str(server_keypair.privkey_file()),
@@ -116,6 +117,9 @@ def tmp_server_config_file(tmp_path_factory: pytest.TempPathFactory,
         Keyword Arguments:
             conf: Key value pairs corresponding to the possible arguments of
                 `ServerConfig`.
+
+        Returns:
+            ConfigContext: A filled out context.
         """
         tmp_path = tmp_path or tmp_path_factory.mktemp('server_config')
         server_keypair = server_keypair or keypairgen()

@@ -37,7 +37,8 @@ class ContainerWrapper:
     are accessible as attributes of instances of this class.
     """
 
-    _wait_timeout_interval = 0.1
+    _wait_timeout_interval: float = 0.1
+    """Time to sleep in each run of the wait loop."""
 
     def __init__(self, client: docker.DockerClient):
         """Create a new `ContainerWrapper`.
@@ -48,7 +49,17 @@ class ContainerWrapper:
         self._client = client
         self._container: Container = None
 
-    def create(self, image: str, **kwargs: Any):
+    @property
+    def started_at(self) -> datetime:
+        """When the container last reached the `running` state."""
+        self._container.reload()
+        if self._container.status == ContainerStatus.CREATED:
+            return None
+        started_at = self._container.attrs['State']['StartedAt']
+        cleaned = re.sub(r'\.[0-9]+Z', '', started_at)
+        return datetime.strptime(cleaned, '%Y-%m-%dT%H:%M:%S')
+
+    def create(self, image: str, **kwargs: Any) -> 'ContainerWrapper':
         """Create a new container.
 
         Arguments:
@@ -92,6 +103,14 @@ class ContainerWrapper:
         self.wait_for_status(ContainerStatus.RUNNING, timeout=timeout)
         self._container.reload()
 
+    def teardown(self, timeout: int = 60):
+        """Purge the container from the system."""
+        # If the container creation errors out there is no container set. To
+        #   avoid extra error noise don't try to remove the container if it
+        #   isn't set.
+        if self._container:
+            self._container.remove(force=True)
+
     def wait_for_status(self, status: ContainerStatus, timeout: int = 60):
         """Wait for the container to be in the specified state.
 
@@ -112,24 +131,6 @@ class ContainerWrapper:
                 )
             countdown -= 1
             time.sleep(self._wait_timeout_interval)
-
-    @property
-    def started_at(self) -> datetime:
-        """When the container last reached the `running` state."""
-        self._container.reload()
-        if self._container.status == ContainerStatus.CREATED:
-            return None
-        started_at = self._container.attrs['State']['StartedAt']
-        cleaned = re.sub(r'\.[0-9]+Z', '', started_at)
-        return datetime.strptime(cleaned, '%Y-%m-%dT%H:%M:%S')
-
-    def teardown(self, timeout: int = 60):
-        """Purge the container from the system."""
-        # If the container creation errors out there is no container set. To
-        #   avoid extra error noise don't try to remove the container if it
-        #   isn't set.
-        if self._container:
-            self._container.remove(force=True)
 
     def _teardown_old(self, container_id: str):
         try:
@@ -167,60 +168,16 @@ class ClientContainer(ContainerWrapper):
     """The key pair for the associated server. Just for ease of access."""
 
     @property
-    def name(self):
-        return self._container.name
-
-    @property
-    def is_running(self):
-        return self._container.status == ContainerStatus.RUNNING
-
-    @property
     def has_started(self):
+        """`True` if the client in the container is ready for connections."""
         started_flag = (b'INFO:certdeploy-client:Listening for incoming '
                         b'connections at ')
         return started_flag in self._container.logs()
 
-    def start(self, timeout: int = 60):
-        """Wait while the client is starting up.
-
-        Arguments:
-            timeout: The number of seconds to wait before giving up on the
-                client starting.
-        """
-        super().start(wait=False)
-        self._container.reload()
-        countdown = (timeout or 0)/0.1
-        while not self.has_started and not self.has_crashed():
-            self._container.reload()
-            if timeout and countdown < 1:
-                raise TimeoutError(
-                    f'Waited {timeout} seconds for the client in container '
-                    f'{self._container.name} to start'
-                )
-            countdown -= 1
-            time.sleep(0.1)
-
-    def wait_for_deployed(self, timeout: int = 60):
-        """Wait while the client is in progress.
-
-        Arguments:
-            timeout: The number of seconds to wait before giving up on the
-                status.
-        """
-        self._container.reload()
-        countdown = (timeout or 0)/0.1
-        while not self.has_updated() and not self.has_crashed():
-            self._container.reload()
-            if timeout and countdown < 1:
-                raise TimeoutError(
-                    f'Waited {timeout} seconds for container '
-                    f'{self._container.name} to finish running: '
-                    f'is_running={self.is_running}, '
-                    f'has_crashed={self.has_crashed()}, '
-                    f'has_deployed={self.has_deployed()}'
-                )
-            countdown -= 1
-            time.sleep(0.1)
+    @property
+    def is_running(self):
+        """`True` if the container is running."""
+        return self._container.status == ContainerStatus.RUNNING
 
     def create(
         self,
@@ -229,12 +186,12 @@ class ClientContainer(ContainerWrapper):
         client_keypair: KeyPair,
         server_keypair: KeyPair,
         tmp_path: pathlib.Path,
-        volumes: list[str] = None,
-        with_docker: bool = False,
         do_not_interfere: bool = False,
+        with_docker: bool = False,
+        volumes: list[str] = None,
         **kwargs: Any
     ) -> 'ClientContainer':
-        """Return an unstarted `ContainerWrapper`.
+        """Create a container and return an unstarted `ContainerWrapper`.
 
         Arguments:
             name: Container name.
@@ -264,8 +221,7 @@ class ClientContainer(ContainerWrapper):
         self.server_keypair = server_keypair
         ## Assemble config dir
         self._prepare_keys()
-        self._prepare_config(client_config, CLIENT_DEST_DIR,
-                             do_not_interfere)
+        self._prepare_config(client_config, do_not_interfere)
         ## Setup docker bits and pieces
         # Add the sftpd listen port to the exported ports so that they can be
         #   accessed from outside of docker
@@ -284,19 +240,81 @@ class ClientContainer(ContainerWrapper):
         return self
 
     def has_deployed(self, *filenames: str) -> bool:
-        """Return `True` if all the files given exists."""
+        """Return `True` if all the files given exists.
+
+        Arguments:
+            filenames (list[str]): A list of file names relative to the
+                `self.output_path`.
+
+        Returns:
+            bool: `True` if all `filenames` are found in `self.output_path`.
+        """
         for filename in filenames:
             if not self.output_path(filename).exists():
                 return False
         return True
 
     def has_updated(self) -> bool:
+        """Return `True` if the client has finished updating services."""
         if (b'INFO:certdeploy-client:Updated services\n' in
                 self._container.logs()):
             return True
         return False
 
-    def _assemble_volumes(self, volumes: dict, with_docker: bool) -> dict:
+    def start(self, timeout: int = 60):
+        """Wait while the client is starting up.
+
+        Arguments:
+            timeout: The number of seconds to wait before giving up on the
+                client starting. Defaults to 60.
+        """
+        super().start(wait=False)
+        self._container.reload()
+        countdown = (timeout or 0)/0.1
+        while not self.has_started and not self.has_crashed():
+            self._container.reload()
+            if timeout and countdown < 1:
+                raise TimeoutError(
+                    f'Waited {timeout} seconds for the client in container '
+                    f'{self._container.name} to start'
+                )
+            countdown -= 1
+            time.sleep(0.1)
+
+    def wait_for_deployed(self, timeout: int = 60):
+        """Wait while the client is in progress.
+
+        Arguments:
+            timeout: The number of seconds to wait before giving up on the
+                status. Defaults to 60.
+        """
+        self._container.reload()
+        countdown = (timeout or 0)/0.1
+        while not self.has_updated() and not self.has_crashed():
+            self._container.reload()
+            if timeout and countdown < 1:
+                raise TimeoutError(
+                    f'Waited {timeout} seconds for container '
+                    f'{self._container.name} to finish running: '
+                    f'is_running={self.is_running}, '
+                    f'has_crashed={self.has_crashed()}, '
+                    f'has_deployed={self.has_deployed()}'
+                )
+            countdown -= 1
+            time.sleep(0.1)
+
+    def _assemble_volumes(self, volumes: list[str], with_docker: bool
+                          ) -> list[str]:
+        """Combine the volumes given in `volumes` with required volumes.
+
+        Arguments:
+            volumes (list[str]): A list of strings describing individual mounts
+                like in docker-compose.
+            with_docker (bool): Add the docker socket to the list of volumes.
+
+        Returns:
+            list[str]: A list of volume specifications.
+        """
         real_volumes = [
             f'{self.etc_path}:/etc/certdeploy:ro',
             f'''{self.output_path}:{self.config['destination']}'''
@@ -306,7 +324,43 @@ class ClientContainer(ContainerWrapper):
         real_volumes.extend(volumes)
         return real_volumes
 
+    def _prepare_config(self, client_config: dict,
+                        do_not_interfere: bool):
+        """Prepare the config dict to pass to the client config fixture.
+
+        Adds the following to the client config:
+            * `destination`
+            * `source`
+        Adds the following to the `sftpd` section of the client config:
+            * `privkey_filename` - Set with the absolute path for inside the
+                container.
+            * `server_pubkey_filename` - Set with the absolute path for inside
+                the container.
+
+        Arguments:
+            client_config (dict): The base client config `dict`.
+            do_not_interfere (bool): If `True` `client_config` won't be
+                changed.
+        """
+        # If not told to not interfere with configs, then interfere with configs
+        if not do_not_interfere:
+            # Force source and dest to constant values
+            client_config['destination'] = CLIENT_DEST_DIR
+            client_config['source'] = CLIENT_SOURCE_DIR
+            if 'sftpd' in client_config:
+                sftpd = client_config.pop('sftpd')
+                sftpd['privkey_filename'] = \
+                    f'/etc/certdeploy/{self.keypair.privkey_name}'
+                sftpd['server_pubkey_filename'] = \
+                    f'/etc/certdeploy/{self.server_keypair.pubkey_name}'
+        # Generate a config file and transfer it to the config dir
+        context = client_config_file(self.etc_path, client_keypair=self.keypair,
+                                     server_keypair=self.server_keypair,
+                                     sftpd=sftpd, **client_config)
+        self.config = context.config
+
     def _prepare_keys(self):
+        """Prepare server and client key pairs."""
         self.keypair.update(self.etc_path, CLIENT_KEY_NAME,
                             f'{CLIENT_KEY_NAME}.pub')
         self.server_keypair.update(self.etc_path, SERVER_KEY_NAME,
@@ -316,29 +370,8 @@ class ClientContainer(ContainerWrapper):
         self.keypair.privkey_file()
         self.server_keypair.pubkey_file()
 
-    def _prepare_config(self, client_config: dict,
-                        container_dest_dir: pathlib.Path,
-                        do_not_interfere: bool) -> dict:
-        # If not told to not interfere with configs, then interfere with configs
-        if not do_not_interfere:
-            # Force source and dest to constant values
-            client_config['destination'] = CLIENT_DEST_DIR
-            client_config['source'] = CLIENT_SOURCE_DIR
-            if 'sftpd' in client_config:
-                client_config['sftpd']['privkey_filename'] = \
-                    f'/etc/certdeploy/{CLIENT_KEY_NAME}'
-                client_config['sftpd']['server_pubkey_filename'] = \
-                    f'/etc/certdeploy/{SERVER_KEY_NAME}.pub'
-        # Generate a config file and transfer it to the config dir
-        config_path, self.config = client_config_file(self.etc_path,
-                                                      **client_config)
-        # Write the config file to the etc dir
-        self.etc_path.joinpath('client.yml').write_bytes(
-            config_path.read_bytes()
-        )
 
-
-def _canned_docker_container(started: bool) -> ContainerWrapper:
+def _get_canned_docker_container(started: bool) -> ContainerWrapper:
     """Return a canned container.
 
     The container is a very minimal container that does nothing. It's suitable
@@ -368,7 +401,7 @@ def canned_docker_container() -> callable:
     """
     containers = []
 
-    def _canned_container(started: bool = True) -> ContainerWrapper:
+    def _canned_docker_container(started: bool = True) -> ContainerWrapper:
         """Return a canned `ContainerWrapper`.
 
         Arguments:
@@ -377,11 +410,11 @@ def canned_docker_container() -> callable:
         Returns:
             ContainerWrapper: A canned container.
         """
-        canned = _canned_docker_container(started=started)
+        canned = _get_canned_docker_container(started=started)
         containers.append(canned)
         return canned
 
-    yield _canned_container
+    yield _canned_docker_container
     for container in containers:
         container.teardown()
 
@@ -390,21 +423,56 @@ def canned_docker_container() -> callable:
 def client_docker_container(tmp_path: pathlib.Path, keypairgen: callable,
                             request: _pytest.fixtures.SubRequest
                             ) -> callable:
+    """Return a CertDeploy client docker container factory."""
     clients = []
 
     def _client_docker_container(
-        name,
-        client_config: dict = None,
-        volumes: list = None,
+        name: str,
+        client_config: dict[str, Any] = None,
+        volumes: list[str] = None,
         no_build: bool = False,
         with_docker: bool = False,
+        client_keypair: KeyPair = None,
         server_keypair: KeyPair = None,
         do_not_interfere: bool = False,
         **kwargs
-    ):
+    ) -> ClientContainer:
+        """Return an unstarted CertDeploy client docker container.
+
+        Arguments:
+            name (str):
+            client_config (dict[str, Any], optional): The client config as a
+                `dict`. Defaults to `{}`.
+            volumes (list[str], optional): A list of strings describing
+                individual mounts like in docker-compose. `/etc/certdeploy` and
+                `/certdeploy/certs` or the configured `destination` will be
+                added automatically. The docker socket will be added if
+                `with_docker` is `True`. Defaults to `[]`.
+            no_build (bool, optional): Mounts the `src/certdeploy` directory in
+                this repo in place of the package installed in the container.
+                Defaults to `False`.
+            with_docker (bool, optional): If `True` adds the local docker
+                socket to the volumes to be mounted. Defaults to `False`.
+            client_keypair (KeyPair, optional): A key pair for the client.
+                Defaults to a freshly generated `KeyPair`.
+            server_keypair (KeyPair, optional): A key pair for the server.
+                Defaults to a freshly generated `KeyPair`.
+            do_not_interfere (bool, optional): If `True` the `client_config`
+                will not be modified. Defaults to `False`.
+
+        Keyword Arguments:
+            kwargs: Keyword arguments to be passed to
+                `docker.client.containers.create`.
+
+        Returns:
+            ClientContainer: An unstarted client container wapper configured as
+                specified.
+        """
+        client_config = client_config or {}
+        volumes = volumes or []
+        client_keypair = client_keypair or keypairgen()
+        server_keypair = server_keypair or keypairgen()
         if no_build:
-            if not volumes:
-                volumes = []
             rootdir = pathlib.Path(request.config.rootdir)
             volumes.append(
                     f'''{rootdir.joinpath('src').joinpath('certdeploy')}:'''
@@ -416,8 +484,8 @@ def client_docker_container(tmp_path: pathlib.Path, keypairgen: callable,
         client.create(
             name=f'certdeploy_test_client_{name}',
             client_config=client_config,
-            client_keypair=keypairgen(),
-            server_keypair=server_keypair or keypairgen(),
+            client_keypair=client_keypair,
+            server_keypair=server_keypair,
             tmp_path=tmp_path,
             volumes=volumes,
             with_docker=with_docker,

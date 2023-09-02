@@ -4,10 +4,8 @@ import pathlib
 
 import pytest
 
-"""This script template is for testing how CertDeploy calls certbot.
-
-If the right arguments are passed to the script it will touch the flag file.
-"""
+# This script template is for testing how CertDeploy calls certbot.
+#   If the right arguments are passed to the script it will touch the flag file.
 SCRIPT_TEMPLATE = '''\
 #!/bin/sh
 

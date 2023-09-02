@@ -30,7 +30,7 @@ def client_config_file(tmp_path: pathlib.Path, client_keypair: KeyPair = None,
             `certdeploy.client.config.client.Config` arguments.
 
     Returns:
-        ClientConfig: The client config with the given values.
+        ClientConfig: The client config with the given values or minimum values.
     """
     src = tmp_path.joinpath('src')
     src.mkdir()
@@ -58,6 +58,22 @@ def client_sftpd_config(
     listen_port: int = None,
     **conf: Any
 ) -> dict:
+    """Finish configuring the temporary client SFTPD config.
+
+    Arguments:
+        tmp_path (pathlib.Path): Base directory for the config.
+        client_keypair (KeyPair, optional): The CertDeploy client's key pair.
+        server_keypair (KeyPair, optional): The CertDeploy server's key pair.
+        listen_port (int, optional): The port for SFTPD to listen on. Defaults
+            to a random port above 1024.
+
+    Keyword Arguments:
+        conf: Key value pairs corresponding to
+            `certdeploy.client.config.client.Config` arguments.
+
+    Returns:
+        dict: The client SFTPD config with the given values or minimum values.
+    """
     config = dict(
         listen_port=listen_port if listen_port else get_free_port(),
         privkey_filename=f'/etc/certdeploy/{CLIENT_KEY_NAME}',
@@ -78,6 +94,7 @@ def client_sftpd_config(
 
 @pytest.fixture(scope='function')
 def tmp_client_sftpd_config(free_port: callable) -> callable:
+    """Return a `sftpd` config section factory."""
     return client_sftpd_config
 
 
@@ -127,7 +144,7 @@ def tmp_client_config_file(tmp_path_factory: pytest.TempPathFactory,
 @pytest.fixture(scope='function')
 def tmp_client_config(tmp_path_factory: pytest.TempPathFactory,
                       keypairgen: callable) -> callable:
-    """Return a temporary client config constructor."""
+    """Return a temporary client config factory."""
 
     def _tmp_client_config(client_keypair: KeyPair = None,
                            server_keypair: KeyPair = None, **conf: Any
@@ -147,7 +164,7 @@ def tmp_client_config(tmp_path_factory: pytest.TempPathFactory,
         Returns:
             ClientConfig: The client config with the given values.
         """
-        tmp_path = tmp_path_factory.mktemp('client_config')
+        tmp_path = tmp_path_factory.mktemp('tmp_client_config')
         client_keypair = client_keypair or keypairgen()
         server_keypair = server_keypair or keypairgen()
         config_context = client_config_file(tmp_path, client_keypair,

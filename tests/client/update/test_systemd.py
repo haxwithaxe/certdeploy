@@ -23,7 +23,7 @@ def test_restarts_systemd_service(tmp_client_config: callable,
         SystemdUnit({'name': unit_name, 'action': 'restart'}),
         client_config
     )
-    assert mock_systemctl.flag_text == SystemdFlags.RESTARTED.value
+    assert mock_systemctl.flag_text == SystemdFlags.RESTARTED
 
 
 def test_reloads_systemd_service(tmp_client_config: callable,
@@ -41,7 +41,7 @@ def test_reloads_systemd_service(tmp_client_config: callable,
         SystemdUnit({'name': unit_name, 'action': 'reload'}),
         client_config
     )
-    assert mock_systemctl.flag_text == SystemdFlags.RELOADED.value
+    assert mock_systemctl.flag_text == SystemdFlags.RELOADED
 
 
 def test_fails_fast_when_systemd_service_fails(tmp_client_config: callable,
@@ -61,4 +61,4 @@ def test_fails_fast_when_systemd_service_fails(tmp_client_config: callable,
             SystemdUnit({'name': unit_name, 'action': 'reload'}),
             client_config
         )
-    assert mock_systemctl.flag_text == SystemdFlags.FAILED.value
+    assert mock_systemctl.flag_text == SystemdFlags.FAILED

@@ -70,14 +70,31 @@ class KeyPair:
 
     def update(self, path: pathlib.Path = None, privkey_name: str = None,
                pubkey_name: str = None):
-        self.path = path if path else self.path
-        self.privkey_name = privkey_name if privkey_name else self.privkey_name  # noqa: E501 readability
-        self.pubkey_name = pubkey_name if pubkey_name else self.pubkey_name
-        return self
+        """Update the values of variables used to create key files.
 
-    def __iter__(self):
-        """Emulate the original output type."""
-        return iter(tuple(self.privkey_text, self.pubkey_text))
+        Any arguments omitted or set to a falsey value are ignored. If
+        `privkey_name` is given and both the `pubkey_name` argument and the
+        `self.pubkey_name` attribute are falsey the value of `privkey_name`
+        will be used as the base for `self.pubkey_name`.
+
+        Arguments:
+            path (pathlib.Path, optional): The path of the directory to write
+                the key files to.
+            privkey_name (str, optional): The filename (basename) of the
+                private key file.
+            pubkey_name (str, optional): The filename (basename) of the public
+                key file.
+
+        Returns:
+            KeyPair: As a convenience this instance is returned (as in a fluent
+                interface).
+        """
+        self.path = path or self.path
+        self.privkey_name = privkey_name or self.privkey_name
+        self.pubkey_name = pubkey_name or self.pubkey_name
+        if privkey_name and not self.pubkey_name and not pubkey_name:
+            self.pubkey_name = f'{self.privkey_name}.pub'
+        return self
 
 
 def _keypairgen() -> KeyPair:
@@ -119,9 +136,10 @@ def pubkeygen() -> Callable[[], str]:
 
 @pytest.fixture(scope='function')
 def keypairgen() -> Callable[[], KeyPair]:
-    """Return a key pair string factory.
+    """Return a key pair factory.
 
     Returns:
-        callable: Returns a `KeyPair` with a private key and a public key.
+        callable: Returns a factory that returns a `KeyPair` with a private key
+            and a public key.
     """
     return _keypairgen

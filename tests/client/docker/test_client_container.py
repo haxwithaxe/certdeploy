@@ -43,8 +43,8 @@ def test_updates_other_container(
     time.sleep(1)
     # start and wait for the container to be running and the client to be ready
     client.start(timeout=120)
-    _, pusher = mock_server_push
-    pusher(
+    context = mock_server_push
+    context.pusher(
         lineage_name='test.example.com',
         client_config=client.config,
         client_keypair=client.keypair,

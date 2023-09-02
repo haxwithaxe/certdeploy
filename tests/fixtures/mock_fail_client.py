@@ -11,12 +11,27 @@ import threading
 import pytest
 
 
-def _tcp_handler_factory(log_func: callable):
+def _tcp_handler_factory(log_func: callable) -> socketserver.BaseRequestHandler:
+    """Return a request handler with `log_func` embedded in its `handle`.
+
+    Arguments:
+        log_func (callable): A function that does something the code it comes
+            from cares about.
+    Returns:
+        socketserver.BaseRequestHandler: A subclass of
+            `socketserver.BaseRequestHandler` with a `handle` method that calls
+            `log_func`.
+    """
 
     class MockClientTCPHandler(socketserver.BaseRequestHandler):
         """TCP handler that runs a logging callback."""
 
         def handle(self):
+            """Handle a request.
+
+            Run the logging callback and send some output to make sure the
+            other end is unhappy with what it sees.
+            """
             log_func()
             self.request.sendall(b'Mock fail client')
 
@@ -27,6 +42,7 @@ class MockClientTCPServer(threading.Thread):
     """A mock CertDeploy client that cannot connect to the server."""
 
     def __init__(self):
+        """Override `threading.Thread.__init__`."""
         threading.Thread.__init__(self, daemon=True)
         self.address = None
         self.port = None
@@ -48,11 +64,19 @@ class MockClientTCPServer(threading.Thread):
         self.join()
 
     def _log_request(self):
-        """Log the current date and time."""
+        """Log the current date and time.
+
+        This is passed to the `_tcp_handler_factory` as the value of
+        `log_func`.
+        """
         self._log.append(datetime.datetime.now())
 
     def run(self):
-        """Run the main loop."""
+        """Run the main loop.
+
+        As long as `self._keep_serving` is `True` keep handling requests one at
+        a time.
+        """
         handler = _tcp_handler_factory(self._log_request)
         with socketserver.TCPServer((self.address, self.port),
                                     handler) as server:
@@ -68,6 +92,16 @@ def mock_fail_client(free_port: callable) -> callable:
 
     def _mock_fail_client(address: str, port: int = None
                           ) -> MockClientTCPServer:
+        """Return a started mock client server.
+
+        Arguments:
+            address (str): The listen address.
+            port (int, optional): The listen port. Defaults to a random free
+                port.
+        Returns:
+            MockClientTCPServer: A naive mock CertDeploy client for server
+                tests to fail to connect to.
+        """
         client = MockClientTCPServer()
         mock_clients.append(client)
         client.address = address
