@@ -40,16 +40,17 @@ def test_tries_on_interval(
     ## Setup lineage
     # The filename doesn't matter because it will never get far enough to
     #   matter.
-    lineage_path = str(lineage_factory(lineage_name, ['doesnotmatter.pem']))
+    lineage_path = lineage_factory(lineage_name, ['doesnotmatter.pem'])
     ## Setup test
     server = Server(server_config)
-    server.sync(lineage_path, [lineage_name])
-    ## Run test
+    # Add a job to the queue
+    server.sync(str(lineage_path), [lineage_name])
+    ## Run the test
     server.serve_forever(one_shot=True)
-    ## Collect results
+    ## Collect the results
     client0_access_log = client0_server.log
     client1_access_log = client1_server.log
-    ## Verify results
+    ## Verify the results
     # The log accounts for the first attempt as well as subsequent attempts
     assert len(client0_access_log) == total_push_attempts
     assert len(client1_access_log) == total_push_attempts

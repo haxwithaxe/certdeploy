@@ -21,14 +21,20 @@ def test_config_base_kitchen_sink(tmp_client_config_file: callable):
 
 
 def test_config_sftpd_kitchen_sink(tmp_client_config_file: callable,
-                                   pubkeygen: callable):
+                                   keypairgen: callable):
+    server_keypair = keypairgen()
+    client_keypair = keypairgen()
     context = tmp_client_config_file(
+        client_keypair=client_keypair,
+        server_keypair=server_keypair,
         sftpd=dict(
             listen_port=22222,
             listen_address='1.2.3.4',
             username='test_username',
             privkey_filename='/dev/null',
-            server_pubkey=pubkeygen(),
+            # This will not automatically be set by the fixtures if
+            #   `server_pubkey_filename` is set.
+            server_pubkey=server_keypair.pubkey_text,
             server_pubkey_filename='/dev/null.pub',
             log_level='DEBUG',
             log_filename='/dev/stdout',

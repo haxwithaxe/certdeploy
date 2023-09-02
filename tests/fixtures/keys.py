@@ -28,7 +28,7 @@ class KeyPair:
     """The default value for `name` in `privkey_file`."""
     pubkey_name: str = 'pubkey'
     """The default value for `name` in `pubkey_file`."""
-    _path: pathlib.Path = None
+    path: pathlib.Path = None
     """The default value for `tmp_path` in `privkey_file` and `pubkey_file`.
     It can be set using `set_path`."""
 
@@ -45,7 +45,7 @@ class KeyPair:
                 Defaults to the value of `_privkey_name`.
         """
         name = name or self.privkey_name
-        tmp_path = tmp_path or self._path
+        tmp_path = tmp_path or self.path
         filename = tmp_path.joinpath(self.privkey_name)
         filename.write_text(self.privkey_pem)
         return filename
@@ -63,14 +63,14 @@ class KeyPair:
                 Defaults to the value of `_pubkey_name`.
         """
         name = name or self.privkey_name
-        tmp_path = tmp_path or self._path
+        tmp_path = tmp_path or self.path
         filename = tmp_path.joinpath(self.pubkey_name)
         filename.write_text(self.pubkey_text)
         return filename
 
     def update(self, path: pathlib.Path = None, privkey_name: str = None,
                pubkey_name: str = None):
-        self._path = path if path else self._path
+        self.path = path if path else self.path
         self.privkey_name = privkey_name if privkey_name else self.privkey_name  # noqa: E501 readability
         self.pubkey_name = pubkey_name if pubkey_name else self.pubkey_name
         return self

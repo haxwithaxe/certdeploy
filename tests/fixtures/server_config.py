@@ -32,20 +32,21 @@ def _client_conn_config(client_keypair: KeyPair, conf: dict = None) -> dict:
 
 
 @pytest.fixture(scope='function')
-def client_conn_config_factory() -> callable:
+def client_conn_config_factory(keypairgen: callable) -> callable:
     """Generate dicts to go into the `client_configs` section."""
 
-    def _client_conn_config_factory(client_keypair: KeyPair,
+    def _client_conn_config_factory(client_keypair: KeyPair = None,
                                     **conf: Any) -> dict:
         """Return a `dict` representing a client connection config.
 
         Arguments:
-            client_keypair (client_keypair): The client key pair.
+            client_keypair (client_keypair, optional): The client key pair.
 
         Keyword Arguments:
             conf: Key value pairs to be included in or override the values to
                 be passed to `ClientConnection`.
         """
+        client_keypair = client_keypair or keypairgen()
         return _client_conn_config(client_keypair, conf)
 
     return _client_conn_config_factory

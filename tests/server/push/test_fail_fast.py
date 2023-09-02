@@ -19,6 +19,7 @@ def test_fail_fast_on_serial_push(
     # Set to more than one to verify the server fails on the first error
     push_retries = 3
     ## Setup client
+    # Shared client key pair
     client0_server = mock_fail_client(client_address)
     client0_config = client_conn_config_factory(
         address=client0_server.address,
