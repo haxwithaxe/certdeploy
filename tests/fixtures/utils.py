@@ -65,6 +65,31 @@ class ConfigContext:
         return iter((self.config_path, self.config))
 
 
+class _Ports:
+    """A registry of ports use in testing."""
+
+    _claimed: list[int] = []
+    """A list of claimed ports."""
+
+    @classmethod
+    def claim(cls, port: int) -> bool:
+        """Attempt to claim a port.
+
+        Arguments:
+            port (int): The port number to be claimed.
+
+        Returns:
+            bool: `True` if the port is not claimed already. `False` if it is
+                claimed.
+        """
+        print('_Ports.claim', port, cls._claimed)
+        if port in cls._claimed:
+            print('_Ports.claim: False')
+            return False
+        cls._claimed.append(port)
+        return True
+
+
 @dataclass
 class Script:
     """A wrapper for a temporary script and a flag file."""
@@ -152,9 +177,13 @@ def lineage_factory(tmp_path_factory: pytest.TempPathFactory) -> callable:
 
 def get_free_port(min_port: int = 1025, max_port: int = 65535,
                   address: str = '127.0.0.1') -> int:
-    """Returns the first free port between `min_port` and `max_port`.
+    """Return the first free port between `min_port` and `max_port`.
 
     The range between `min_port` and `max_port` is inclusive.
+
+    Note: This uses a global registry of selected ports so the previously
+        discovered free ports don't have to be in use when selecting another
+        free port.
 
     Arguments:
         min_port (int, optional): The lowest acceptable port. Defaults to
@@ -170,16 +199,18 @@ def get_free_port(min_port: int = 1025, max_port: int = 65535,
     Raises:
        NoFreePort: When there are no unused ports in the given range.
     """
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    port = min_port
-    while min_port <= port <= max_port:
+    for port in range(min_port, max_port):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             sock.bind((address, port))
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            sock.close()
-            return port
+            if _Ports.claim(port):
+                sock.close()
+                return port
         except OSError:
-            port += 1
+            pass
+        finally:
+            sock.close()
     raise NoFeePort()
 
 
