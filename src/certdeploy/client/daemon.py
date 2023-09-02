@@ -141,6 +141,8 @@ class StubSFTPServer(paramiko.SFTPServerInterface):
                 # os.open() defaults to 0777 which is
                 # an odd default mode for files
                 file_desc_0 = os.open(path, flags, DEFAULT_FILE_MODE)
+                log.debug('open: open %s with flags=%s and mode=%s '
+                          '(default mode)', path, flags, DEFAULT_FILE_MODE)
         except OSError as err:
             log.debug('open: failed to open %s with flags=%s and mode=%s '
                       '(default mode)', path, flags, DEFAULT_FILE_MODE)
@@ -163,6 +165,7 @@ class StubSFTPServer(paramiko.SFTPServerInterface):
             mode = 'rb'
         try:
             file_desc = os.fdopen(file_desc_0, mode)
+            log.debug('open: fdopen %s with mode=%s', path, mode)
         except OSError as err:
             log.debug('open: failed to fdopen %s with mode=%s', path, mode)
             return paramiko.SFTPServer.convert_errno(err.errno)
@@ -220,6 +223,9 @@ class _Update(threading.Thread):
                 time.sleep(self.min_wait_seconds)
             log.info('Updating services')
             self.update_func(self._config)
+            # This is used in tests as evidence of completion.
+            #   Don't change it without changing the tests
+            log.info('Updated services')
         except CertDeployError as err:
             if self._config.fail_fast:
                 self._exception = err
@@ -291,6 +297,8 @@ class DeployServer:  # pylint: disable=too-few-public-methods
                 f'{self._sftpd_config.listen_address or "0.0.0.0"}:'
                 f'{self._sftpd_config.listen_port}: {err}'
             ) from err
+        # This is used to determine if the client has started running in some
+        #   of the tests. Be sure to adjust the tests if you change this.
         log.info('Listening for incoming connections at %s:%s',
                  self._sftpd_config.listen_address or '0.0.0.0',
                  self._sftpd_config.listen_port)

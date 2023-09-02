@@ -64,8 +64,10 @@ def deploy(config: ClientConfig) -> bool:
 
     Returns `True` if new certificates were deployed.
     """
+    log.debug('Deploying')
     update = False
     if not os.listdir(config.source):
+        log.debug('Source directory is empty: %s', config.source)
         return False
     for lineage in os.listdir(config.source):
         log.debug('Found lineage: %s', lineage)
