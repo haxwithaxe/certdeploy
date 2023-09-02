@@ -1,12 +1,13 @@
 
-import py
+
 import pytest
 
 from certdeploy.client.config import ClientConfig
 from certdeploy.errors import ConfigError
 
 
-def test_accepts_valid_name(tmp_client_config_file: callable):
+def test_accepts_valid_name(tmp_client_config_file: callable,
+                            tmp_path_factory: pytest.TempPathFactory):
     """Verify the valid values for the `systemd` update service type are
     accepted.
     """
@@ -26,16 +27,18 @@ def test_accepts_valid_name(tmp_client_config_file: callable):
         'a_unit_name.scope'
     ]
     for name in names:
-        config_filename, _ = tmp_client_config_file(
+        context = tmp_client_config_file(
+            tmp_path=tmp_path_factory.mktemp('test_accepts_valid_name'),
             update_services=[
                 dict(type='systemd', name=name)
             ]
         )
-        config = ClientConfig.load(config_filename)
+        config = ClientConfig.load(context.config_path)
         assert config.services[0].name == name
 
 
-def test_fails_invalid_name_values(tmp_client_config_file: callable):
+def test_fails_invalid_name_values(tmp_client_config_file: callable,
+                                   tmp_path_factory: pytest.TempPathFactory):
     """Verify ConfigError is thrown for `name` values that are invalid.
 
     This is an exhaustive set of invalid names but these are important when it
@@ -54,39 +57,39 @@ def test_fails_invalid_name_values(tmp_client_config_file: callable):
         'bad_character_*.service'
     ]
     for bad_name in bad_names:
-        config_filename, _ = tmp_client_config_file(
+        context = tmp_client_config_file(
+            tmp_path=tmp_path_factory.mktemp('test_fails_invalid_name_values'),
             update_services=[
                 dict(type='systemd', name=bad_name)
             ]
         )
         with pytest.raises(ConfigError) as err:
-            ClientConfig.load(config_filename)
+            ClientConfig.load(context.config_path)
         assert (f'Invalid value "{bad_name}" for systemd update '
                 f'service config `name`.' in str(err))
 
 
 def test_fails_null_name_values(tmp_client_config_file: callable):
     """Verify ConfigError is thrown for `name` values that are null."""
-    config_filename, _ = tmp_client_config_file(
+    context = tmp_client_config_file(
         update_services=[
             dict(type='systemd', name=None)
         ]
     )
     with pytest.raises(ConfigError) as err:
-        ClientConfig.load(config_filename)
+        ClientConfig.load(context.config_path)
     assert ('Invalid value "None" for systemd update service config `name`.' in
             str(err))
 
 
-def test_fails_missing_name_values(tmp_client_config_file: callable,
-                                   tmpdir: py.path.local):
+def test_fails_missing_name_values(tmp_client_config_file: callable):
     """Verify ConfigError is thrown for `name` values that are missing."""
-    config_filename, _ = tmp_client_config_file(
+    context = tmp_client_config_file(
         update_services=[
             dict(type='systemd')
         ]
     )
     with pytest.raises(ConfigError) as err:
-        ClientConfig.load(config_filename)
+        ClientConfig.load(context.config_path)
     assert ('Invalid value "None" for systemd update service config `name`.' in
             str(err))

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import pytest
+from fixtures.keys import KeyPair
 
 # Just enough like a real PEM file to pass the tests used by the CertDeploy
 #   client.
@@ -45,6 +46,23 @@ _MOCK_PEM = b'''\
 
 class NoFeePort(Exception):
     """A descriptive exception for when no free port is found."""
+
+
+@dataclass
+class ConfigContext:
+
+    config_path: pathlib.Path
+    """The generated config path."""
+    config: dict
+    """The config used to generate the config file at `config_path`"""
+    client_keypair: KeyPair = None
+    """The optional client keypair."""
+    server_keypair: KeyPair = None
+    """The optional server keypair."""
+
+    def __iter__(self):
+        """Imitate the original tuple to reduce rewrites."""
+        return iter((self.config_path, self.config))
 
 
 @dataclass
@@ -132,40 +150,40 @@ def lineage_factory(tmp_path_factory: pytest.TempPathFactory) -> callable:
     return _gen_lineage
 
 
+def get_free_port(min_port: int = 1025, max_port: int = 65535,
+                  address: str = '127.0.0.1') -> int:
+    """Returns the first free port between `min_port` and `max_port`.
+
+    The range between `min_port` and `max_port` is inclusive.
+
+    Arguments:
+        min_port (int, optional): The lowest acceptable port. Defaults to
+            1025.
+        max_port (int, optional): The highest acceptable port. Defaults to
+            65535.
+        address (str, optional): The address to bind to. Defaults to
+            "127.0.0.1".
+
+    Returns:
+        int: A free port between `min_port` and `max_port` (inclusive).
+
+    Raises:
+       NoFreePort: When there are no unused ports in the given range.
+    """
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    port = min_port
+    while min_port <= port <= max_port:
+        try:
+            sock.bind((address, port))
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.close()
+            return port
+        except OSError:
+            port += 1
+    raise NoFeePort()
+
+
 @pytest.fixture()
 def free_port() -> callable:
-    """Returns a free port number factory."""
-
-    def _free_port(min_port: int = 1025, max_port: int = 65535,
-                   address: str = '127.0.0.1') -> int:
-        """Returns the first free port between `min_port` and `max_port`.
-
-        The range between `min_port` and `max_port` is inclusive.
-
-        Arguments:
-            min_port (int, optional): The lowest acceptable port. Defaults to
-                1025.
-            max_port (int, optional): The highest acceptable port. Defaults to
-                65535.
-            address (str, optional): The address to bind to. Defaults to
-                "127.0.0.1".
-
-        Returns:
-            int: A free port between `min_port` and `max_port` (inclusive).
-
-        Raises:
-           NoFreePort: When there are no unused ports in the given range.
-        """
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        port = min_port
-        while min_port <= port <= max_port:
-            try:
-                sock.bind((address, port))
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                sock.close()
-                return port
-            except OSError:
-                port += 1
-        raise NoFeePort()
-
-    return _free_port
+    """Return a free port number factory."""
+    return get_free_port
