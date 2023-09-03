@@ -31,6 +31,10 @@ class ContainerStatus:
     DEAD = 'dead'
 
 
+class ContainerCrashed(Exception):
+    """Indicates that a container has crashed while waiting for it."""
+
+
 class ContainerWrapper:
     """A wrapper around `docker.models.containers.Container`.
 
@@ -45,7 +49,7 @@ class ContainerWrapper:
         """Create a new `ContainerWrapper`.
 
         Arguments:
-            client (docker.DockerClient): The docker API client.
+            client: The docker API client.
         """
         self._client = client
         self._container: Container = None
@@ -65,20 +69,22 @@ class ContainerWrapper:
         cleaned = re.sub(r'\.[0-9]+Z', '', started_at)
         return datetime.strptime(cleaned, '%Y-%m-%dT%H:%M:%S')
 
-    def create(self, image: str, **kwargs: Any) -> 'ContainerWrapper':
+    def create(self, image: str, name: str = None, **kwargs: Any
+               ) -> 'ContainerWrapper':
         """Create a new container.
 
         Arguments:
             image: The docker image name.
+            name: The container name. If this is given any other containers
+                with the same name will be purged before creating this new
+                container.
 
         Keyword Arguments:
-            name (str): The container name. If this is given any other
-                containers with the same name will be purged before creating
-                this new container.
             kwargs: See docs for `docker.client.containers.create`.
         """
-        if 'name' in kwargs:
-            self._teardown_old(kwargs['name'])
+        if name:
+            self._teardown_old(name)
+            kwargs['name'] = name
         self._container = self._client.containers.create(image, **kwargs)
         return self
 
@@ -111,7 +117,7 @@ class ContainerWrapper:
         self.wait_for_status(ContainerStatus.RUNNING, timeout=timeout)
         self._container.reload()
 
-    def teardown(self, timeout: int = 60):
+    def teardown(self):
         """Purge the container from the system."""
         # If the container creation errors out there is no container set. To
         #   avoid extra error noise don't try to remove the container if it
@@ -127,9 +133,10 @@ class ContainerWrapper:
             timeout: The number of seconds to wait before giving up on the
                 status.
         """
+        # This assumes that `self._wait_timeout_interval` is less than 1
         countdown = int(timeout / self._wait_timeout_interval)
         self._container.reload()
-        while self._container.status != status or self.has_crashed():
+        while self._container.status != status:
             self._container.reload()
             if timeout and countdown < 1:
                 raise TimeoutError(
@@ -137,10 +144,13 @@ class ContainerWrapper:
                     f'{self._container.name} status to be {status} current '
                     f'status is {self._container.status}'
                 )
+            if self.has_crashed():
+                raise ContainerCrashed(self.name)
             countdown -= 1
             time.sleep(self._wait_timeout_interval)
 
     def _teardown_old(self, container_id: str):
+        """Tear down any existing containers with the same name."""
         try:
             old = self._client.containers.get(container_id)
         except docker.errors.NotFound:
@@ -150,7 +160,8 @@ class ContainerWrapper:
     def __getattr__(self, attr: Any) -> Any:
         """Passthrough any attribute requests.
 
-        Passthrough requests that `self._container` can provide.
+        Passthrough requests that `docker.models.containers.Container` can
+        provide.
         """
         if self._container:
             self._container.reload()
@@ -172,6 +183,7 @@ class ContainerInternalPaths:
 
 
 class CertDeployContainerWrapper(ContainerWrapper):
+    """Base CertDeploy container wrapper."""
 
     container_paths = ContainerInternalPaths
     """Paths for inside the container."""
@@ -209,26 +221,24 @@ class CertDeployContainerWrapper(ContainerWrapper):
         """Create a container and return an unstarted container.
 
         Arguments:
-            name (str): Container name.
-            config (dict): Config values.
-            client_keypair (KeyPair): The key pair for the CertDeploy client.
-            server_keypair (KeyPair): The key pair for the CertDeploy server.
-            etc_path (pathlib.Path): The path to mount to `/etc/certdeploy` in
-                the container.
-            with_docker (bool, optional): Add the default docker socket as a
-                mount if `True`. Defaults to `False`.
-            volumes (list[str], optional): A list of volume declarations just
-                like in a docker-compose file.
-            do_not_interfere (bool, optional): Don't change client configs if
-                `True`. Defaults to `False` to set some sensible defaults.
+            name: Container name.
+            config: Config values.
+            client_keypair: The key pair for the CertDeploy client.
+            server_keypair: The key pair for the CertDeploy server.
+            etc_path: The path to mount to `/etc/certdeploy` in the container.
+            with_docker: Add the default docker socket as a mount if `True`.
+                Defaults to `False`.
+            volumes: A list of volume declarations just like in a docker-compose
+                file.
+            do_not_interfere: Don't change client configs if `True`. Defaults to
+                `False` to set some sensible defaults.
 
         Keyword Arguments:
             kwargs: Keyword args passed to `docker.client.containers.create`,
                 except for the `ports` value which is updated to export the
                 CertDeploy client container's listening port.
         Returns:
-            CertDeployContainerWrapper: This instance of the container wrapper
-                type.
+            This instance of this kind of container wrapper.
         """
         config = config or {}
         volumes = volumes or []
@@ -325,12 +335,12 @@ class CertDeployContainerWrapper(ContainerWrapper):
         """Combine the volumes given in `volumes` with required volumes.
 
         Arguments:
-            volumes (list[str]): A list of strings describing individual mounts
+            volumes: A list of strings describing individual mounts
                 like in docker-compose.
-            with_docker (bool): Add the docker socket to the list of volumes.
+            with_docker: Add the docker socket to the list of volumes.
 
         Returns:
-            list[str]: A list of volume specifications.
+            A list of volume specifications.
         """
         real_volumes = [
             f'{self.etc_path}:/etc/certdeploy:ro',
@@ -368,11 +378,11 @@ class ClientContainer(CertDeployContainerWrapper):
         """Return `True` if all the files given exists.
 
         Arguments:
-            filenames (list[str]): A list of file names relative to the
+            filenames: A list of file names relative to the
                 `self.output_path`.
 
         Returns:
-            bool: `True` if all `filenames` are found in `self.output_path`.
+            `True` if all `filenames` are found in `self.output_path`.
         """
         for filename in filenames:
             if not self.output_path(filename).exists():
@@ -387,6 +397,15 @@ class ClientContainer(CertDeployContainerWrapper):
         return False
 
     def precreate(self, create_kwargs: dict):
+        """Do things that need to happen before calling `super().create`.
+
+        Do things that need to happen after the config is ready and before
+        `super().create` is called.
+
+        Arguments:
+            create_kwargs: The keyword arguments to be passed to
+                `docker.client.containers.create`.
+        """
         # Add the sftpd listen port to the exported ports so that they can be
         #   accessed from outside of docker
         if self.config.get('sftpd', {}).get('listen_port'):
@@ -399,6 +418,8 @@ class ClientContainer(CertDeployContainerWrapper):
                        do_not_interfere: bool):
         """Prepare the config dict to pass to the client config fixture.
 
+        Populates `self.config`.
+
         Adds the following to the client config:
             * `destination`
             * `source`
@@ -409,9 +430,8 @@ class ClientContainer(CertDeployContainerWrapper):
                 the container.
 
         Arguments:
-            config (dict): The base client config `dict`.
-            do_not_interfere (bool): If `True` `client_config` won't be
-                changed.
+            config: The base client config `dict`.
+            do_not_interfere: If `True` `client_config` won't be changed.
         """
         # If not told to not interfere with configs, then interfere with configs
         if not do_not_interfere:
@@ -475,13 +495,15 @@ class ServerContainer(CertDeployContainerWrapper):
     def prepare_config(self, config: dict, do_not_interfere: bool):
         """Prepare the config dict to pass to the client config fixture.
 
+        Populates `self.config`.
+
         Adds the following to the client config:
             * `privkey_filename`
             * `pubkey` for all `client_configs`
 
         Arguments:
-            config (dict): The base server config `dict`.
-            do_not_interfere (bool): If `True` `config` won't be changed.
+            config: The base server config `dict`.
+            do_not_interfere: If `True` `config` won't be changed.
         """
         # If not told to not interfere with configs, then interfere with configs
         if not do_not_interfere:
@@ -577,33 +599,31 @@ def client_docker_container(tmp_path: pathlib.Path, keypairgen: callable,
         """Return an unstarted CertDeploy client docker container.
 
         Arguments:
-            name (str): Container name suffix.
-            config (dict[str, Any], optional): The client config as a
-                `dict`. Defaults to `{}`.
-            volumes (list[str], optional): A list of strings describing
-                individual mounts like in docker-compose. `/etc/certdeploy` and
-                `/certdeploy/certs` or the configured `destination` will be
-                added automatically. The docker socket will be added if
-                `with_docker` is `True`. Defaults to `[]`.
-            no_build (bool, optional): Mounts the `src/certdeploy` directory in
-                this repo in place of the package installed in the container.
-                Defaults to `False`.
-            with_docker (bool, optional): If `True` adds the local docker
-                socket to the volumes to be mounted. Defaults to `False`.
-            client_keypair (KeyPair, optional): A key pair for the client.
-                Defaults to a freshly generated `KeyPair`.
-            server_keypair (KeyPair, optional): A key pair for the server.
-                Defaults to a freshly generated `KeyPair`.
-            do_not_interfere (bool, optional): If `True` the `client_config`
-                will not be modified. Defaults to `False`.
+            name: Container name suffix.
+            config: The client config as a `dict`. Defaults to `{}`.
+            volumes: A list of strings describing individual mounts like in
+                docker-compose. `/etc/certdeploy` and `/certdeploy/certs` or the
+                configured `destination` will be added automatically. The docker
+                socket will be added if `with_docker` is `True`. Defaults to
+                `[]`.
+            no_build: Mounts the `src/certdeploy` directory in this repo in
+                place of the package installed in the container. Defaults to
+                `False`.
+            with_docker: If `True` adds the local docker socket to the volumes
+                to be mounted. Defaults to `False`.
+            client_keypair: A key pair for the client. Defaults to a freshly
+                generated `KeyPair`.
+            server_keypair: A key pair for the server. Defaults to a freshly
+                generated `KeyPair`.
+            do_not_interfere: If `True` the `client_config` will not be
+                modified. Defaults to `False`.
 
         Keyword Arguments:
             kwargs: Keyword arguments to be passed to
                 `docker.client.containers.create`.
 
         Returns:
-            ClientContainer: An unstarted client container wapper configured as
-                specified.
+            An unstarted client container wapper configured as specified.
         """
         config = config or {}
         volumes = volumes or []
@@ -656,33 +676,30 @@ def server_docker_container(tmp_path: pathlib.Path, keypairgen: callable,
         """Return an unstarted CertDeploy server docker container.
 
         Arguments:
-            name (str): The service name.
-            config (dict[str, Any], optional): The client config as a
-                `dict`. Defaults to `{}`.
-            volumes (list[str], optional): A list of strings describing
-                individual mounts like in docker-compose. `/etc/certdeploy` and
-                the configured `queue_dir` will be added automatically. The
-                docker socket will be added if `with_docker` is `True`.
-                Defaults to `[]`.
-            no_build (bool, optional): Mounts the `src/certdeploy` directory in
-                this repo in place of the package installed in the container.
-                Defaults to `False`.
-            with_docker (bool, optional): If `True` adds the local docker
-                socket to the volumes to be mounted. Defaults to `False`.
-            client_keypair (KeyPair, optional): A key pair for the client.
-                Defaults to a freshly generated `KeyPair`.
-            server_keypair (KeyPair, optional): A key pair for the server.
-                Defaults to a freshly generated `KeyPair`.
-            do_not_interfere (bool, optional): If `True` the `client_config`
-                will not be modified. Defaults to `False`.
+            name: The service name.
+            config: The client config as a `dict`. Defaults to `{}`.
+            volumes: A list of strings describing individual mounts like in
+                docker-compose. `/etc/certdeploy` and the configured `queue_dir`
+                will be added automatically. The docker socket will be added if
+                `with_docker` is `True`. Defaults to `[]`.
+            no_build: Mounts the `src/certdeploy` directory in this repo in
+                place of the package installed in the container. Defaults to
+                `False`.
+            with_docker: If `True` adds the local docker socket to the volumes
+                to be mounted. Defaults to `False`.
+            client_keypair: A key pair for the client. Defaults to a freshly
+                generated `KeyPair`.
+            server_keypair: A key pair for the server. Defaults to a freshly
+                generated `KeyPair`.
+            do_not_interfere: If `True` the `client_config` will not be
+                modified. Defaults to `False`.
 
         Keyword Arguments:
             kwargs: Keyword arguments to be passed to
                 `docker.client.containers.create`.
 
         Returns:
-            ServerContainer: An unstarted client container wapper configured as
-                specified.
+            An unstarted client container wapper configured as specified.
         """
         config = config or {}
         volumes = volumes or []
