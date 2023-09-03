@@ -8,6 +8,7 @@ from fixtures.client_config import client_sftpd_config
 from fixtures.docker_container import ContainerStatus
 
 
+@pytest.mark.certdeploy_docker
 @pytest.mark.docker
 @pytest.mark.system
 @pytest.mark.slow
@@ -19,9 +20,10 @@ def test_updates_other_container(
 ):
     """Verify that the client container can restart another container.
 
-    This test uses the `certdeploy-client:latest` on the host system. If that
-    doesn't have your latest changes then you need to build a new image with
-    `tox -e dockerbuild`.
+    Note:
+        This test uses the `certdeploy-client:latest` on the host system. If
+        that doesn't have your latest changes then you need to build a new
+        image with `tox -e dockerbuild`.
     """
     # Setup the canned container to be restarted
     canned = canned_docker_container()
@@ -30,7 +32,7 @@ def test_updates_other_container(
     client = client_docker_container(
         'updates_container',
         with_docker=True,
-        client_config=dict(
+        config=dict(
             update_delay='1s',
             update_services=[dict(type='docker_container', name=canned.name)],
             log_level='DEBUG',
@@ -47,7 +49,7 @@ def test_updates_other_container(
     context.pusher(
         lineage_name='test.example.com',
         client_config=client.config,
-        client_keypair=client.keypair,
+        client_keypair=client.client_keypair,
         server_keypair=client.server_keypair
     )
     # Wait for the update workflow to finish

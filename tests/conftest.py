@@ -13,7 +13,8 @@ from fixtures.client_config import (  # noqa: F401
 )
 from fixtures.docker_container import (  # noqa: F401
     canned_docker_container,
-    client_docker_container
+    client_docker_container,
+    server_docker_container
 )
 from fixtures.keys import keypairgen, pubkeygen  # noqa: F401
 from fixtures.mock_certbot import mock_certbot  # noqa: F401
@@ -22,6 +23,7 @@ from fixtures.mock_server import mock_server_push  # noqa: F401
 from fixtures.script import tmp_script_for_service  # noqa: F401
 from fixtures.server_config import (  # noqa: F401
     client_conn_config_factory,
+    server_config_file,
     tmp_server_config,
     tmp_server_config_file
 )

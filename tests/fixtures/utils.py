@@ -82,9 +82,7 @@ class _Ports:
             bool: `True` if the port is not claimed already. `False` if it is
                 claimed.
         """
-        print('_Ports.claim', port, cls._claimed)
         if port in cls._claimed:
-            print('_Ports.claim: False')
             return False
         cls._claimed.append(port)
         return True
@@ -98,6 +96,9 @@ class Script:
     """The path of the temporary script."""
     flag_file: pathlib.Path = None
     """The path of the flag file."""
+    alt_flag_file: pathlib.Path = None
+    """An alternate path of the flag file. For instance the path when mounted
+    in a docker container."""
 
     @property
     def flag_text(self) -> str:
@@ -109,12 +110,24 @@ class Script:
 def tmp_script(tmp_path_factory: pytest.TempPathFactory) -> callable:
     """Return a temporary executable script factory."""
 
-    def _tmp_script(name: str, template: str, **format_kwargs: Any) -> Script:
+    def _tmp_script(name: str, template: str, tmp_path: pathlib.Path = None,
+                    alt_flag_file: pathlib.Path = None, **format_kwargs: Any
+                    ) -> Script:
         """Return a temporary executable script.
 
         Arguments:
             name (str): The name of the script.
-            template (str): A template string compatible with `str.format()`
+            template (str): A template string compatible with `str.format()`.
+                The following keys are available to all templates:
+                    * flag_file_path: This is the `flag_file_path` variable
+                        unless the `alt_flag_file_path` is set then that
+                        variable is used. This allows scripts mounted in docker
+                        containers to have the right path to the flag file.
+            tmp_path (pathlib.Path, optional): The base path for the script and
+                flag file. Defaults to a new temporary directory.
+            alt_flag_file (pathlib.Path, optional): An alternate path of the
+                flag file. For instance the path when mounted in a docker
+                container.
 
         Keyword Arguments:
             fail (str, optional): A special case that is formatted with the
@@ -127,22 +140,25 @@ def tmp_script(tmp_path_factory: pytest.TempPathFactory) -> callable:
             Script: A script wrapper with the path to the script and the flag
                 file.
         """
-        tmp_path = tmp_path_factory.mktemp('tmp_script')
+        tmp_path = tmp_path or tmp_path_factory.mktemp('tmp_script')
         flag_file_path = tmp_path.joinpath('flag')
+        format_flag_file_path = (alt_flag_file or tmp_path).joinpath('flag')
         script_path = tmp_path.joinpath(name)
         if 'fail' in format_kwargs:
             format_kwargs['fail'] = format_kwargs['fail'].format(
-                flag_file_path=flag_file_path,
+                flag_file_path=format_flag_file_path,
                 **format_kwargs
             )
-        script_path.write_text(template.format(flag_file_path=flag_file_path,
-                                               **format_kwargs))
+        script_path.write_text(template.format(
+            flag_file_path=format_flag_file_path,
+            **format_kwargs
+        ))
         script_path.chmod(
             stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH |  # a+r
             stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH |  # a+x
             stat.S_IWUSR  # Allow the teardown to remove the script
         )
-        return Script(script_path, flag_file_path)
+        return Script(script_path, flag_file_path, format_flag_file_path)
 
     return _tmp_script
 
@@ -181,7 +197,8 @@ def get_free_port(min_port: int = 1025, max_port: int = 65535,
 
     The range between `min_port` and `max_port` is inclusive.
 
-    Note: This uses a global registry of selected ports so the previously
+    Note:
+        This uses a global registry of selected ports so the previously
         discovered free ports don't have to be in use when selecting another
         free port.
 

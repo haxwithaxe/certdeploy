@@ -11,7 +11,7 @@ from fixtures.utils import ConfigContext
 from certdeploy.server.config import ServerConfig
 
 
-def _client_conn_config(client_keypair: KeyPair, conf: dict = None) -> dict:
+def client_conn_config(client_keypair: KeyPair, conf: dict = None) -> dict:
     """Generate a minimal dict to pass as a client connection config.
 
     Arguments:
@@ -47,13 +47,13 @@ def client_conn_config_factory(keypairgen: callable) -> callable:
                 be passed to `ClientConnection`.
         """
         client_keypair = client_keypair or keypairgen()
-        return _client_conn_config(client_keypair, conf)
+        return client_conn_config(client_keypair, conf)
 
     return _client_conn_config_factory
 
 
-def _server_config(tmp_path: pathlib.Path, client_keypair: KeyPair,
-                   server_keypair: KeyPair, conf: dict = None) -> ConfigContext:
+def server_config_file(tmp_path: pathlib.Path, client_keypair: KeyPair,
+                       server_keypair: KeyPair, **conf: Any) -> ConfigContext:
     """Generate a minimal CertDeploy server config updated with `conf`.
 
     Arguments:
@@ -75,12 +75,11 @@ def _server_config(tmp_path: pathlib.Path, client_keypair: KeyPair,
     config_path = tmp_path.joinpath('server.yml')
     config = dict(
         privkey_filename=str(server_keypair.privkey_file()),
-        client_configs=[_client_conn_config(client_keypair=client_keypair)],
+        client_configs=[client_conn_config(client_keypair=client_keypair)],
         # Has to be a real dir writable by the test user
         queue_dir=str(queue_dir)
     )
-    if conf:
-        config.update(conf)
+    config.update(conf)
     yaml.safe_dump(config, config_path.open('w'))
     return ConfigContext(config_path, config, client_keypair, server_keypair)
 
@@ -124,7 +123,7 @@ def tmp_server_config_file(tmp_path_factory: pytest.TempPathFactory,
         tmp_path = tmp_path or tmp_path_factory.mktemp('server_config')
         server_keypair = server_keypair or keypairgen()
         client_keypair = client_keypair or keypairgen()
-        _conf = dict(
+        config = dict(
             fail_fast=False,
             log_level='DEBUG',
             renew_every=2,
@@ -139,8 +138,9 @@ def tmp_server_config_file(tmp_path_factory: pytest.TempPathFactory,
             push_retry_interval=41,
             join_timeout=371
         )
-        _conf.update(conf)
-        return _server_config(tmp_path, client_keypair, server_keypair, _conf)
+        config.update(conf)
+        return server_config_file(tmp_path, client_keypair, server_keypair,
+                                  **config)
 
     return _tmp_server_config_file
 
@@ -172,8 +172,8 @@ def tmp_server_config(tmp_path_factory: pytest.TempPathFactory,
         tmp_path = tmp_path or tmp_path_factory.mktemp('server_config')
         client_keypair = client_keypair or keypairgen()
         server_keypair = server_keypair or keypairgen()
-        context = _server_config(tmp_path, client_keypair,
-                                 server_keypair, conf)
+        context = server_config_file(tmp_path, client_keypair,
+                                     server_keypair, **conf)
         return ServerConfig.load(context.config_path)
 
     return _tmp_server_config

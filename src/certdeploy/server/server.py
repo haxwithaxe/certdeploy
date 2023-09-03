@@ -310,6 +310,8 @@ class Server:
         one_shot (bool): Push lineages in the queue and exit when the queue has
             been fully processed. Defaults to `False`.
         """
+        # This is used in tests to determine if the server has started.
+        log.debug('Server.serve_forever: one_shot=%s', one_shot)
         # `timeout` is just for debugging. It makes the whole server fail hard
         #   if it takes too long. In order to use it set `ONE_SHOT_TIMEOUT`
         #   to a positive integer.
@@ -365,7 +367,7 @@ class Server:
                     break
 
     def _add_worker(self, client: ClientConnection):
-        # Kickstart a new PushWorker for this client
+        """Kickstart a new PushWorker for this `client`."""
         worker = PushWorker(self, client, self._config)
         self._workers[client.hash] = worker
         worker.start()
@@ -375,7 +377,7 @@ class Server:
         del self._workers[worker.client_hash]
 
     def _schedule_renew(self):
-        # Attempt to configure a scheduled cert renewal.
+        """Attempt to configure a scheduled cert renewal."""
         # Catch config related errors and add some context before reraising.
         try:
             every = schedule.every(self._config.renew_every)
