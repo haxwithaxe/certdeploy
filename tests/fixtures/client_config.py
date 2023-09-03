@@ -17,20 +17,19 @@ def client_config_file(tmp_path: pathlib.Path, client_keypair: KeyPair = None,
     """Finish configuring the temporary client config.
 
     Arguments:
-        tmp_path (pathlib.Path): Base directory for the config.
-        client_keypair (KeyPair, optional): The CertDeploy client's key pair.
-        server_keypair (KeyPair, optional): The CertDeploy server's key pair.
-        sftpd (dict, optional): The `sftpd` config option gets special
-            treatment. If this is `None` or `{}` (empty `dict`) Nothing will be
-            done to it. Otherwise it's run through `client_sftp_config` to give
-            it some basic values.
+        tmp_path: Base directory for the config.
+        client_keypair: The CertDeploy client's key pair.
+        server_keypair: The CertDeploy server's key pair.
+        sftpd: The `sftpd` config option gets special treatment. If this is
+            `None` or `{}` (empty `dict`) Nothing will be done to it. Otherwise
+            it's run through `client_sftp_config` to give it some basic values.
 
     Keyword Arguments:
         conf: Key value pairs corresponding to
             `certdeploy.client.config.client.Config` arguments.
 
     Returns:
-        ClientConfig: The client config with the given values or minimum values.
+        The client config with the given values or minimum values.
     """
     src = tmp_path.joinpath('src')
     src.mkdir()
@@ -61,10 +60,10 @@ def client_sftpd_config(
     """Finish configuring the temporary client SFTPD config.
 
     Arguments:
-        tmp_path (pathlib.Path): Base directory for the config.
-        client_keypair (KeyPair, optional): The CertDeploy client's key pair.
-        server_keypair (KeyPair, optional): The CertDeploy server's key pair.
-        listen_port (int, optional): The port for SFTPD to listen on. Defaults
+        tmp_path: Base directory for the config.
+        client_keypair: The CertDeploy client's key pair.
+        server_keypair: The CertDeploy server's key pair.
+        listen_port: The port for SFTPD to listen on. Defaults
             to a random port above 1024.
 
     Keyword Arguments:
@@ -72,7 +71,7 @@ def client_sftpd_config(
             `certdeploy.client.config.client.Config` arguments.
 
     Returns:
-        dict: The client SFTPD config with the given values or minimum values.
+        The client SFTPD config with the given values or minimum values.
     """
     config = dict(
         listen_port=listen_port if listen_port else get_free_port(),
@@ -111,12 +110,19 @@ def tmp_client_config_file(tmp_path_factory: pytest.TempPathFactory,
     ) -> ConfigContext:
         """Finish configuring the temporary client config.
 
+        Arguments:
+            tmp_path: The temporary directory to use in this function. Defaults
+                to a freshly generated temporary directory.
+            client_keypair: The key pair for the CertDeploy client. Defaults to
+                a freshly generated key pair.
+            server_keypair: The key pair for the CertDeploy server. Defaults to
+                a freshly generated key pair.
+
         Keyword Arguments:
             conf: Key value pairs corresponding to
                 `certdeploy.client.config.client.Config` arguments.
         Returns:
-            pathlib.Path, dict: The path of the client config and the `dict`
-                used to create it.
+            The path of the client config and the `dict` used to create it.
         """
         tmp_path = tmp_path or tmp_path_factory.mktemp('tmp_client_config_file')
         client_keypair = client_keypair or keypairgen()
@@ -152,9 +158,9 @@ def tmp_client_config(tmp_path_factory: pytest.TempPathFactory,
         """Finish configuring the temporary client config.
 
         Arguments:
-            client_keypair (KeyPair, optional): The key pair for the
+            client_keypair: The key pair for the
                 CertDeploy client.
-            server_keypair (KeyPair, optional): The key pair for the CertDeploy
+            server_keypair: The key pair for the CertDeploy
                 server.
 
         Keyword Arguments:
@@ -162,7 +168,7 @@ def tmp_client_config(tmp_path_factory: pytest.TempPathFactory,
                 `certdeploy.client.config.client.Config` arguments.
 
         Returns:
-            ClientConfig: The client config with the given values.
+            The client config with the given values.
         """
         tmp_path = tmp_path_factory.mktemp('tmp_client_config')
         client_keypair = client_keypair or keypairgen()
