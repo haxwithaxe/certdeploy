@@ -80,19 +80,28 @@ python3 -m http.server --directory 'docs/_build/html'
 
 All code must:
 * Conform to [Google's python style guide] with a few exceptions. Look at the
-      existing code for a lead on those changes. Bellow are some of them.
-      * Always preffer single quotes except around doc-strings or inside single
-         quotes.
-      * Use `Arguments:` instead of `Args:` in doc-strings.
-      * No trailing commas except in single item tuples.
-      * Type hinting must be used unless conforming to an interface that
-         doesn't use it.
-         * returning `None`, `self`, or `cls` hints are not needed.
+   existing code for a lead on those changes. Bellow are some of them.
+   * Always preffer single quotes except around doc-strings or inside single
+      quotes.
+   * Use `Arguments:` instead of `Args:` in doc-strings.
+   * No trailing commas except in single item tuples.
+   * Type hinting must be used unless conforming to an interface that
+      doesn't use it.
+      * returning `None`, `self`, or `cls` hints are not needed.
+         * Remember to not include type info in `Arguments:` unless the code
+            isn't type hinted. For example:
+
+
+               Arguments:
+                  foo: The correct way if using type hinting.
+
+               Arguments:
+                  foo (int): The correct way if not using type hinting.
+
+
 * Pass the pre-commit linting or `tox -e lint` (same thing).
 * Pass the unit tests (`tox -e default`).
-* Pass the docker tests (`tox -e dockerbuild && tox -e dockertest` or
-      `tox -e dockertest nobuild` depending on whether your changes are to the
-      Docker image or the python code respectively).
+* Pass the docker tests (`tox -e dockerbuild && tox -e dockertest`).
 
 New features must:
 * Include unit tests or integration tests covering both success and failure modes.
@@ -129,8 +138,6 @@ conda create -n certdeploy python=3 six virtualenv pytest pytest-cov
 conda activate certdeploy
 ```
 
-The tests require `docker-compose`. Docker-compose v2 does not have a python interface so you'll need to install it independently.
-
 ### Clone the repository
 
 1. Create an user account on GitHub if you do not already have one.
@@ -163,9 +170,10 @@ The tests require `docker-compose`. Docker-compose v2 does not have a python int
    `certdeploy` comes with a lot of hooks configured to automatically help the
    developer to check the code being written.
 
-6. Install docker and docker-compose, and initialize a swarm node if you don't
-   already have those. The integration tests require a docker swarm node. The steps to
-   accomplish those is beyond the scope of this document.
+6. Install docker and initialize a swarm node if you don't already have those.
+   The integration tests require a docker swarm node. The steps to accomplish
+   those is beyond the scope of this document.
+
 
 ### Implement your changes
 
@@ -213,7 +221,7 @@ The tests require `docker-compose`. Docker-compose v2 does not have a python int
 5. Please check that your changes don't break any unit or integration tests with:
 
    ```
-   tox && tox -e dockertest nobuild
+   tox
    ```
    Or if you have made changes to anything in `docker/client` or `docker/server`
 
@@ -226,6 +234,7 @@ The tests require `docker-compose`. Docker-compose v2 does not have a python int
    You can also use [tox] to run several other pre-configured tasks in the
    repository. Try `tox -av` to see a list of the available checks.
 
+
 ### Submit your contribution
 
 1. If everything works fine, push your local branch to the remote server with:
@@ -236,6 +245,7 @@ The tests require `docker-compose`. Docker-compose v2 does not have a python int
 
 2. Go to the web page of your fork and click "Create pull request"
    to send your changes for review.
+
 
 ### Troubleshooting
 
