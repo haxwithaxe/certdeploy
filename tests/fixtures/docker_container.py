@@ -149,7 +149,9 @@ class ContainerWrapper:
                     f'{self._container.name} to meet the condition {condition}'
                 )
             if self.has_crashed:
-                raise ContainerCrashed(self.name)
+                raise ContainerCrashed(
+                    f'{self.name}:\n{self._container.logs().decode()}'
+                )
             countdown -= 1
             time.sleep(self._wait_timeout_interval)
 
@@ -227,7 +229,8 @@ class CertDeployContainerWrapper(ContainerWrapper):
     """Docker image name."""
     type_name: str = 'generic'
     """Internal use only. Used in log messages and errors."""
-    has_started_flag: bytes = None
+    has_started_flag: bytes = (b'INFO:certdeploy-client:Listening for incoming '
+                               b'connections at ')
     """The encoded string that signals the client or server is ready to use."""
 
     @property
@@ -463,10 +466,10 @@ class ClientContainer(CertDeployContainerWrapper):
             sftpd = {}
             if 'sftpd' in config:
                 sftpd = config.pop('sftpd')
-                sftpd['privkey_filename'] = \
-                    f'/etc/certdeploy/{self.client_keypair.privkey_name}'
-                sftpd['server_pubkey_filename'] = \
-                    f'/etc/certdeploy/{self.server_keypair.pubkey_name}'
+            sftpd['privkey_filename'] = \
+                f'/etc/certdeploy/{self.client_keypair.privkey_name}'
+            sftpd['server_pubkey_filename'] = \
+                f'/etc/certdeploy/{self.server_keypair.pubkey_name}'
         # Generate a config file and transfer it to the config dir
         context = client_config_file(
             self.etc_path,
