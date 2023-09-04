@@ -78,6 +78,7 @@ class ClientConnection:  # pylint: disable=too-many-instance-attributes
     """
 
     def __post_init__(self):
+        """Validate configs."""
         match = PUBKEY_RE.match(self.pubkey)
         if not match:
             raise ConfigError(f'Invalid value for `pubkey`: {self.pubkey}')
