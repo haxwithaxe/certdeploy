@@ -35,16 +35,14 @@ def mock_certbot(tmp_script: callable) -> callable:
         """Return a mock certbot script.
 
         Arguments:
-            renew_args (list[str], optional): The arguments the script will
-                expect to be passed. Defaults to `['renew']`.
-            tmp_path (pathlib.Path, optional): The base path for the script and
-                flag file.
-            alt_flag_file_path (os.PathLike, optional): An alternate path for
-                the flag file. For instance a path to the file when mounted in
-                a docker container.
+            renew_args: The arguments the script will expect to be passed.
+                Defaults to `['renew']`.
+            tmp_path: The base path for the script and flag file.
+            alt_flag_file_path: An alternate path for the flag file. For
+                instance a path to the file when mounted in a docker container.
 
         Returns:
-            Script: The mock certbot script.
+            A mock certbot script.
         """
         # DEFAULT VALUE: certdeploy.server.config.server.Server.renew_args
         renew_args = renew_args if renew_args else ['renew']
