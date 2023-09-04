@@ -1,3 +1,4 @@
+"""Functions that update system services."""
 
 import subprocess
 
@@ -19,6 +20,7 @@ from .errors import (
 
 def update_docker_container(spec: DockerContainer,
                             client_config: ClientConfig):
+    """Update a docker container."""
     log.debug('Updating %s', spec)
     api = docker.DockerClient(base_url=client_config.docker_url)
     matches = api.containers.list(filters=spec.filters)
@@ -43,6 +45,7 @@ def update_docker_container(spec: DockerContainer,
 
 
 def update_docker_service(spec: DockerService, client_config: ClientConfig):
+    """Force update a docker service."""
     log.debug('Updating %s', spec)
     api = docker.DockerClient(base_url=client_config.docker_url)
     matches = api.services.list(filters=spec.filters)
@@ -70,6 +73,7 @@ def update_docker_service(spec: DockerService, client_config: ClientConfig):
 
 
 def update_script(script: Script, client_config: ClientConfig):
+    """Update the system with a script."""
     log.debug('Updating %s', script)
     try:
         # pylint: disable=consider-using-with
@@ -131,6 +135,7 @@ def update_systemd_unit(unit: SystemdUnit, client_config: ClientConfig):
     log.info('Systemd unit %s %sed.', unit.name, unit.action)
 
 
+# An index of Service types to update functions
 _UPDATER_MAP = {
     DockerContainer: update_docker_container,
     DockerService: update_docker_service,
@@ -140,7 +145,7 @@ _UPDATER_MAP = {
 
 
 def update_services(config: ClientConfig):
-    """Update services in `config.services`."""
+    """Update all services in `config.services`."""
     for service in config.services:
         try:
             _UPDATER_MAP[type(service)](service, config)
