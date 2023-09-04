@@ -4,9 +4,10 @@ This mock client is just a TCP server with some instrumentation. It should
 cause any calls to it to fail on the server side.
 """
 
-import datetime
 import socketserver
 import threading
+from datetime import datetime
+from typing import Callable
 
 import pytest
 
@@ -15,12 +16,11 @@ def _tcp_handler_factory(log_func: callable) -> socketserver.BaseRequestHandler:
     """Return a request handler with `log_func` embedded in its `handle`.
 
     Arguments:
-        log_func (callable): A function that does something the code it comes
-            from cares about.
+        log_func: A function that does something the code it comes from cares
+            about.
     Returns:
-        socketserver.BaseRequestHandler: A subclass of
-            `socketserver.BaseRequestHandler` with a `handle` method that calls
-            `log_func`.
+        A subclass of `MockClientTCPHandler` with a `handle` method that calls
+        `log_func`.
     """
 
     class MockClientTCPHandler(socketserver.BaseRequestHandler):
@@ -33,6 +33,8 @@ def _tcp_handler_factory(log_func: callable) -> socketserver.BaseRequestHandler:
             other end is unhappy with what it sees.
             """
             log_func()
+            # Reply with something that definitely isn't a SSH or SFTP
+            #   handshake.
             self.request.sendall(b'Mock fail client')
 
     return MockClientTCPHandler
@@ -50,10 +52,13 @@ class MockClientTCPServer(threading.Thread):
         self._log = []
 
     @property
-    def log(self):
+    def log(self) -> list[datetime]:
         """The logs of the times the server was accessed.
 
         Also stops this mock client.
+
+        Returns:
+            The access logs of the TCP server.
         """
         self.stop()
         return self._log
@@ -69,7 +74,7 @@ class MockClientTCPServer(threading.Thread):
         This is passed to the `_tcp_handler_factory` as the value of
         `log_func`.
         """
-        self._log.append(datetime.datetime.now())
+        self._log.append(datetime.now())
 
     def run(self):
         """Run the main loop.
@@ -86,7 +91,8 @@ class MockClientTCPServer(threading.Thread):
 
 
 @pytest.fixture()
-def mock_fail_client(free_port: callable) -> callable:
+def mock_fail_client(free_port: callable
+                     ) -> Callable[[str, int], MockClientTCPServer]:
     """Return a mock CertDeploy client factory."""
     mock_clients = []
 
@@ -95,12 +101,12 @@ def mock_fail_client(free_port: callable) -> callable:
         """Return a started mock client server.
 
         Arguments:
-            address (str): The listen address.
-            port (int, optional): The listen port. Defaults to a random free
-                port.
+            address: The listen address.
+            port: The listen port. Defaults to a random free port.
+
         Returns:
-            MockClientTCPServer: A naive mock CertDeploy client for server
-                tests to fail to connect to.
+            A naive mock CertDeploy client for server tests to fail to connect
+            to.
         """
         client = MockClientTCPServer()
         mock_clients.append(client)
