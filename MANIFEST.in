@@ -1,4 +1,3 @@
-exclude docker-compose.yml
 exclude .*
 exclude *.md
 exclude tox.ini
