@@ -1,10 +1,10 @@
-"""Random small fixtures."""
+"""Random small fixtures and utilities."""
 
 import pathlib
 import socket
 import stat
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 
 import pytest
 from fixtures.keys import KeyPair
@@ -50,6 +50,7 @@ class NoFeePort(Exception):
 
 @dataclass
 class ConfigContext:
+    """A wrapper for important config generation related values."""
 
     config_path: pathlib.Path
     """The generated config path."""
@@ -76,11 +77,11 @@ class _Ports:
         """Attempt to claim a port.
 
         Arguments:
-            port (int): The port number to be claimed.
+            port: The port number to be claimed.
 
         Returns:
-            bool: `True` if the port is not claimed already. `False` if it is
-                claimed.
+            `True` if the port is not claimed already. `False` if it is
+            claimed.
         """
         if port in cls._claimed:
             return False
@@ -107,7 +108,9 @@ class Script:
 
 
 @pytest.fixture()
-def tmp_script(tmp_path_factory: pytest.TempPathFactory) -> callable:
+def tmp_script(tmp_path_factory: pytest.TempPathFactory
+               ) -> Callable[[str, str, pathlib.Path, pathlib.Path, ...],
+                             Script]:
     """Return a temporary executable script factory."""
 
     def _tmp_script(name: str, template: str, tmp_path: pathlib.Path = None,
@@ -116,29 +119,26 @@ def tmp_script(tmp_path_factory: pytest.TempPathFactory) -> callable:
         """Return a temporary executable script.
 
         Arguments:
-            name (str): The name of the script.
-            template (str): A template string compatible with `str.format()`.
+            name: The name of the script.
+            template: A template string compatible with `str.format()`.
                 The following keys are available to all templates:
                     * flag_file_path: This is the `flag_file_path` variable
                         unless the `alt_flag_file_path` is set then that
                         variable is used. This allows scripts mounted in docker
                         containers to have the right path to the flag file.
-            tmp_path (pathlib.Path, optional): The base path for the script and
-                flag file. Defaults to a new temporary directory.
-            alt_flag_file (pathlib.Path, optional): An alternate path of the
-                flag file. For instance the path when mounted in a docker
-                container.
+            tmp_path: The base path for the script and flag file. Defaults to a
+                new temporary directory.
+            alt_flag_file: An alternate path of the flag file. For instance the
+                path when mounted in a docker container.
 
         Keyword Arguments:
-            fail (str, optional): A special case that is formatted with the
-                `flag_file_path` and the `format_kwargs` before formatting
+            fail: A special case that is formatted with the `flag_file_path`
+                and the `format_kwargs` before formatting `template`.
+            format_kwargs: Key value pairs to apply when formatting `fail` and
                 `template`.
-            format_kwargs (dict[str, str], optional): Key value pairs to apply
-                when formatting `fail` and `template`.
 
         Returns:
-            Script: A script wrapper with the path to the script and the flag
-                file.
+            A script wrapper with the path to the script and the flag file.
         """
         tmp_path = tmp_path or tmp_path_factory.mktemp('tmp_script')
         flag_file_path = tmp_path.joinpath('flag')
@@ -164,22 +164,22 @@ def tmp_script(tmp_path_factory: pytest.TempPathFactory) -> callable:
 
 
 @pytest.fixture()
-def lineage_factory(tmp_path_factory: pytest.TempPathFactory) -> callable:
+def lineage_factory(tmp_path_factory: pytest.TempPathFactory
+                    ) -> Callable[[str, list[str]], pathlib.Path]:
     """Return a temporary lineage factory."""
 
     def _gen_lineage(lineage: str, filenames: list[str] = None) -> pathlib.Path:
         """Generate a temporary lineage.
 
         Arguments:
-            lineage (str): The lineage name. Not the full path.
-            filenames (list[str], optional): A list of filenames to create.
-                Defaults to `['fullchain.pem', 'privkey.pem']`.
+            lineage: The lineage name. Not the full path.
+            filenames: A list of filenames to create. Defaults to
+                `['fullchain.pem', 'privkey.pem']`.
 
         Returns:
-            pathlib.Path: The path to the lineage directory.
+            The path to the lineage directory.
         """
-        if not filenames:
-            filenames = ['fullchain.pem', 'privkey.pem']
+        filenames = filenames or ['fullchain.pem', 'privkey.pem']
         cert_dir = tmp_path_factory.mktemp('tmp_lineage')
         lineage_dir = cert_dir.joinpath(lineage)
         lineage_dir.mkdir()
@@ -203,15 +203,12 @@ def get_free_port(min_port: int = 1025, max_port: int = 65535,
         free port.
 
     Arguments:
-        min_port (int, optional): The lowest acceptable port. Defaults to
-            1025.
-        max_port (int, optional): The highest acceptable port. Defaults to
-            65535.
-        address (str, optional): The address to bind to. Defaults to
-            "127.0.0.1".
+        min_port: The lowest acceptable port. Defaults to 1025.
+        max_port: The highest acceptable port. Defaults to 65535.
+        address: The address to bind to. Defaults to `'127.0.0.1'`.
 
     Returns:
-        int: A free port between `min_port` and `max_port` (inclusive).
+        A free port between `min_port` and `max_port` (inclusive).
 
     Raises:
        NoFreePort: When there are no unused ports in the given range.
@@ -222,6 +219,8 @@ def get_free_port(min_port: int = 1025, max_port: int = 65535,
             sock.bind((address, port))
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             if _Ports.claim(port):
+                # Only close the socket on a successful connection or at the
+                #   end of the process.
                 sock.close()
                 return port
         except OSError:
@@ -232,6 +231,6 @@ def get_free_port(min_port: int = 1025, max_port: int = 65535,
 
 
 @pytest.fixture()
-def free_port() -> callable:
+def free_port() -> Callable[[int, int, str], int]:
     """Return a free port number factory."""
     return get_free_port
