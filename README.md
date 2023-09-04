@@ -118,7 +118,7 @@ The following are daemon specific configs.
     push_retries: 12
     ```
 
-
+(client-connection-settings)=
 #### Client Connection Settings
 * `address` - The client address (IP address or hostname).
 * `domains` - A list of domains that this client needs certs for.
@@ -281,6 +281,7 @@ In a case like this the certs are delivered via whatever ssh server is running o
 
 #### Service settings
 
+(scripts)=
 ##### Scripts
 The only option for scripts is `name` which is the path to the script.
 `name` can be an absolute path, an executable in the system's ``$PATH``, or relative path (complicated). The path is evaluated in that order.
@@ -293,6 +294,7 @@ update_services:
     name: /path/to/script.sh
 ```
 
+(systemd-units)=
 ##### Systemd Units
 The two config fields for each Systemd service are `name` and `action`. `action` can be `restart` or `reload` which correspond to the ``systemctl restart ...`` and ``systemctl reload ...`` commands. The default `action` is `restart`.
 ```yaml
@@ -303,7 +305,7 @@ update_services:
     name: apache_or_whatever.service
     action: reload
 ```
-
+(docker-services-and-containers)=
 ##### Docker Services and Containers
 The two config fields for each docker service or container are `name` and `filters`. Either name or filters can be given.
 ```yaml
@@ -374,6 +376,7 @@ sftpd:
   server_pubkey_filename: /etc/certdeploy/server_key.pub
 ```
 
+(client-security-considerations)=
 #### Client Security Considerations
 When run as a script or daemon outside of docker it's expected that the CertDeploy client will run as root or a user that has permission to manage system services and docker. Because it can run arbitrary code (via the `script` service definitions) it is very strongly recommended that the config file and the update scripts are globally read only or readable only by the user that runs the client, and writable only by root or at most only the user that runs the client.
 

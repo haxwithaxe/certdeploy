@@ -337,7 +337,7 @@ on [PyPI], the following steps can be used to release a new version for
 [pre-commit]: https://pre-commit.com/
 [pypi]: https://pypi.org/
 [pyscaffold's contributor's guide]: https://pyscaffold.org/en/stable/contributing.html
-[pytest can drop you]: https://docs.pytest.org/en/stable/usage.html#dropping-to-pdb-python-debugger-at-the-start-of-a-test
+[pytest can drop you]: https://docs.pytest.org/en/stable/how-to/failures.html
 [python software foundation's code of conduct]: https://www.python.org/psf/conduct/
 [sphinx]: https://www.sphinx-doc.org/en/master/
 [tox]: https://tox.readthedocs.io/en/stable/
