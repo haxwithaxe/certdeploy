@@ -1,7 +1,7 @@
 """Temporary client config fixtures."""
 
 import pathlib
-from typing import Any
+from typing import Any, Callable
 
 import pytest
 import yaml
@@ -92,14 +92,20 @@ def client_sftpd_config(
 
 
 @pytest.fixture(scope='function')
-def tmp_client_sftpd_config(free_port: callable) -> callable:
+def tmp_client_sftpd_config(free_port: callable
+                            ) -> Callable[
+                                [pathlib.Path, KeyPair, KeyPair, int, ...],
+                                dict
+                            ]:
     """Return a `sftpd` config section factory."""
     return client_sftpd_config
 
 
 @pytest.fixture(scope='function')
 def tmp_client_config_file(tmp_path_factory: pytest.TempPathFactory,
-                           keypairgen: callable) -> callable:
+                           keypairgen: callable
+                           ) -> Callable[[pathlib.Path, KeyPair, KeyPair, ...],
+                                         ConfigContext]:
     """Return a temporary client config constructor."""
 
     def _tmp_client_config_file(
@@ -149,7 +155,8 @@ def tmp_client_config_file(tmp_path_factory: pytest.TempPathFactory,
 
 @pytest.fixture(scope='function')
 def tmp_client_config(tmp_path_factory: pytest.TempPathFactory,
-                      keypairgen: callable) -> callable:
+                      keypairgen: callable
+                      ) -> Callable[[KeyPair, KeyPair, ...], ClientConfig]:
     """Return a temporary client config factory."""
 
     def _tmp_client_config(client_keypair: KeyPair = None,

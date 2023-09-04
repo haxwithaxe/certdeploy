@@ -73,10 +73,12 @@ def _push_to_client(
 
 
 @pytest.fixture()
-def mock_server_push(keypairgen: callable, lineage_factory: callable,
-                     tmp_path: pathlib.Path
-                     ) -> Callable[[dict, pathlib.Path, str, KeyPair, KeyPair,
-                                    str, list[pathlib.Path]], MockPushContext]:
+def mock_server_push(
+    keypairgen: Callable[[], KeyPair],
+    lineage_factory: Callable[[str, list[str]], pathlib.Path],
+    tmp_path: pathlib.Path
+) -> Callable[[dict, pathlib.Path, str, KeyPair, KeyPair, str,
+               list[pathlib.Path]], MockPushContext]:
     """Return a mock CertDeploy server push context factory."""
 
     def _mock_server_push(

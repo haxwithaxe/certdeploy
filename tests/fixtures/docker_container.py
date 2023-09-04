@@ -4,7 +4,7 @@ import pathlib
 import re
 import time
 from datetime import datetime
-from typing import Any
+from typing import Any, Callable
 
 import _pytest
 import pytest
@@ -21,12 +21,12 @@ CLIENT_CONTAINER_PYTHON_VERSION = '3.10'
 class ContainerStatus:
     """Container status strings."""
 
-    CREATED = 'created'
-    RESTARTING = 'restarting'
-    RUNNING = 'running'
-    PAUSED = 'paused'
-    EXITED = 'exited'
-    DEAD = 'dead'
+    CREATED: str = 'created'
+    RESTARTING: str = 'restarting'
+    RUNNING: str = 'running'
+    PAUSED: str = 'paused'
+    EXITED: str = 'exited'
+    DEAD: str = 'dead'
 
 
 class ContainerCrashed(Exception):
@@ -132,7 +132,9 @@ class ContainerWrapper:
         if self._container:
             self._container.remove(force=True)
 
-    def wait_for_condition(self, condition: callable, timeout: int = 60):
+    def wait_for_condition(self,
+                           condition: Callable[['ContainerWrapper'], bool],
+                           timeout: int = 60):
         """Wait for some `condition` to occur in the container.
 
         Arguments:
@@ -140,6 +142,9 @@ class ContainerWrapper:
                 only argument.
             timeout: The number of seconds to wait before giving up on the
                 `condition`. Defaults to 60.
+
+        Raises:
+            ContainerCrashed: If the container state indicates it has crashed.
         """
         # This assumes that `self._wait_timeout_interval` is less than 1
         countdown = int(timeout / self._wait_timeout_interval)
@@ -578,7 +583,7 @@ def _get_canned_docker_container(started: bool) -> ContainerWrapper:
 
 
 @pytest.fixture(scope='function')
-def canned_docker_container() -> callable:
+def canned_docker_container() -> Callable[[bool], ContainerWrapper]:
     """Return a canned `ContainerWrapper` factory.
 
     The container is a vert minimal container that does nothing. It's suitable
@@ -606,9 +611,14 @@ def canned_docker_container() -> callable:
 
 
 @pytest.fixture()
-def client_docker_container(tmp_path: pathlib.Path, keypairgen: callable,
-                            request: _pytest.fixtures.SubRequest
-                            ) -> callable:
+def client_docker_container(
+    tmp_path: pathlib.Path,
+    keypairgen: Callable[[], KeyPair],
+    request: _pytest.fixtures.SubRequest
+) -> Callable[
+    [str, dict[str, Any], list[str], bool, bool, KeyPair, KeyPair, bool, ...],
+    ClientContainer
+]:
     """Return a CertDeploy client docker container factory."""
     clients = []
 
@@ -685,9 +695,14 @@ def client_docker_container(tmp_path: pathlib.Path, keypairgen: callable,
 
 
 @pytest.fixture()
-def server_docker_container(tmp_path: pathlib.Path, keypairgen: callable,
-                            request: _pytest.fixtures.SubRequest
-                            ) -> callable:
+def server_docker_container(
+    tmp_path: pathlib.Path,
+    keypairgen: Callable[[], KeyPair],
+    request: _pytest.fixtures.SubRequest
+) -> Callable[
+    [str, dict[str, Any], list[str], bool, bool, KeyPair, KeyPair, bool, ...],
+    ServerContainer
+]:
     """Return a CertDeploy server docker container factory."""
     servers = []
 

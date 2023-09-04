@@ -2,6 +2,7 @@
 
 import os
 import pathlib
+from typing import Callable
 
 import pytest
 from fixtures.utils import Script
@@ -26,7 +27,8 @@ touch {flag_file_path}
 
 
 @pytest.fixture(scope='function')
-def mock_certbot(tmp_script: callable) -> callable:
+def mock_certbot(tmp_script: Callable[[...], Script]
+                 ) -> Callable[[list[str], pathlib.Path, os.PathLike], Script]:
     """Return a mock certbot script factory."""
 
     def _mock_certbot(renew_args: list[str] = None,

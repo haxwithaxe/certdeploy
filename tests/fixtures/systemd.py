@@ -57,7 +57,7 @@ fi
 
 
 @pytest.fixture(scope='function')
-def tmp_systemd_service(tmp_script: callable
+def tmp_systemd_service(tmp_script: Callable[[str, str, str, str], Script]
                         ) -> Callable[[str, bool], tuple[str, Script]]:
     """Return a factory for temporary systemctl expecting a unit name."""
 
