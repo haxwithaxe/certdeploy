@@ -1,5 +1,7 @@
 """Fixtures an utilities for testing client Systemd unit updating."""
 
+from typing import Callable
+
 import pytest
 from fixtures.utils import Script
 
@@ -55,23 +57,23 @@ fi
 
 
 @pytest.fixture(scope='function')
-def tmp_systemd_service(tmp_script: callable) -> callable:
-    """Return a temporary Systemd service factory."""
+def tmp_systemd_service(tmp_script: callable
+                        ) -> Callable[[str, bool], tuple[str, Script]]:
+    """Return a factory for temporary systemctl expecting a unit name."""
 
-    def _tmp_systemd_service(unit_name='certdeploy-test.service',
+    def _tmp_systemd_service(unit_name: str = 'certdeploy-test.service',
                              fail: bool = False) -> tuple[str, Script]:
         """Return a unit name and mock systemctl.
 
         Arguments:
-            unit_name (str, optional): The desired unit name. Defaults to
+            unit_name: The desired unit name. Defaults to
                 'certdeploy-test.service'.
-            fail (bool, optional): If True a command is inserted into the mock
-                systemctl that causes premature failure.
+            fail: If True a command is inserted into the mock systemctl that
+                causes premature failure. Defaults to `False`
 
         Returns:
-            str, Script: Where the first item is the unit name the script is
-                expecting and the second object is the script object for the
-                mock systemctl.
+            A unit name the mock systemctl is expecting and the script object
+            for the mock systemctl.
         """
         fail_str = ''
         if fail:
