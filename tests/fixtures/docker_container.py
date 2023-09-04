@@ -15,8 +15,6 @@ from fixtures.server_config import server_config_file
 
 import docker
 
-CLIENT_DEST_DIR = '/certdeploy/certs'
-CLIENT_SOURCE_DIR = '/certdeploy/staging'
 CLIENT_CONTAINER_PYTHON_VERSION = '3.10'
 
 
@@ -42,8 +40,10 @@ class ContainerWrapper:
     are accessible as attributes of instances of this class.
     """
 
+    # If this is set to something above 1 the wait_for_condition method needs
+    #   updating.
     _wait_timeout_interval: float = 0.1
-    """Time to sleep in each run of the wait loop."""
+    """Time to sleep in each run of any of the wait loops."""
 
     def __init__(self, client: docker.DockerClient):
         """Create a new `ContainerWrapper`.
@@ -68,21 +68,24 @@ class ContainerWrapper:
         return False
 
     @property
-    def ipv4_address(self):
+    def ipv4_address(self) -> str:
+        """The primary IPv4 address of the container."""
         return self._container.attrs['NetworkSettings']['IPAddress']
 
     @property
-    def is_running(self):
+    def is_running(self) -> bool:
         """`True` if the container is running."""
         return self._container.status == ContainerStatus.RUNNING
 
     @property
     def started_at(self) -> datetime:
-        """When the container last reached the `running` state."""
+        """When the container last reached the `running` status."""
         self._container.reload()
+        # If the container state is still `created` don't bother continuing.
         if self._container.status == ContainerStatus.CREATED:
             return None
         started_at = self._container.attrs['State']['StartedAt']
+        # Transform the time into a format datetime can handle.
         cleaned = re.sub(r'\.[0-9]+Z', '', started_at)
         return datetime.strptime(cleaned, '%Y-%m-%dT%H:%M:%S')
 
@@ -110,7 +113,7 @@ class ContainerWrapper:
 
         Arguments:
             wait: If `True` then this will wait for the container to be
-                in the `running` state.
+                in the `running` state. Defaults to `True`.
             timeout: The number of seconds to wait before giving up on waiting
                 for the container to start. Defaults to 60.
 
@@ -133,7 +136,7 @@ class ContainerWrapper:
         """Wait for some `condition` to occur in the container.
 
         Arguments:
-            condition: A `callable` that takes this container wrapper as the
+            condition: A `callable` that takes this `ContainerWrapper` as the
                 only argument.
             timeout: The number of seconds to wait before giving up on the
                 `condition`. Defaults to 60.
@@ -171,12 +174,16 @@ class ContainerWrapper:
         Arguments:
             status: The desired status of the container.
             timeout: The number of seconds to wait before giving up on the
-                status.
+                status. Defaults to 60.
         """
         self.wait_for_condition((lambda x: x.status == status), timeout)
 
     def _teardown_old(self, container_id: str):
-        """Tear down any existing containers with the same name."""
+        """Tear down any existing containers with the same name.
+
+        Arguments:
+            container_id: This can be the id hash or the container name.
+        """
         try:
             old = self._client.containers.get(container_id)
         except docker.errors.NotFound:
@@ -206,6 +213,15 @@ class ContainerInternalPaths:
     """The output directory. In clients this is where the source and destination
     directories are made. In servers this is where the queue directory is made.
     """
+    # This is created in the server Dockerfile
+    queue: pathlib.Path = pathlib.Path('/var/run/certdeploy')
+    """The server's queue directory."""
+    # This is created in the client Dockerfile
+    dest: pathlib.Path = output.joinpath('certs')
+    """The client's certificate output directory."""
+    # This is created in the client Dockerfile
+    source: pathlib.Path = output.joinpath('staging')
+    """The client's certificate staging directory."""
 
 
 class CertDeployContainerWrapper(ContainerWrapper):
@@ -214,8 +230,8 @@ class CertDeployContainerWrapper(ContainerWrapper):
     container_paths = ContainerInternalPaths
     """Paths for inside the container."""
     etc_path: pathlib.Path = None
-    """The host side path to the directory mounted to /etc/certdeploy in the
-    container."""
+    """The host side path to the directory mounted to `self.container_paths.etc`
+    in the container."""
     output_path: pathlib.Path = None
     """The host side path to the directory mounted in the container for the
     output."""
@@ -257,20 +273,22 @@ class CertDeployContainerWrapper(ContainerWrapper):
             config: Config values.
             client_keypair: The key pair for the CertDeploy client.
             server_keypair: The key pair for the CertDeploy server.
-            etc_path: The path to mount to `/etc/certdeploy` in the container.
-            with_docker: Add the default docker socket as a mount if `True`.
+            etc_path: The path to mount to `self.container_paths.etc` in the
+                container.
+            with_docker: Add the default docker socket as a volume if `True`.
                 Defaults to `False`.
             volumes: A list of volume declarations just like in a docker-compose
-                file.
-            do_not_interfere: Don't change client configs if `True`. Defaults to
-                `False` to set some sensible defaults.
+                file. Defaults to an empty `list`.
+            do_not_interfere: If `True` `config` will not be altered before
+                being converted into a config file. Defaults to `False` to set
+                some sensible defaults.
 
         Keyword Arguments:
             kwargs: Keyword args passed to `docker.client.containers.create`,
                 except for the `ports` value which is updated to export the
                 CertDeploy client container's listening port.
         Returns:
-            This instance of this kind of container wrapper.
+            An instance of this kind of container wrapper.
         """
         config = config or {}
         volumes = volumes or []
@@ -280,12 +298,12 @@ class CertDeployContainerWrapper(ContainerWrapper):
         self.output_path.mkdir()
         self.client_keypair = client_keypair
         self.server_keypair = server_keypair
-        ## Assemble config dir
+        # Assemble config dir
         self.prepare_keys()
         self.prepare_config(config, do_not_interfere)
-        ## Setup docker bits and pieces
+        # Preprocess kwargs for create
         self.precreate(kwargs)
-        ## Setup the container
+        # Setup the container
         super().create(
             image=self.image,
             name=name,
@@ -306,13 +324,13 @@ class CertDeployContainerWrapper(ContainerWrapper):
         """
         pass
 
-    def prepare_config(self, config, do_not_interfere):
+    def prepare_config(self, config: dict, do_not_interfere: bool):
         """Prepare the config.
 
-        Populates `self.config`.
+        Must populate `self.config`.
 
         Arguments:
-            config: The config `dict` for the component.
+            config: The config `dict` for the client/server.
             do_not_interfere: If `True` `config` will not be interfered with
                 by this method.
         """
@@ -320,8 +338,8 @@ class CertDeployContainerWrapper(ContainerWrapper):
 
     def prepare_keys(self):
         """Prepare server and client key pairs."""
-        # Populate the key pairs with the info from this object.
-        # Don't overwrite the path or privkey name of the keys.
+        # Populate the key pairs with the info from this object, but don't
+        #   overwrite the path or privkey name of the keys.
         if (not self.client_keypair.path or
                 not self.client_keypair.privkey_name):
             self.client_keypair.update(self.etc_path, CLIENT_KEY_NAME,
@@ -337,11 +355,12 @@ class CertDeployContainerWrapper(ContainerWrapper):
         self.server_keypair.privkey_file()
 
     def start(self, timeout: int = 60):
-        """Wait while the client is starting up.
+        """Start the container and wait for the client/server to be ready.
 
         Arguments:
             timeout: The number of seconds to wait before giving up on the
-                component starting. Defaults to 60.
+                component starting. If timeout is falsey this will not wait for
+                the container to start or be ready. Defaults to 60.
         """
         super().start(wait=False)
         if not timeout:
@@ -389,8 +408,6 @@ class ClientContainer(CertDeployContainerWrapper):
     This naively uses the latest `certdeploy-client` locally available.
     """
 
-    server_keypair: KeyPair = None
-    """The key pair for the associated server. Just for ease of access."""
     has_started_flag: bytes = (b'INFO:certdeploy-client:Listening for '
                                b'incoming connections at ')
     image: str = 'certdeploy-client:latest'
@@ -400,7 +417,7 @@ class ClientContainer(CertDeployContainerWrapper):
 
     @property
     def has_updated(self) -> bool:
-        """Return `True` if the client has finished updating services."""
+        """`True` if the client has finished updating services."""
         if (b'INFO:certdeploy-client:Updated services\n' in
                 self._container.logs()):
             return True
@@ -422,10 +439,7 @@ class ClientContainer(CertDeployContainerWrapper):
         return True
 
     def precreate(self, create_kwargs: dict):
-        """Do things that need to happen before calling `super().create`.
-
-        Do things that need to happen after the config is ready and before
-        `super().create` is called.
+        """Prepare the keyword arguments for `docker.client.containers.create`.
 
         Arguments:
             create_kwargs: The keyword arguments to be passed to
@@ -456,20 +470,23 @@ class ClientContainer(CertDeployContainerWrapper):
 
         Arguments:
             config: The base client config `dict`.
-            do_not_interfere: If `True` `client_config` won't be changed.
+            do_not_interfere: If `True` `config` won't be changed.
         """
-        # If not told to not interfere with configs, then interfere with configs
         if not do_not_interfere:
             # Force source and dest to constant values
-            config['destination'] = CLIENT_DEST_DIR
-            config['source'] = CLIENT_SOURCE_DIR
+            config['destination'] = str(self.container_paths.dest)
+            config['source'] = str(self.container_paths.source)
             sftpd = {}
             if 'sftpd' in config:
                 sftpd = config.pop('sftpd')
-            sftpd['privkey_filename'] = \
-                f'/etc/certdeploy/{self.client_keypair.privkey_name}'
-            sftpd['server_pubkey_filename'] = \
-                f'/etc/certdeploy/{self.server_keypair.pubkey_name}'
+            sftpd['privkey_filename'] = str(self.container_paths.etc.joinpath(
+                self.client_keypair.privkey_name
+            ))
+            sftpd['server_pubkey_filename'] = str(
+                self.container_paths.etc.joinpath(
+                    self.server_keypair.pubkey_name
+                )
+            )
         # Generate a config file and transfer it to the config dir
         context = client_config_file(
             self.etc_path,
@@ -481,11 +498,12 @@ class ClientContainer(CertDeployContainerWrapper):
         self.config = context.config
 
     def wait_for_updated(self, timeout: int = 60):
-        """Wait while the client is in progress.
+        """Wait for the client to finish updating services.
 
         Arguments:
             timeout: The number of seconds to wait before giving up on the
-                status. Defaults to 60.
+                status. If `timeout` is falsey then this will not wait.
+                Defaults to 60.
         """
         self.wait_for_condition((lambda x: x.has_updated), timeout)
 
@@ -493,7 +511,7 @@ class ClientContainer(CertDeployContainerWrapper):
 class ServerContainer(CertDeployContainerWrapper):
     """A CertDeploy server docker container wrapper.
 
-    This naively uses the latest `certdeploy-server` locally available.
+    This naively uses the latest `certdeploy-server` available on the host.
     """
 
     has_started_flag: bytes = (b'DEBUG:certdeploy-server: '
@@ -505,30 +523,26 @@ class ServerContainer(CertDeployContainerWrapper):
     """Internal use only. Used in log messages and errors."""
 
     def prepare_config(self, config: dict, do_not_interfere: bool):
-        """Prepare the config dict to pass to the client config fixture.
+        """Prepare `config` to pass to the server config fixture.
 
         Populates `self.config`.
 
-        Adds the following to the client config:
+        Adds the following to the server configs:
+            * `queue_dir`
             * `privkey_filename`
-            * `pubkey` for all `client_configs`
+            * The same `pubkey` for all `client_configs`
 
         Arguments:
             config: The base server config `dict`.
             do_not_interfere: If `True` `config` won't be changed.
         """
-        # If not told to not interfere with configs, then interfere with configs
         if not do_not_interfere:
             # Force queue_dir value
-            config['queue_dir'] = str(
-                self.container_paths.output.joinpath('queue')
-            )
+            config['queue_dir'] = str(self.container_paths.queue)
             # Force privkey_filename value
-            config['privkey_filename'] = str(
-                self.container_paths.etc.joinpath(
-                    self.server_keypair.privkey_file().name
-                )
-            )
+            config['privkey_filename'] = str(self.container_paths.etc.joinpath(
+                self.server_keypair.privkey_file().name
+            ))
             # Force the pubkey values for all client connections
             for client_conn in config.get('client_configs', []):
                 client_conn['pubkey'] = self.client_keypair.pubkey_text
@@ -549,7 +563,7 @@ def _get_canned_docker_container(started: bool) -> ContainerWrapper:
     for testing the client's ability to manage Docker containers.
 
     Arguments:
-        started: If True start the container before returning.
+        started: If `True` start the container before returning.
     """
     canned = ContainerWrapper(docker.from_env())
     canned.create(
@@ -576,10 +590,11 @@ def canned_docker_container() -> callable:
         """Return a canned `ContainerWrapper`.
 
         Arguments:
-            started: If `True` the container is started on creation.
+            started: If `True` the container is started on creation. Defaults
+                to `True`.
 
         Returns:
-            ContainerWrapper: A canned container.
+            A canned container.
         """
         canned = _get_canned_docker_container(started=started)
         containers.append(canned)
@@ -611,31 +626,33 @@ def client_docker_container(tmp_path: pathlib.Path, keypairgen: callable,
         """Return an unstarted CertDeploy client docker container.
 
         Arguments:
-            name: Container name suffix.
+            name: Container name suffix. The prefix is
+                `certdeploy_test_client_`.
             config: The client config as a `dict`. Defaults to `{}`.
             volumes: A list of strings describing individual mounts like in
-                docker-compose. `/etc/certdeploy` and `/certdeploy/certs` or the
-                configured `destination` will be added automatically. The docker
-                socket will be added if `with_docker` is `True`. Defaults to
-                `[]`.
+                docker-compose. `ContainerInternalPaths.etc` and
+                `ContainerInternalPaths.dest` or the configured `destination`
+                will be added automatically. The docker socket will be added if
+                `with_docker` is `True`. Defaults to `[]`.
             no_build: Mounts the `src/certdeploy` directory in this repo in
-                place of the package installed in the container. Defaults to
-                `False`.
+                place of the package installed in the container. This relies on
+                the python version in `CLIENT_CONTAINER_PYTHON_VERSION` matching
+                the client container's python version. Defaults to `False`.
             with_docker: If `True` adds the local docker socket to the volumes
                 to be mounted. Defaults to `False`.
             client_keypair: A key pair for the client. Defaults to a freshly
                 generated `KeyPair`.
             server_keypair: A key pair for the server. Defaults to a freshly
                 generated `KeyPair`.
-            do_not_interfere: If `True` the `client_config` will not be
-                modified. Defaults to `False`.
+            do_not_interfere: If `True` the `config` will not be modified.
+                Defaults to `False`.
 
         Keyword Arguments:
             kwargs: Keyword arguments to be passed to
                 `docker.client.containers.create`.
 
         Returns:
-            An unstarted client container wapper configured as specified.
+            An unstarted client container wrapper configured as specified.
         """
         config = config or {}
         volumes = volumes or []
@@ -688,22 +705,24 @@ def server_docker_container(tmp_path: pathlib.Path, keypairgen: callable,
         """Return an unstarted CertDeploy server docker container.
 
         Arguments:
-            name: The service name.
+            name: The service name suffix. The prefix is
+                `certdeploy_test_server_`.
             config: The client config as a `dict`. Defaults to `{}`.
             volumes: A list of strings describing individual mounts like in
                 docker-compose. `/etc/certdeploy` and the configured `queue_dir`
                 will be added automatically. The docker socket will be added if
                 `with_docker` is `True`. Defaults to `[]`.
             no_build: Mounts the `src/certdeploy` directory in this repo in
-                place of the package installed in the container. Defaults to
-                `False`.
+                place of the package installed in the container. This relies on
+                the python version in `CLIENT_CONTAINER_PYTHON_VERSION` matching
+                the client container's python version. Defaults to `False`.
             with_docker: If `True` adds the local docker socket to the volumes
                 to be mounted. Defaults to `False`.
             client_keypair: A key pair for the client. Defaults to a freshly
                 generated `KeyPair`.
             server_keypair: A key pair for the server. Defaults to a freshly
                 generated `KeyPair`.
-            do_not_interfere: If `True` the `client_config` will not be
+            do_not_interfere: If `True` the `config` will not be
                 modified. Defaults to `False`.
 
         Keyword Arguments:
@@ -711,7 +730,7 @@ def server_docker_container(tmp_path: pathlib.Path, keypairgen: callable,
                 `docker.client.containers.create`.
 
         Returns:
-            An unstarted client container wapper configured as specified.
+            An unstarted server container wrapper configured as specified.
         """
         config = config or {}
         volumes = volumes or []

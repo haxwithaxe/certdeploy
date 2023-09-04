@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 import paramiko
 import pytest
-from fixtures.docker_container import CLIENT_SOURCE_DIR
+from fixtures.docker_container import ContainerInternalPaths
 from fixtures.keys import CLIENT_KEY_NAME, SERVER_KEY_NAME, KeyPair
 from paramiko.ed25519key import Ed25519Key
 
@@ -76,7 +76,7 @@ def mock_server_push(keypairgen: callable, lineage_factory: callable,
         ## Reconsile the variables
         # Calling out the places where things are added to the context so they
         #   don't get lost in the noise.
-        client_path = client_path or pathlib.Path(CLIENT_SOURCE_DIR)
+        client_path = client_path or ContainerInternalPaths.source
         default_client_keypair = keypairgen().update(
             path=tmp_path,
             privkey_name=CLIENT_KEY_NAME
