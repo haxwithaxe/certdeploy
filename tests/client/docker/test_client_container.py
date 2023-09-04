@@ -40,23 +40,25 @@ def test_updates_other_container(
         )
     )
     # Take the before measurement
-    started_at = canned.started_at
+    canned_started_at = canned.started_at
     # Sleep just enough to ensure a definite difference
     time.sleep(1)
     # start and wait for the container to be running and the client to be ready
     client.start(timeout=120)
-    context = mock_server_push
-    context.pusher(
+    time.sleep(10)
+    server_context = mock_server_push(
         lineage_name='test.example.com',
+        client_address=client.ipv4_address,
         client_config=client.config,
         client_keypair=client.client_keypair,
         server_keypair=client.server_keypair
     )
+    server_context.push()
     # Wait for the update workflow to finish
     #   Don't wait forever though
-    client.wait_for_deployed(timeout=300)
+    client.wait_for_updated(timeout=300)
     # Wait for the container to come back up
     canned.wait_for_status(ContainerStatus.RUNNING, timeout=300)
     # Take the after measurement
-    restarted_at = canned.started_at
-    assert restarted_at != started_at
+    canned_restarted_at = canned.started_at
+    assert canned_restarted_at != canned_started_at

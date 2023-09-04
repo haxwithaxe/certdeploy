@@ -15,11 +15,11 @@ from certdeploy.server.server import _sftp_mkdir
 @dataclass
 class MockPushContext:
 
-    pusher: callable = None
-    server_keypair: KeyPair = None
-    client_keypair: KeyPair = None
-    filenames: list[str] = None
-    client_address: str = None
+    push: callable
+    client_address: str
+    client_keypair: KeyPair
+    server_keypair: KeyPair
+    filenames: list[str]
 
 
 def _push_to_client(
@@ -60,9 +60,8 @@ def _push_to_client(
 
 @pytest.fixture()
 def mock_server_push(keypairgen: callable, lineage_factory: callable,
-                     tmp_path: pathlib.Path) -> MockPushContext:
-    """Return the server's pubkey and a function to push to a client."""
-    context = MockPushContext()
+                     tmp_path: pathlib.Path) -> callable:
+    """Return the push context with a function to push to the client."""
 
     def _mock_server_push(
         client_config: dict,
@@ -72,8 +71,8 @@ def mock_server_push(keypairgen: callable, lineage_factory: callable,
         server_keypair: KeyPair = None,
         lineage_name: str = None,
         filenames: list[pathlib.Path] = None
-    ):
-        """Push arbitrarily named certs to a client."""
+    ) -> MockPushContext:
+        """Prepare to push arbitrarily named certs to a client."""
         ## Reconsile the variables
         # Calling out the places where things are added to the context so they
         #   don't get lost in the noise.
@@ -83,30 +82,31 @@ def mock_server_push(keypairgen: callable, lineage_factory: callable,
             privkey_name=CLIENT_KEY_NAME
         )
         client_keypair = client_keypair or default_client_keypair
-        # Add client_keypair to the context
-        context.client_keypair = client_keypair
         default_server_keypair = keypairgen().update(
             path=tmp_path,
             privkey_name=SERVER_KEY_NAME
         )
         server_keypair = server_keypair or default_server_keypair
-        # Add server_keypair to the context
-        context.server_keypair = server_keypair
         filenames = filenames or ['fullchain.pem', 'privkey.pem']
-        # Add filenames to the context
-        context.filenames = filenames
-        lineage_path = lineage_factory(lineage_name, context.filenames)
+        lineage_path = lineage_factory(lineage_name, filenames)
         if not client_address:
             client_address = client_config['sftpd']['listen_address']
-        if context.client_address == '0.0.0.0':
+        if client_address == '0.0.0.0':
             client_address = '127.0.0.1'
-        # Add client_address to the context
-        context.client_address = client_address
         client_port = client_config['sftpd']['listen_port']
-        ## Do the push
-        _push_to_client(client_path, client_address, client_port,
-                        client_keypair, server_keypair, lineage_path,
-                        filenames)
 
-    context.pusher = _mock_server_push
-    return context
+        def _pusher():
+            _push_to_client(client_path, client_address, client_port,
+                            client_keypair, server_keypair, lineage_path,
+                            filenames)
+
+        context = MockPushContext(
+            push=_pusher,
+            client_keypair=client_keypair,
+            server_keypair=server_keypair,
+            filenames=filenames,
+            client_address=client_address
+        )
+        return context
+
+    return _mock_server_push

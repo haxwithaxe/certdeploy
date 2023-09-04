@@ -12,9 +12,11 @@ from .server import Server
 
 def _run(config, daemon, renew, push, lineage, domains):
     if renew:
+        # This is used in tests to indicate the renew process has begun.
         log.debug('Running renew')
         renew_certs(config)
     elif daemon:
+        # This is used in tests to indicate the daemon is being run.
         log.debug('Running daemon')
         Server(config).serve_forever()
     else:

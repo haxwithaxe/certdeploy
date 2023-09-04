@@ -55,6 +55,23 @@ class ContainerWrapper:
         self._container: Container = None
 
     @property
+    def has_crashed(self) -> bool:
+        """Return `True` if the container probably crashed and stayed down."""
+        state = self._container.attrs['State']
+        if not state['Running']:
+            if state['Error']:
+                return True
+            if state['ExitCode'] != 0:
+                return True
+            if state['OOMKilled']:
+                return True
+        return False
+
+    @property
+    def ipv4_address(self):
+        return self._container.attrs['NetworkSettings']['IPAddress']
+
+    @property
     def is_running(self):
         """`True` if the container is running."""
         return self._container.status == ContainerStatus.RUNNING
@@ -88,18 +105,6 @@ class ContainerWrapper:
         self._container = self._client.containers.create(image, **kwargs)
         return self
 
-    def has_crashed(self) -> bool:
-        """Return `True` if the container probably crashed and stayed down."""
-        state = self._container.attrs['State']
-        if not state['Running']:
-            if state['Error']:
-                return True
-            if state['ExitCode'] != 0:
-                return True
-            if state['OOMKilled']:
-                return True
-        return False
-
     def start(self, wait: bool = True, timeout: int = 60):
         """Start this container.
 
@@ -115,7 +120,6 @@ class ContainerWrapper:
         if not wait:
             return
         self.wait_for_status(ContainerStatus.RUNNING, timeout=timeout)
-        self._container.reload()
 
     def teardown(self):
         """Purge the container from the system."""
@@ -125,6 +129,40 @@ class ContainerWrapper:
         if self._container:
             self._container.remove(force=True)
 
+    def wait_for_condition(self, condition: callable, timeout: int = 60):
+        """Wait for some `condition` to occur in the container.
+
+        Arguments:
+            condition: A `callable` that takes this container wrapper as the
+                only argument.
+            timeout: The number of seconds to wait before giving up on the
+                `condition`. Defaults to 60.
+        """
+        # This assumes that `self._wait_timeout_interval` is less than 1
+        countdown = int(timeout / self._wait_timeout_interval)
+        self._container.reload()
+        while not condition(self):
+            self._container.reload()
+            if timeout and countdown < 1:
+                raise TimeoutError(
+                    f'Waited {timeout} seconds for container '
+                    f'{self._container.name} to meet the condition {condition}'
+                )
+            if self.has_crashed:
+                raise ContainerCrashed(self.name)
+            countdown -= 1
+            time.sleep(self._wait_timeout_interval)
+
+    def wait_for_log(self, match_bytes: bytes, timeout: int = 60):
+        """Wait for `match_bytes` to occur in the container logs.
+
+        Arguments:
+            match_bytes: The byte string to look for in the logs.
+            timeout: The number of seconds to wait before giving up on the
+                match. Defaults to 60.
+        """
+        self.wait_for_condition((lambda x: match_bytes in x.logs()), timeout)
+
     def wait_for_status(self, status: ContainerStatus, timeout: int = 60):
         """Wait for the container to be in the specified state.
 
@@ -133,21 +171,7 @@ class ContainerWrapper:
             timeout: The number of seconds to wait before giving up on the
                 status.
         """
-        # This assumes that `self._wait_timeout_interval` is less than 1
-        countdown = int(timeout / self._wait_timeout_interval)
-        self._container.reload()
-        while self._container.status != status:
-            self._container.reload()
-            if timeout and countdown < 1:
-                raise TimeoutError(
-                    f'Waited {timeout} seconds for container '
-                    f'{self._container.name} status to be {status} current '
-                    f'status is {self._container.status}'
-                )
-            if self.has_crashed():
-                raise ContainerCrashed(self.name)
-            countdown -= 1
-            time.sleep(self._wait_timeout_interval)
+        self.wait_for_condition((lambda x: x.status == status), timeout)
 
     def _teardown_old(self, container_id: str):
         """Tear down any existing containers with the same name."""
@@ -206,6 +230,11 @@ class CertDeployContainerWrapper(ContainerWrapper):
     has_started_flag: bytes = None
     """The encoded string that signals the client or server is ready to use."""
 
+    @property
+    def has_started(self):
+        """`True` if the component in the container is ready to use."""
+        return self.has_started_flag in self._container.logs()
+
     def create(
         self,
         name: str,
@@ -262,32 +291,6 @@ class CertDeployContainerWrapper(ContainerWrapper):
         )
         return self
 
-    @property
-    def has_started(self):
-        """`True` if the component in the container is ready to use."""
-        return self.has_started_flag in self._container.logs()
-
-    def start(self, timeout: int = 60):
-        """Wait while the client is starting up.
-
-        Arguments:
-            timeout: The number of seconds to wait before giving up on the
-                component starting. Defaults to 60.
-        """
-        super().start(wait=False)
-        self._container.reload()
-        countdown = (timeout or 0)/0.1
-        while (self._container.status == ContainerStatus.RUNNING and
-               not self.has_started and not self.has_crashed()):
-            self._container.reload()
-            if timeout and countdown < 1:
-                raise TimeoutError(
-                    f'Waited {timeout} seconds for the {self.type_name} in '
-                    f'container {self._container.name} to start'
-                )
-            countdown -= 1
-            time.sleep(0.1)
-
     def precreate(self, create_kwargs: dict):
         """Do things that need to happen before calling `super().create`.
 
@@ -329,6 +332,24 @@ class CertDeployContainerWrapper(ContainerWrapper):
         self.client_keypair.privkey_file()
         self.server_keypair.pubkey_file()
         self.server_keypair.privkey_file()
+
+    def start(self, timeout: int = 60):
+        """Wait while the client is starting up.
+
+        Arguments:
+            timeout: The number of seconds to wait before giving up on the
+                component starting. Defaults to 60.
+        """
+        super().start(wait=False)
+        if not timeout:
+            return
+        self._container.reload()
+
+        def _condition(container):
+            return (container.status == ContainerStatus.RUNNING and
+                    container.has_started)
+
+        self.wait_for_condition(_condition)
 
     def _assemble_volumes(self, volumes: list[str], with_docker: bool
                           ) -> list[str]:
@@ -374,6 +395,14 @@ class ClientContainer(CertDeployContainerWrapper):
     type_name: str = 'client'
     """Internal use only. Used in log messages and errors."""
 
+    @property
+    def has_updated(self) -> bool:
+        """Return `True` if the client has finished updating services."""
+        if (b'INFO:certdeploy-client:Updated services\n' in
+                self._container.logs()):
+            return True
+        return False
+
     def has_deployed(self, *filenames: str) -> bool:
         """Return `True` if all the files given exists.
 
@@ -388,13 +417,6 @@ class ClientContainer(CertDeployContainerWrapper):
             if not self.output_path(filename).exists():
                 return False
         return True
-
-    def has_updated(self) -> bool:
-        """Return `True` if the client has finished updating services."""
-        if (b'INFO:certdeploy-client:Updated services\n' in
-                self._container.logs()):
-            return True
-        return False
 
     def precreate(self, create_kwargs: dict):
         """Do things that need to happen before calling `super().create`.
@@ -455,27 +477,14 @@ class ClientContainer(CertDeployContainerWrapper):
         )
         self.config = context.config
 
-    def wait_for_deployed(self, timeout: int = 60):
+    def wait_for_updated(self, timeout: int = 60):
         """Wait while the client is in progress.
 
         Arguments:
             timeout: The number of seconds to wait before giving up on the
                 status. Defaults to 60.
         """
-        self._container.reload()
-        countdown = (timeout or 0)/0.1
-        while not self.has_updated() and not self.has_crashed():
-            self._container.reload()
-            if timeout and countdown < 1:
-                raise TimeoutError(
-                    f'Waited {timeout} seconds for container '
-                    f'{self._container.name} to finish running: '
-                    f'is_running={self.is_running}, '
-                    f'has_crashed={self.has_crashed()}, '
-                    f'has_deployed={self.has_deployed()}'
-                )
-            countdown -= 1
-            time.sleep(0.1)
+        self.wait_for_condition((lambda x: x.has_updated), timeout)
 
 
 class ServerContainer(CertDeployContainerWrapper):
