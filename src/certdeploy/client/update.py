@@ -17,52 +17,48 @@ from .errors import (
 )
 
 
-def update_docker_container(container: DockerContainer,
+def update_docker_container(spec: DockerContainer,
                             client_config: ClientConfig):
-    log.debug('Updating %s', container)
-    api = docker.APIClient(client_config.docker_url)
-    matches = api.containers(filters=container.filters)
+    log.debug('Updating %s', spec)
+    api = docker.DockerClient(base_url=client_config.docker_url)
+    matches = api.containers.list(filters=spec.filters)
     if not matches:
-        err = DockerContainerNotFound(container)
+        err = DockerContainerNotFound(spec)
         if client_config.fail_fast:
             raise err
         log.error(err)
         return
-    for match in matches:
+    for container in matches:
         try:
-            api.restart(match.get('Id'), timeout=container.timeout)
+            container.restart(timeout=spec.timeout)
         except docker.errors.APIError as err:
-            error = DockerContainerError(container, err,
-                                         str(match.get('Names')))
+            error = DockerContainerError(spec, err,
+                                         str(container.attrs.get('Names')))
             if client_config.fail_fast:
                 raise error from err
             log.error(error, exc_info=err)
         else:
             log.info('Docker container updated: names=%s, filters=%s',
-                     match.get('Names'), container.filters)
+                     container.attrs.get('Names'), spec.filters)
 
 
-def update_docker_service(service: DockerService, client_config: ClientConfig):
-    log.debug('Updating %s', service)
-    api = docker.APIClient(base_url=client_config.docker_url)
-    matches = api.services(filters=service.filters)
+def update_docker_service(spec: DockerService, client_config: ClientConfig):
+    log.debug('Updating %s', spec)
+    api = docker.DockerClient(base_url=client_config.docker_url)
+    matches = api.services.list(filters=spec.filters)
     if not matches:
         # Borrowing the formatting from the exception
-        err = DockerServiceNotFound(service)
+        err = DockerServiceNotFound(spec)
         if client_config.fail_fast:
             raise err
         log.error(err)
         return
-    for match in matches:
-        service_model = docker.models.services.Service(
-            attrs=match,
-            client=docker.DockerClient(base_url=client_config.docker_url)
-        )
+    for service in matches:
         try:
-            warnings = service_model.force_update()
+            warnings = service.force_update()
         except docker.errors.APIError as err:
             # Borrowing the formatting from the exception
-            error = DockerServiceError(service, service_name=service_model.name)
+            error = DockerServiceError(spec, service_name=service.name)
             if client_config.fail_fast:
                 raise UpdateError(error) from err
             log.error(error, exc_info=err)
@@ -70,7 +66,7 @@ def update_docker_service(service: DockerService, client_config: ClientConfig):
             for warn in warnings.get('Warnings') or []:
                 log.warning('Got warning from the Docker API: %s', warn)
             log.info('Docker service updated: name=%s',
-                     service_model.name)
+                     service.name)
 
 
 def update_script(script: Script, client_config: ClientConfig):
