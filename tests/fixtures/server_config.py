@@ -1,7 +1,7 @@
 """Fixtures for generating temporary CertDeploy server configs."""
 
 import pathlib
-from typing import Any
+from typing import Any, Callable
 
 import pytest
 import yaml
@@ -11,19 +11,19 @@ from fixtures.utils import ConfigContext
 from certdeploy.server.config import ServerConfig
 
 
-def client_conn_config(client_keypair: KeyPair, conf: dict = None) -> dict:
+def client_conn_config(client_keypair: KeyPair, **conf: Any) -> dict:
     """Generate a minimal dict to pass as a client connection config.
 
     Arguments:
-        client_keypair (client_keypair): The client key pair.
-        conf (optional): A dict of configs to be eventually passed to
-            `ClientConnection`.
+        client_keypair: The client key pair.
+        conf: A dict of configs to be eventually passed to `ClientConnection`.
+
     Returns:
-        dict: A minimal client connection config updated with `conf`.
+        A minimal client connection config updated with `conf`.
     """
     _conf = dict(
         address='test_client_address',
-        domains=['example.com'],
+        domains=['test.example.com'],
         pubkey=client_keypair.pubkey_text
     )
     if conf:
@@ -32,7 +32,8 @@ def client_conn_config(client_keypair: KeyPair, conf: dict = None) -> dict:
 
 
 @pytest.fixture(scope='function')
-def client_conn_config_factory(keypairgen: callable) -> callable:
+def client_conn_config_factory(keypairgen: callable
+                               ) -> Callable[[KeyPair, ...], dict]:
     """Generate dicts to go into the `client_configs` section."""
 
     def _client_conn_config_factory(client_keypair: KeyPair = None,
@@ -40,14 +41,15 @@ def client_conn_config_factory(keypairgen: callable) -> callable:
         """Return a `dict` representing a client connection config.
 
         Arguments:
-            client_keypair (client_keypair, optional): The client key pair.
+            client_keypair: The client key pair. Defaults to a freshly generated
+                `KeyPair`.
 
         Keyword Arguments:
             conf: Key value pairs to be included in or override the values to
                 be passed to `ClientConnection`.
         """
         client_keypair = client_keypair or keypairgen()
-        return client_conn_config(client_keypair, conf)
+        return client_conn_config(client_keypair, **conf)
 
     return _client_conn_config_factory
 
@@ -56,16 +58,20 @@ def server_config_file(tmp_path: pathlib.Path, client_keypair: KeyPair,
                        server_keypair: KeyPair, **conf: Any) -> ConfigContext:
     """Generate a minimal CertDeploy server config updated with `conf`.
 
+    Updates `server_keypair` with `tmp_path` as the path and sets
+    `server_keypair.privkey_name` to `SERVER_KEY_NAME` if it isn't already set.
+
     Arguments:
-        tmp_path (pathlib.Path): The temporary directory to put the config file
-            and private key file in.
-        client_keypair (KeyPair, optional): A keypair for the CertDeploy client.
-        server_keypair (KeyPair, optional): A keypair for the CertDeploy server.
-        conf (dict, optional): A `dict` of arguments to eventually be passed to
-            `ServerConfig`.
+        tmp_path: The temporary directory to put the config file and private key
+            file in.
+        client_keypair: A keypair for the CertDeploy client.
+        server_keypair: A keypair for the CertDeploy server.
+
+    Keyword Arguments:
+        conf: A `dict` of arguments to eventually be passed to `ServerConfig`.
 
     Returns:
-        ConfigContext: A filled out context.
+        A filled out config context.
     """
     queue_dir = tmp_path.joinpath('queue')
     queue_dir.mkdir()
@@ -85,8 +91,10 @@ def server_config_file(tmp_path: pathlib.Path, client_keypair: KeyPair,
 
 
 @pytest.fixture(scope='function')
-def tmp_server_config_file(tmp_path_factory: pytest.TempPathFactory,
-                           keypairgen: callable) -> callable:
+def tmp_server_config_file(
+    tmp_path_factory: pytest.TempPathFactory,
+    keypairgen: Callable[[], KeyPair]
+) -> Callable[[pathlib.Path, KeyPair, KeyPair, ...], ConfigContext]:
     """Generate a full CertDeploy server config and matching config file.
 
     This sets all the possible values to non-default values to help test the
@@ -107,11 +115,12 @@ def tmp_server_config_file(tmp_path_factory: pytest.TempPathFactory,
             this fixture should be used.
 
         Arguments:
-            tmp_path (pathlib.Path, optional): A temporary base directory.
-            client_keypair (KeyPair, optional): A keypair for the
-                CertDeploy client.
-            server_keypair (KeyPair, optional): A keypair for the
-                CertDeploy server.
+            tmp_path: A temporary base directory. Defaults to a new temporary
+                directory.
+            client_keypair: A key pair for the CertDeploy client. Defaults to a
+                freshly generated `KeyPair`.
+            server_keypair: A key pair for the CertDeploy server. Defaults to a
+                freshly generated `KeyPair`.
 
         Keyword Arguments:
             conf: Key value pairs corresponding to the possible arguments of
@@ -146,8 +155,10 @@ def tmp_server_config_file(tmp_path_factory: pytest.TempPathFactory,
 
 
 @pytest.fixture(scope='function')
-def tmp_server_config(tmp_path_factory: pytest.TempPathFactory,
-                      keypairgen: callable) -> callable:
+def tmp_server_config(
+    tmp_path_factory: pytest.TempPathFactory,
+    keypairgen: Callable[[], KeyPair]
+) -> Callable[[pathlib.Path, KeyPair, KeyPair, ...], ServerConfig]:
     """Return a `ServerConfig` factory."""
 
     def _tmp_server_config(
@@ -159,11 +170,12 @@ def tmp_server_config(tmp_path_factory: pytest.TempPathFactory,
         """Return a minimal `ServerConfig` with the additions of `conf`.
 
         Arguments:
-            tmp_path (pathlib.Path, optional): A temporary base directory.
-            client_keypair (KeyPair, optional): A keypair for the CertDeploy
-                client.
-            server_keypair (KeyPair, optional): A keypair for the CertDeploy
-                server.
+            tmp_path: A temporary base directory. Defaults to a new temporary
+                directory.
+            client_keypair: A key pair for the CertDeploy client. Defaults to a
+                freshly generated `KeyPair`.
+            server_keypair: A key pair for the CertDeploy server. Defaults to a
+                freshly generated `KeyPair`.
 
         Keyword Arguments:
             conf: Key value pairs corresponding to the possible arguments of
