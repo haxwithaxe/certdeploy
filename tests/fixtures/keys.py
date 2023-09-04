@@ -37,12 +37,14 @@ class KeyPair:
         """Write the private key to a file.
 
         Arguments:
-            tmp_path (pathlib.Path, optional): The directory to write the
-                private key file in. If `_path` has not been set this argument
-                is not optional. Defaults to the value of `_path`.
-            name (str, optional): The name to use for the file. If the
-                `_privkey_name` has not been set this argument is not optional.
-                Defaults to the value of `_privkey_name`.
+            tmp_path: The directory to write the private key file in. If
+                `self.path` has not been set this argument is not optional.
+                Defaults to the value of `self.path`.
+            name: The name to use for the file. If the `self.privkey_name` has
+                not been set this argument is not optional. Defaults to the
+                value of `self.privkey_name`.
+        Returns:
+            The path of the private key file.
         """
         name = name or self.privkey_name
         tmp_path = tmp_path or self.path
@@ -55,12 +57,15 @@ class KeyPair:
         """Write the public key to a file.
 
         Arguments:
-            tmp_path (pathlib.Path, optional): The directory to write the
-                public key file in. If `_path` has not been set this argument
-                is not optional. Defaults to the value of `_path`.
-            name (str, optional): The name to use for the file. If the
-                `_pubkey_name` has not been set this argument is not optional.
-                Defaults to the value of `_pubkey_name`.
+            tmp_path: The directory to write the public key file in. If
+                `self.path` has not been set this argument is not optional.
+                Defaults to the value of `self.path`.
+            name: The name to use for the file. If the `self.pubkey_name` has
+                not been set this argument is not optional. Defaults to the
+                value of `self.pubkey_name`.
+
+        Returns:
+            The path of the public key file.
         """
         name = name or self.privkey_name
         tmp_path = tmp_path or self.path
@@ -78,16 +83,13 @@ class KeyPair:
         will be used as the base for `self.pubkey_name`.
 
         Arguments:
-            path (pathlib.Path, optional): The path of the directory to write
-                the key files to.
-            privkey_name (str, optional): The filename (basename) of the
-                private key file.
-            pubkey_name (str, optional): The filename (basename) of the public
-                key file.
+            path: The path of the directory to write the key files to.
+            privkey_name: The filename (basename) of the private key file.
+            pubkey_name: The filename (basename) of the public key file.
 
         Returns:
-            KeyPair: As a convenience this instance is returned (as in a fluent
-                interface).
+            As a convenience this instance is returned (as in a fluent
+            interface).
         """
         self.path = path or self.path
         self.privkey_name = privkey_name or self.privkey_name
@@ -101,9 +103,10 @@ def _keypairgen() -> KeyPair:
     """Generate a private and public key pair.
 
     Returns:
-        KeyPair: A private key and a public key in a wrapper.
+        private key and a public key in a wrapper.
     """
     keypair = asymmetric.ed25519.Ed25519PrivateKey.generate()
+    # Process private key
     privkey_pem = keypair.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.OpenSSH,
@@ -111,6 +114,7 @@ def _keypairgen() -> KeyPair:
     )
     privkey_io = io.StringIO(privkey_pem.decode())
     privkey = paramiko.ed25519key.Ed25519Key.from_private_key(privkey_io)
+    # Process public key
     pubkey = keypair.public_key()
     openssh_pub = pubkey.public_bytes(
         encoding=serialization.Encoding.OpenSSH,
@@ -139,7 +143,6 @@ def keypairgen() -> Callable[[], KeyPair]:
     """Return a key pair factory.
 
     Returns:
-        callable: Returns a factory that returns a `KeyPair` with a private key
-            and a public key.
+        A factory that returns a `KeyPair` with a private key and a public key.
     """
     return _keypairgen
