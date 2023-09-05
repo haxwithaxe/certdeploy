@@ -13,7 +13,10 @@ def test_logs_at_given_level_to_given_file(
     tmp_client_config: Callable[[...], ClientConfig],
     tmp_path: pathlib.Path
 ):
-    """Verify the `log_filename` config changes where the server logs."""
+    """Verify the `log_filename` config changes where the server logs.
+
+    This also exercises the `log_level` config.
+    """
     ## Define some variables to avoid magic values
     log_path = tmp_path.joinpath('test.log')
     ## Setup client
@@ -45,7 +48,10 @@ def test_sftpd_logs_at_given_level_to_given_file(
     tmp_client_config: Callable[[...], ClientConfig],
     tmp_path: pathlib.Path
 ):
-    """Verify the `log_filename` config changes where the server logs."""
+    """Verify the `log_filename` config changes where the server logs.
+
+    This also exercises the `log_level` config.
+    """
     ## Define some variables to avoid magic values
     log_path = tmp_path.joinpath('test.log')
     ## Setup client
