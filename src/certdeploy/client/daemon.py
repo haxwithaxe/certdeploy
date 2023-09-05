@@ -313,10 +313,18 @@ class DeployServer:  # pylint: disable=too-few-public-methods
                 paramiko.SFTPServer,
                 StubSFTPServer
             )
-            server = SSHServer(self._config)
-            transport.start_server(server=server)
-            # The channel variable is required for some reason
-            channel = transport.accept()  # noqa: F841
-            while transport.is_active():
-                time.sleep(1)
+            # Catching this exception to make pytest not complain about
+            #   unhandled exceptions in threads.
+            #   `pytest.PytestUnhandledThreadExceptionWarning`
+            try:
+                server = SSHServer(self._config)
+                transport.start_server(server=server)
+                # The channel variable is required for some reason
+                channel = transport.accept()  # noqa: F841
+                while transport.is_active():
+                    time.sleep(1)
+            except paramiko.ssh_exception.SSHException as err:
+                if self._config.fail_fast:
+                    raise err from err
+                log.error(err, exc_info=err)
             self._deploy()
