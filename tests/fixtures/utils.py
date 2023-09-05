@@ -3,6 +3,7 @@
 import pathlib
 import socket
 import stat
+import time
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -234,3 +235,40 @@ def get_free_port(min_port: int = 1025, max_port: int = 65535,
 def free_port() -> Callable[[int, int, str], int]:
     """Return a free port number factory."""
     return get_free_port
+
+
+@pytest.fixture()
+def socket_poker() -> Callable[[str, int, str], None]:
+
+    def _socket_poker(address: str, port: int, message: str = 'testing'):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.connect((address, port))
+            sock.sendall(message.encode())
+
+    return _socket_poker
+
+
+@pytest.fixture()
+def wait_for_condition() -> Callable[[Callable[[], bool], int], None]:
+    """Return a utility that waits for a function to be `True`."""
+
+    def _wait_for_condition(condition: Callable[[], bool], timeout: int = 60):
+        """Wait for `condition` to be `True`.
+
+        Arguments:
+            condition: A `callable` that requires no arguments and returns
+                `True` when its conditions are met.
+            timeout: The number of seconds to wait before giving up on
+                `condition`. Defaults to 60.
+
+        Raises:
+            TimeoutError: If it takes more than `timeout` seconds for
+                `condition` to become `True`.
+        """
+        for _ in range(1, int(timeout / 0.1)):
+            if condition():
+                return
+            time.sleep(0.1)
+        raise TimeoutError()
+
+    return _wait_for_condition
