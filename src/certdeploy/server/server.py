@@ -5,7 +5,7 @@ import socket
 import time
 from datetime import datetime, timedelta
 from threading import Semaphore, Thread
-from typing import Optional
+from typing import Any, Optional
 
 import paramiko
 import schedule
@@ -67,8 +67,8 @@ class Queue:
         """Queue of client hash to lineages to be pushed to clients.
 
         Arguments:
-            server (ServerConfig): The config of the parent server.
-            mode (str): The access mode of the queue file. Valid values are 'r'
+            server: The config of the parent server.
+            mode: The access mode of the queue file. Valid values are 'r'
                 read (nonblocking) and 'w' write (blocks writes and reads).
                 Defaults to 'r'.
         Note:
@@ -84,27 +84,48 @@ class Queue:
         self._mode: str = mode
 
     @property
-    def clients(self):
+    def clients(self) -> list[str]:
+        """The client hashes in the queue."""
         return list(self._queue.keys())
 
     def append(self, client_hash: str, lineage: str):
+        """Append a job (`lineage`) to the queue for a given client.
+
+        Arguments:
+            client_hash: The value of `ClientConnection.hash` for the client
+                that needs the update.
+            lineage: The lineage path that needs syncing to the client.
+        """
         if client_hash not in self._queue:
             self._queue[client_hash] = []
         self._queue[client_hash].append(lineage)
 
-    def get(self, client_hash, default=None) -> list:
+    def get(self, client_hash: str, default: Any = None) -> list[str]:
+        """Get a list of lineages that need to be pushed to a client.
+
+        Arguments:
+            client_hash: The value of `ClientConnection.hash` for the client
+                being requested.
+            default: This will be returned when no client matching `client_hash`
+                is found. Defaults to `None`.
+
+        Returns:
+            A list of lineages that need to be pushed for the given client.
+        """
         client_queue = self._queue.get(client_hash, None)
         if client_queue is None:
             return default
         return (client_queue or []).copy()
 
-    def count(self, client_hash) -> int:
+    def count(self, client_hash: str) -> int:
+        """Return the number of lineages left to push for the given client."""
         client_queue = self._queue.get(client_hash)
         if not client_queue:
             return 0
         return len(client_queue)
 
     def next(self, client_hash: str) -> str:
+        """Return the next lineage to push for the given client."""
         client_queue = self._queue.get(client_hash)
         if not client_queue:
             return None
@@ -114,6 +135,10 @@ class Queue:
         return lineage
 
     def load(self):
+        """Load the queue from the path configured with `queue_dir`.
+
+        This won't load a file that is open for writing.
+        """
         if self._mode == 'w':
             raise ValueError('Can\'t use Queue.load() in writable mode.')
         try:
@@ -124,6 +149,10 @@ class Queue:
             self._unlock()
 
     def _load(self):
+        """Load the queue from disk.
+
+        The backend of `self.load`.
+        """
         if os.path.exists(self._filename):
             with open(self._filename, 'r') as queue_file:
                 try:
@@ -141,50 +170,67 @@ class Queue:
             self._queue = {}
 
     def _dump(self):
+        """Write the queue to disk"""
         with open(self._filename, 'w') as queue_file:
             json.dump(self._queue, queue_file)
 
     def _lock(self):
+        """Attempt to lock the queue file for writing."""
         self.lock.acquire()
         while os.path.exists(self._lock_filename):
             time.sleep(0.01)
         open(self._lock_filename, 'w').close()
 
     def _unlock(self):
+        """Release the lock on the queue file."""
         self.lock.release()
         if os.path.exists(self._lock_filename):
             os.remove(self._lock_filename)
 
     def __contains__(self, key: str):
+        """Test if some `key` (`ClientConnection.hash`) exists in the queue."""
         return key in self._queue
 
-    def __enter__(self):
+    def __enter__(self) -> 'Queue':
+        """Attempt to lock and load the queue file."""
         self._lock()
         self._load()
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, _exc_type, _exc_value, _traceback):
+        """Write the queue file if needed and close it."""
         if self._mode == 'w':
             self._dump()
         self._unlock()
 
     def __len__(self):
+        """Return the length of the queue."""
         return len(self._queue)
 
 
 class PushWorker(Thread):
+    """A worker thread to push lineages to a single client."""
 
     def __init__(self, server: 'Server', client: ClientConnection,
                  config: ServerConfig):
+        """Prepare the worker.
+
+        Arguments:
+            server: The `Server` instance creating this worker.
+            client: The client connection information.
+            config: The configs for the server creating this worker.
+        """
         Thread.__init__(self, daemon=True)
         self._server = server
         self._client = client
         self._config = config
         self._lineage: str = None
         self._retries: int = self._config.push_retries
+        # Prefer the client configs over the server configs.
         if isinstance(self._client.push_retries, int):
             self._retries = self._client.push_retries
         self._retry_interval: int = self._config.push_retry_interval
+        # Prefer the client configs over the server configs.
         if isinstance(self._client.push_retry_interval, int):
             self._retry_interval = self._client.push_retry_interval
         self._exception: Exception = None
@@ -201,6 +247,7 @@ class PushWorker(Thread):
         return self._exception is not None
 
     def _sync_client(self):
+        """Sync the current lineage to the client over SFTP."""
         cert_dir = os.path.join(self._client.path,
                                 os.path.basename(self._lineage))
         ssh = paramiko.client.SSHClient()
@@ -238,11 +285,19 @@ class PushWorker(Thread):
         sftp.close()
 
     def _next(self) -> bool:
+        """Return `True` if there is another lineage to push.
+
+        This also loads the `self._lineage` variable from the queue.
+        """
         with Queue(self._config, 'w') as queue:
             self._lineage = queue.next(self._client.hash)
         return self._lineage is not None
 
     def run(self):
+        """Run the main loop.
+
+        This is called automatically by `self.start`.
+        """
         while self._next():
             log.info('Pushing %s to %s', self._lineage, self._client)
             for self._attempt in range(self._retries+1):
@@ -281,25 +336,35 @@ class PushWorker(Thread):
                     break  # Go to the next lineage
 
     def join(self, timeout: Optional[float] = None):
+        """Join the worker thread and raise an exception.
+
+        Arguments:
+            timeout: The number of seconds to wait for the thread to end before
+                raising a `TimeoutError`. Defaults to `None`.
+
+        Raises:
+            An exception if one was encountered and `fail_fast` is enabled.
+        """
         Thread.join(self, timeout)
         if self._config.fail_fast and self._exception:
             raise self._exception
 
     def __repr__(self):
+        """Return a pragmatic representation of this object."""
         return (f'<{self.__class__.__name__} address={self._client.address}, '
                 f'port={self._client.port}, username={self._client.username},'
                 f'attempts={self._attempt}, exception={self._exception}>')
 
 
 class Server:
-    """Serve updated tls certs to clients.
-
-    Arguments:
-        config (Config): Server config.
-
-    """
+    """Accept new sync requests and push new certs to clients."""
 
     def __init__(self, config: ServerConfig):
+        """Prepare the server.
+
+        Arguments:
+            config: Server config.
+        """
         self._config = config
         self._workers: dict[str, PushWorker] = {}
         self._schedule_renew()
@@ -307,7 +372,7 @@ class Server:
     def serve_forever(self, one_shot: bool = False):
         """Push queued lineages to clients.
 
-        one_shot (bool): Push lineages in the queue and exit when the queue has
+        one_shot: Push lineages in the queue and exit when the queue has
             been fully processed. Defaults to `False`.
         """
         # This is used in tests to determine if the server has started.
@@ -356,7 +421,7 @@ class Server:
             time.sleep(main_loop_sleep)
 
     def sync(self, lineage: os.PathLike, domains: list[str]):
-        """Synchronize clients that need updated domains."""
+        """Synchronize clients that need updates based on domains."""
         for client in self._config.clients:
             for domain in domains:
                 if domain in client.domains:
@@ -367,12 +432,13 @@ class Server:
                     break
 
     def _add_worker(self, client: ClientConnection):
-        """Kickstart a new PushWorker for this `client`."""
+        """Kickstart a new `PushWorker` for this `client`."""
         worker = PushWorker(self, client, self._config)
         self._workers[client.hash] = worker
         worker.start()
 
     def _remove_worker(self, worker):
+        """End a worker and pop it off the pool."""
         worker.join(self._config.join_timeout)
         del self._workers[worker.client_hash]
 
