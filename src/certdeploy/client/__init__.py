@@ -1,5 +1,5 @@
 
-from .. import Logger, LogLevel
+from .. import CERTDEPLOY_CLIENT_LOGGER_NAME, Logger, LogLevel
 
-log = Logger('certdeploy-client')
+log = Logger(name=CERTDEPLOY_CLIENT_LOGGER_NAME)
 log.setLevel(LogLevel.ERROR)
