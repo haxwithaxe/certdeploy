@@ -22,6 +22,8 @@ def test_loads_valid_server(tmp_server_config_file: callable):
     assert config.push_retry_interval == src_config['push_retry_interval']
     assert config.join_timeout == src_config['join_timeout']
     assert config.queue_dir == src_config['queue_dir']
+    assert config.sftp_log_filename == src_config['sftp_log_filename']
+    assert config.sftp_log_level == src_config['sftp_log_level']
 
 
 def test_loads_valid_server_push_mode_serial(tmp_server_config_file: callable):

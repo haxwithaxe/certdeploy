@@ -5,7 +5,12 @@ import shutil
 from dataclasses import dataclass, field
 from typing import Any, Optional, Union
 
-from ... import LogLevel
+from ... import (
+    CERTDEPLOY_SERVER_LOGGER_NAME,
+    PARAMIKO_LOGGER_NAME,
+    LogLevel,
+    set_log_properties
+)
 from ...errors import (
     ConfigError,
     ConfigInvalid,
@@ -70,6 +75,14 @@ class Server:
     """The log level of the CertDeploy server. Valid values are `DEBUG`,
     `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.
     """
+    log_filename: Optional[os.PathLike] = None
+    """The path of the CertDeploy server log file."""
+    sftp_log_level: Union[LogLevel, str] = LogLevel.ERROR
+    """The paramiko log level. This is separate from the CertDeploy log level.
+    The valid values are the same as `log_level`.
+    """
+    sftp_log_filename: Optional[os.PathLike] = None
+    """The path of the paramiko log file."""
     renew_every: int = 1
     """The interval to try to renew certs on. Valid values are integers greater
     than 0.
@@ -143,6 +156,19 @@ class Server:
     """
 
     def __post_init__(self):
+        """Validate config values."""
+        # Set the log files right away so that the errors produced here go to
+        #   the right place
+        set_log_properties(
+            logger_name=CERTDEPLOY_SERVER_LOGGER_NAME,
+            log_filename=self.log_filename,
+            log_level=self.log_level
+        )
+        set_log_properties(
+            logger_name=PARAMIKO_LOGGER_NAME,
+            log_filename=self.sftp_log_filename,
+            log_level=self.sftp_log_level
+        )
         if not os.path.isfile(self.privkey_filename):
             raise ConfigInvalidPath('privkey_filename', self.privkey_filename,
                                     is_type='file')

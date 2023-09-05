@@ -1,8 +1,10 @@
 
 import os
+from typing import Optional
 
 import yaml
 
+from ... import LogLevel
 from ...errors import ConfigError
 from .client import ClientConnection
 from .server import Server
@@ -32,8 +34,23 @@ class ServerConfig(Server):
             raise ConfigError('No client configs given.')
 
     @classmethod
-    def load(cls, filename: os.PathLike):
+    def load(
+        cls,
+        filename: os.PathLike,
+        override_log_file: Optional[os.PathLike] = None,
+        override_log_level: Optional[LogLevel] = None,
+        override_sftp_log_file: Optional[os.PathLike] = None,
+        override_sftp_log_level: Optional[LogLevel] = None
+    ):
         """Load the `ServerConfig` from a file."""
         with open(filename, 'r', encoding='utf-8') as config_file:
             config = yaml.safe_load(config_file)
+        if override_sftp_log_level:
+            config['sftp_log_level'] = override_sftp_log_level
+        if override_sftp_log_file:
+            config['sftp_log_filename'] = override_sftp_log_file
+        if override_log_level:
+            config['log_level'] = override_log_level
+        if override_log_file:
+            config['log_filename'] = override_log_file
         return cls(**config)

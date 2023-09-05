@@ -24,12 +24,21 @@ def _typer_main(
     config: str = typer.Option(DEFAULT_CLIENT_CONFIG,
                                envvar='CERTDEPLOY_CLIENT_CONFIG'),
     daemon: bool = typer.Option(False, envvar='CERTDEPLOY_CLIENT_DAEMON'),
-    log_level: LogLevel = typer.Option(None, envvar='CERTDEPLOY_LOG_LEVEL')
+    log_level: LogLevel = typer.Option(None, envvar='CERTDEPLOY_LOG_LEVEL'),
+    log_file: str = typer.Option(None, envvar='CERTDEPLOY_LOG_FILE'),
+    sftpd_log_level: LogLevel = typer.Option(None, envvar='SFTPD_LOG_LEVEL'),
+    sftpd_log_file: str = typer.Option(None, envvar='SFTPD_LOG_FILE')
 ):
     # Just in case there is a config error
     log.setLevel(log_level or LogLevel.ERROR)
     try:
-        conf = ClientConfig.load(config)
+        conf = ClientConfig.load(
+            config,
+            override_log_file=log_file,
+            override_log_level=log_level,
+            override_sftpd_log_file=sftpd_log_file,
+            override_sftpd_log_level=sftpd_log_level
+        )
     except FileNotFoundError as err:
         log.error('Config file "%s" not found: %s', config, err, exc_info=err)
         sys.exit(1)

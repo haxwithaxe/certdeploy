@@ -3,6 +3,11 @@ import os
 import re
 from typing import Any
 
+from ... import (
+    CERTDEPLOY_CLIENT_LOGGER_NAME,
+    PARAMIKO_LOGGER_NAME,
+    set_log_properties
+)
 from ...errors import ConfigError, ConfigInvalid, ConfigInvalidPath
 from .client import Config, SFTPDConfig
 from .service import Service
@@ -23,17 +28,35 @@ _DURATION_RE = re.compile(r'\s*(?:\s*(\d+(?:\.\d+)?)([{0}]))\s*'.format(
 
 class ClientConfig(Config):  # pylint: disable=too-few-public-methods
     """CertDeploy client configuration."""
+
     # This is meant to validate as much of the config as possible so that
     #   errors are more likely to occur while a human is looking and before
     #   the system is cluttered with possible causes.
 
     def __init__(self, *args: Any, **kwargs: Any):
+        """Prepare the client config.
+
+        See `certdeploy.client.config.client.Config` for details about
+        arguments.
+        """
         try:
             super().__init__(*args, **kwargs)
         except TypeError as err:
             if 'got an unexpected keyword argument' in str(err):
                 raise ConfigError(f'Invalid config option: {err}') from err
             raise
+        # Set the log files right away so that the errors produced here go to
+        #   the right place
+        set_log_properties(
+            logger_name=CERTDEPLOY_CLIENT_LOGGER_NAME,
+            log_filename=self.log_filename,
+            log_level=self.log_level
+        )
+        set_log_properties(
+            logger_name=PARAMIKO_LOGGER_NAME,
+            log_filename=self.sftpd.get('log_filename'),
+            log_level=self.sftpd.get('log_level')
+        )
         if not os.path.isdir(self.source):
             raise ConfigInvalidPath('source', self.source, is_type='directory')
         if not os.path.isdir(self.destination):

@@ -249,6 +249,8 @@ class DeployServer:  # pylint: disable=too-few-public-methods
         self._config: ClientConfig = config
         self._sftpd_config: SFTPDConfig = self._config.sftpd_config
         self._update: _Update = None
+        # A kill switch for testing.
+        self._stop_running = threading.Event()
         StubSFTPServer._working_dir: os.PathLike = self._config.source
 
     def _join_update(self):
@@ -271,15 +273,6 @@ class DeployServer:  # pylint: disable=too-few-public-methods
 
     def serve_forever(self):
         """Start the server and leave it running."""
-        paramiko_level = getattr(
-            paramiko.common,
-            self._sftpd_config.log_level
-        )
-        paramiko.common.logging.basicConfig(
-            filename=self._sftpd_config.log_filename,
-            filemode='a',
-            level=paramiko_level
-        )
         log.debug('Opening socket on port %s at address %s',
                   self._sftpd_config.listen_port,
                   self._sftpd_config.listen_address)
@@ -302,7 +295,7 @@ class DeployServer:  # pylint: disable=too-few-public-methods
         log.info('Listening for incoming connections at %s:%s',
                  self._sftpd_config.listen_address or '0.0.0.0',
                  self._sftpd_config.listen_port)
-        while True:
+        while not self._stop_running.is_set():
             # socket timeout acts like sleep for this loop
             try:
                 conn, addr = server_socket.accept()

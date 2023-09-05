@@ -2,6 +2,7 @@
 import os
 import shutil
 from dataclasses import dataclass, field
+from typing import Optional
 
 import yaml
 
@@ -23,16 +24,16 @@ class SFTPDConfig:
     """The IP address to listen on."""
     username: str = DEFAULT_USERNAME
     """The username to accept logins from."""
-    privkey_filename: os.PathLike = None
+    privkey_filename: Optional[os.PathLike] = None
     """The path of the private key file."""
     server_pubkey: str = None
     """The text of the public key to accept logins from."""
-    server_pubkey_filename: os.PathLike = None
+    server_pubkey_filename: Optional[os.PathLike] = None
     """The path of the public key to accept logins from."""
-    log_level: str = 'ERROR'
+    log_level: str = LogLevel.ERROR
     """The paramiko log level. This is separate from the CertDeploy log level.
     """
-    log_filename: os.PathLike = '/dev/stderr'
+    log_filename: Optional[os.PathLike] = None
     """The path of the paramiko log file."""
     socket_backlog: int = 10
     """The number of connections to queue while handling the current
@@ -52,7 +53,7 @@ class Config:
     """A `dict` with arguments for `certdeploy.client.config.SFTPDConfig`."""
     systemd_exec: os.PathLike = shutil.which('systemctl')
     """The path of the ``systemctl`` executable."""
-    systemd_timeout: int = None  # Wait indefinitely
+    systemd_timeout: Optional[int] = None  # Wait indefinitely
     """The timeout for executing ``systemctl``. Defaults to `None` (wait
     indefinitely).
     """
@@ -79,10 +80,28 @@ class Config:
     """The log level of the CertDeploy client. Valid values are `DEBUG`,
     `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.
     """
+    log_filename: Optional[os.PathLike] = None
+    """The path of the CertDeploy client log file."""
 
     @classmethod
-    def load(cls, filename: os.PathLike):
+    def load(
+        cls,
+        filename: os.PathLike,
+        override_log_file: Optional[os.PathLike] = None,
+        override_log_level: Optional[LogLevel] = None,
+        override_sftpd_log_file: Optional[os.PathLike] = None,
+        override_sftpd_log_level: Optional[LogLevel] = None
+    ):
         """Load the config from a file."""
         with open(filename, 'r', encoding='utf-8') as config_file:
             config = yaml.safe_load(config_file)
+        if 'sftpd' in config:
+            if override_sftpd_log_level:
+                config['sftpd']['log_level'] = override_sftpd_log_level
+            if override_sftpd_log_file:
+                config['sftpd']['log_filename'] = override_sftpd_log_file
+        if override_log_level:
+            config['log_level'] = override_log_level
+        if override_log_file:
+            config['log_filename'] = override_log_file
         return cls(**config)

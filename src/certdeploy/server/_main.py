@@ -34,21 +34,32 @@ def _run(config, daemon, renew, push, lineage, domains):
             server.serve_forever(one_shot=True)
 
 
-def _typer_main(  # pylint: disable=too-many-arguments
-        config: str = typer.Option(DEFAULT_SERVER_CONFIG,
-                                   envvar='CERTDEPLOY_SERVER_CONFIG'),
-        lineage: str = typer.Option(None, envvar='RENEWED_LINEAGE'),
-        domains: str = typer.Option('', envvar='RENEWED_DOMAINS'),
-        daemon: bool = typer.Option(False, envvar='CERTDEPLOY_SERVER_DAEMON'),
-        renew: bool = typer.Option(False, envvar='CERTDEPLOY_RENEW_ONLY'),
-        push: bool = typer.Option(False, envvar='CERTDEPOLY_PUSH_ONLY'),
-        log_level: LogLevel = typer.Option(None, envvar='CERTDEPLOY_LOG_LEVEL')
+def _typer_main(
+    config: str = typer.Option(DEFAULT_SERVER_CONFIG,
+                               envvar='CERTDEPLOY_SERVER_CONFIG'),
+    lineage: str = typer.Option(None, envvar='RENEWED_LINEAGE'),
+    domains: str = typer.Option('', envvar='RENEWED_DOMAINS'),
+    daemon: bool = typer.Option(False, envvar='CERTDEPLOY_SERVER_DAEMON'),
+    renew: bool = typer.Option(False, envvar='CERTDEPLOY_RENEW_ONLY'),
+    push: bool = typer.Option(False, envvar='CERTDEPOLY_PUSH_ONLY'),
+    log_level: LogLevel = typer.Option(None, envvar='CERTDEPLOY_LOG_LEVEL'),
+    log_file: str = typer.Option(None, envvar='CERTDEPLOY_LOG_FILE'),
+    sftp_log_level: LogLevel = typer.Option(None, envvar='SFTP_LOG_LEVEL'),
+    sftp_log_file: str = typer.Option(None, envvar='SFTP_LOG_FILE')
 ):
+    # Just in case there is a config error
+    log.setLevel(log_level or LogLevel.ERROR)
     try:
-        conf = ServerConfig.load(config)
+        conf = ServerConfig.load(
+            config,
+            override_log_file=log_file,
+            override_log_level=log_level,
+            override_sftp_log_file=sftp_log_file,
+            override_sftp_log_level=sftp_log_level
+        )
         log.setLevel(log_level or conf.log_level)
         _run(conf, daemon, renew, push, lineage, domains)
-    except Exception as err:  # pylint: disable=broad-except
+    except Exception as err:
         log.error(err, exc_info=err)
         sys.exit(1)
 
