@@ -70,34 +70,15 @@ class LogLevel(enum.Enum):
             TypeError: When `level` does not correspond to any `LogLevel`.
         """
         if isinstance(level, int):
-            level = cls.from_int(level)
-            if level is not None:
-                return level
+            for log_level in cls:
+                if getattr(logging, log_level.value) == level:
+                    return log_level
         if isinstance(level, (str, cls)):
             try:
                 return cls.__call__(level)
             except ValueError:
                 pass
         raise TypeError(f'Invalid log level: {level}')
-
-    @classmethod
-    def from_int(cls, level: int) -> 'LogLevel':
-        """Return an `LogLevel` corresponding to the integer `level`.
-
-        Arguments:
-            level: An integer corresponding to a `logging` log level.
-
-        Returns:
-            A `LogLevel` corresponding to `level` or `None` if there is no
-            matching `LogLevel`.
-        """
-        try:
-            for log_level in cls:
-                if getattr(logging, log_level.value) == level:
-                    return log_level
-        except AttributeError:
-            pass
-        return None
 
     @classmethod
     def to_int(cls, level: Union[int, str, 'LogLevel']) -> int:
