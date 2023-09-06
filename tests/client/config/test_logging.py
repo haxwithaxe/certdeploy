@@ -1,14 +1,17 @@
 """Check that the various logging configs do what they say they do."""
 
 import pathlib
-import threading
 from typing import Callable
+
+import paramiko
+from fixtures.threading import CleanThread
 
 from certdeploy.client.config import ClientConfig
 from certdeploy.client.daemon import DeployServer
 
 
 def test_logs_at_given_level_to_given_file(
+    simple_thread: Callable[[...], CleanThread],
     wait_for_condition: Callable[[Callable[[], bool], int], None],
     tmp_client_config: Callable[[...], ClientConfig],
     tmp_path: pathlib.Path
@@ -31,18 +34,22 @@ def test_logs_at_given_level_to_given_file(
     )
     ## Setup test
     client = DeployServer(client_config)
-    kill_switch: threading.Event = client._stop_running
+
+    client_thread = simple_thread(
+        client.serve_forever,
+        allowed_exceptions=[paramiko.ssh_exception.SSHException],
+        kill_switch=client._stop_running
+    )
     ## Run test
-    client_thread = threading.Thread(target=client.serve_forever, daemon=True)
     client_thread.start()
     wait_for_condition((lambda: 'DEBUG' in log_path.read_text()), 300)
-    kill_switch.set()
-    client_thread.join()
+    client_thread.stop()
     ## Formally verify results
     assert 'DEBUG' in log_path.read_text()
 
 
 def test_sftpd_logs_at_given_level_to_given_file(
+    simple_thread: Callable[[...], CleanThread],
     socket_poker: Callable[[str, int, str], None],
     wait_for_condition: Callable[[Callable[[], bool], int], None],
     tmp_client_config: Callable[[...], ClientConfig],
@@ -66,11 +73,13 @@ def test_sftpd_logs_at_given_level_to_given_file(
     )
     ## Setup test
     client = DeployServer(client_config)
-    kill_switch: threading.Event = client._stop_running
-    ## Run test
-    # Start the client
-    client_thread = threading.Thread(target=client.serve_forever, daemon=True)
+    client_thread = simple_thread(
+        client.serve_forever,
+        allowed_exceptions=[paramiko.ssh_exception.SSHException],
+        kill_switch=client._stop_running
+    )
     client_thread.start()
+    ## Run test
     # Connect to the client to generate some paramiko log traffic
     socket_poker(client_config.sftpd_config.listen_address,
                  client_config.sftpd_config.listen_port,
@@ -78,7 +87,6 @@ def test_sftpd_logs_at_given_level_to_given_file(
     # Wait for the logs to have what we want
     wait_for_condition((lambda: 'DEBUG' in log_path.read_text()), 300)
     ## Clean up
-    kill_switch.set()
-    client_thread.join()
+    client_thread.stop()
     ## Formally verify results
     assert 'DEBUG' in log_path.read_text()

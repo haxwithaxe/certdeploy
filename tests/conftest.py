@@ -27,7 +27,8 @@ from fixtures.server_config import (  # noqa: F401
     tmp_server_config,
     tmp_server_config_file
 )
-from fixtures.systemd import SystemdFlags, tmp_systemd_service  # noqa: F401
+from fixtures.systemd import tmp_systemd_service  # noqa: F401
+from fixtures.threading import simple_thread  # noqa: F401
 from fixtures.utils import (  # noqa: F401
     free_port,
     lineage_factory,
