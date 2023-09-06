@@ -1,0 +1,6 @@
+flake8
+flake8-docstrings  # optional
+pre-commit
+pytest
+pytest-cov
+setuptools
