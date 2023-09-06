@@ -25,7 +25,7 @@ SLOW_DOWN_SLEEP = 30  # seconds
 
 
 def _sftp_mkdir(sftp, path, mode=None):
-    """Recursively make a remote directory if needed."""
+    """Recursively make a remote directory (`path`) if needed."""
     log.debug('_sftp_mkdir: path=%s, mode=%s', path, mode)
     if path in ('', '/'):
         return
@@ -40,8 +40,15 @@ def _sftp_mkdir(sftp, path, mode=None):
 
 
 class _TimeoutTimer:
+    """Timeout timer that uses time instead of a counter."""
 
     def __init__(self, max_runtime: int = None):
+        """Prepare the timer.
+
+        Arguments:
+            max_runtime: The maximum time to wait in seconds. `None` disables
+                the timer. Defaults to `None`.
+        """
         self._start = datetime.now()
         self._enabled = False
         if max_runtime is not None and max_runtime > 0:
@@ -49,6 +56,15 @@ class _TimeoutTimer:
         self._max_runtime_tdelta = timedelta(seconds=max_runtime or 0)
 
     def check(self, message=None):
+        """Check if the timer has expired.
+
+        Arguments:
+            message: A message to pass to the `TimeoutError` if the timer has
+                expired.
+
+        Raises:
+            TimeoutError: When the timer has expired.
+        """
         if not self._enabled:
             return
         if datetime.now() - self._start > self._max_runtime_tdelta:
@@ -56,12 +72,23 @@ class _TimeoutTimer:
 
     @classmethod
     def start(cls, max_runtime: int = None) -> '_TimeoutTimer':
+        """Start a new timer.
+
+        Arguments:
+            max_runtime: The maximum time to wait in seconds. `None` disables
+                the timer. Defaults to `None`.
+
+        Returns:
+            A new timer.
+        """
         return cls(max_runtime)
 
 
 class Queue:
+    """A queue of push jobs."""
 
     lock: Semaphore = Semaphore()
+    """A lock for writing to the queue file."""
 
     def __init__(self, server: ServerConfig, mode: str = 'r'):
         """Queue of client hash to lineages to be pushed to clients.
@@ -170,7 +197,7 @@ class Queue:
             self._queue = {}
 
     def _dump(self):
-        """Write the queue to disk"""
+        """Write the queue to disk."""
         with open(self._filename, 'w') as queue_file:
             json.dump(self._queue, queue_file)
 
@@ -218,7 +245,8 @@ class PushWorker(Thread):
         Arguments:
             server: The `Server` instance creating this worker.
             client: The client connection information.
-            config: The configs for the server creating this worker.
+            config: The CertDeploy server config for the server creating this
+                worker.
         """
         Thread.__init__(self, daemon=True)
         self._server = server
@@ -226,11 +254,11 @@ class PushWorker(Thread):
         self._config = config
         self._lineage: str = None
         self._retries: int = self._config.push_retries
-        # Prefer the client configs over the server configs.
+        # Prefer the client config over the server config.
         if isinstance(self._client.push_retries, int):
             self._retries = self._client.push_retries
         self._retry_interval: int = self._config.push_retry_interval
-        # Prefer the client configs over the server configs.
+        # Prefer the client config over the server config.
         if isinstance(self._client.push_retry_interval, int):
             self._retry_interval = self._client.push_retry_interval
         self._exception: Exception = None
@@ -263,7 +291,9 @@ class PushWorker(Thread):
                     username=self._client.username,
                     key_filename=self._config.privkey_filename)
         sftp = ssh.open_sftp()
+        # Make the destination directory
         _sftp_mkdir(sftp, cert_dir)
+        # Transfer certificates as needed
         if self._client.needs_chain:
             log.debug('Copying %s to %s',
                       os.path.join(self._lineage, 'chain.pem'),
@@ -296,7 +326,8 @@ class PushWorker(Thread):
     def run(self):
         """Run the main loop.
 
-        This is called automatically by `self.start`.
+        Note:
+            This is called automatically by `self.start`.
         """
         while self._next():
             log.info('Pushing %s to %s', self._lineage, self._client)
@@ -372,8 +403,9 @@ class Server:
     def serve_forever(self, one_shot: bool = False):
         """Push queued lineages to clients.
 
-        one_shot: Push lineages in the queue and exit when the queue has
-            been fully processed. Defaults to `False`.
+        Arguments:
+            one_shot: Push lineages in the queue and exit when the queue has
+                been fully processed. Defaults to `False`.
         """
         # This is used in tests to determine if the server has started.
         log.debug('Server.serve_forever: one_shot=%s', one_shot)
@@ -421,7 +453,13 @@ class Server:
             time.sleep(main_loop_sleep)
 
     def sync(self, lineage: os.PathLike, domains: list[str]):
-        """Synchronize clients that need updates based on domains."""
+        """Synchronize clients that need updates based on domains.
+
+        Arguments:
+            lineage: The full path of a lineage.
+            domains: A `list` of domain names to use to find clients to push
+                to.
+        """
         for client in self._config.clients:
             for domain in domains:
                 if domain in client.domains:
@@ -432,18 +470,22 @@ class Server:
                     break
 
     def _add_worker(self, client: ClientConnection):
-        """Kickstart a new `PushWorker` for this `client`."""
+        """Kickstart a new `PushWorker` for `client`."""
         worker = PushWorker(self, client, self._config)
         self._workers[client.hash] = worker
         worker.start()
 
     def _remove_worker(self, worker):
-        """End a worker and pop it off the pool."""
+        """End `worker` and pop it out of the pool."""
         worker.join(self._config.join_timeout)
         del self._workers[worker.client_hash]
 
     def _schedule_renew(self):
-        """Attempt to configure a scheduled cert renewal."""
+        """Attempt to configure a scheduled cert renewal.
+
+        Raises:
+            ConfigError: When renew related configs are invalid.
+        """
         # Catch config related errors and add some context before reraising.
         try:
             every = schedule.every(self._config.renew_every)

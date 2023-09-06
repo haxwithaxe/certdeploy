@@ -41,27 +41,30 @@ class SSHServer(paramiko.ServerInterface):
             )
 
     def check_auth_password(self, username, password):
-        # No password auth
+        """Override parent method to always deny password authentication."""
         return paramiko.AUTH_FAILED
 
     def check_auth_publickey(self, username, key):
+        """Verify username and public key combination."""
         if (username == self.valid_username and
                 key.asbytes() == self.valid_public_key.key_blob):
             return paramiko.AUTH_SUCCESSFUL
         return paramiko.AUTH_FAILED
 
     def check_channel_request(self, kind, chanid):
+        """Always allow channel requests."""  # noqa: D401
         return paramiko.OPEN_SUCCEEDED
 
     def get_allowed_auths(self, username):
-        """List availble auth mechanisms."""
-        return "publickey"
+        """List availble authentication mechanisms."""
+        return 'publickey'
 
 
 class SFTPHandle(paramiko.SFTPHandle):
     """SFTP file handle."""
 
     def stat(self):
+        """Return stat data or error info for the `self.readfile`."""
         try:
             return paramiko.SFTPAttributes.from_stat(os.fstat(
                 self.readfile.fileno()
@@ -70,6 +73,7 @@ class SFTPHandle(paramiko.SFTPHandle):
             return paramiko.SFTPServer.convert_errno(err.errno)
 
     def chattr(self, attr):
+        """Set attributes for `self.filename`."""
         # python doesn't have equivalents to fchown or fchmod, so we have to
         # use the stored filename
         try:
@@ -89,6 +93,10 @@ class StubSFTPServer(paramiko.SFTPServerInterface):
     _working_dir = None
 
     def _realpath(self, path):
+        """Return the absolute, canonicalized path if `path`.
+
+        Only if `path` is within the working directory. Otherwise return `None`.
+        """
         # This isn't a general purpose SFTP server so sanitizing the path a
         #   little.
         path = path.replace('../', '/')
@@ -99,6 +107,7 @@ class StubSFTPServer(paramiko.SFTPServerInterface):
         return self.canonicalize(os.path.join(self._working_dir, path))
 
     def list_folder(self, path):
+        """List the contents of `path`."""
         log.debug('list_folder: path=%s', path)
         path = self._realpath(path)
         if not path:
@@ -117,6 +126,7 @@ class StubSFTPServer(paramiko.SFTPServerInterface):
             return paramiko.SFTPServer.convert_errno(err.errno)
 
     def stat(self, path):
+        """Return stat data or error info for the `path`."""
         log.debug('stat: path=%s', path)
         path = self._realpath(path)
         if not path:
@@ -127,6 +137,7 @@ class StubSFTPServer(paramiko.SFTPServerInterface):
             return paramiko.SFTPServer.convert_errno(err.errno)
 
     def open(self, path, flags, attr):  # pylint: disable=too-many-branches
+        """Open `path` for reading or writing."""
         log.debug('open: path=%s, flags=%s, attr=%s', path, flags, attr)
         path = self._realpath(path)
         if not path:
@@ -178,6 +189,7 @@ class StubSFTPServer(paramiko.SFTPServerInterface):
         return file_obj
 
     def mkdir(self, path, attr):
+        """Make a directory (`path`) with attributes (`attr`)."""
         log.debug('mkdir: path=%s, attr=%s', path, attr)
         path = self._realpath(path)
         if not path:
@@ -192,10 +204,18 @@ class StubSFTPServer(paramiko.SFTPServerInterface):
 
 
 class _Update(threading.Thread):
+    """Service update worker thread."""
 
-    min_wait_seconds = 1
+    min_wait_seconds: int = 1
+    """The interval to wait between checks for time to update in seconds"""
 
     def __init__(self, config: ClientConfig, update_func: callable):
+        """Prepare update worker.
+
+        Arguments:
+            config: CertDeploy client config.
+            update_func: The function to use to update services.
+        """
         threading.Thread.__init__(self, daemon=True)
         self._config: ClientConfig = config
         self.update_func: callable = update_func
@@ -213,10 +233,12 @@ class _Update(threading.Thread):
                   (now+delta))
         self._update_time = now + delta
 
-    def _is_update_time(self):
+    def _is_update_time(self) -> bool:
+        """Return `True` if it's time to run updates."""
         return datetime.datetime.now() >= self._update_time
 
     def run(self):
+        """Run the main loop."""
         try:
             self.reset_update_time()
             while not self._is_update_time():
@@ -236,6 +258,10 @@ class _Update(threading.Thread):
             self._exception = err
 
     def join(self):
+        """Join the thread.
+
+        Also reraise any exception encountered if `fail_fast` is enabled.
+        """
         threading.Thread.join(self)
         if self._exception:
             log.debug('Reraising %s', self._exception)
@@ -246,19 +272,37 @@ class DeployServer:  # pylint: disable=too-few-public-methods
     """SFTP server to accept certs from the CertDeploy server."""
 
     def __init__(self, config: ClientConfig):
+        """Prepare the server.
+
+        Arguments:
+            config: The CertDeploy client config.
+        """
         self._config: ClientConfig = config
         self._sftpd_config: SFTPDConfig = self._config.sftpd_config
         self._update: _Update = None
         # A kill switch for testing.
+        # This is just for testing within a thread for now.
         self._stop_running = threading.Event()
         StubSFTPServer._working_dir: os.PathLike = self._config.source
 
     def _join_update(self):
+        """Join the update worker thread when it's done.
+
+        Raises:
+            Any exception encountered by the update worker if `fail_fast` is
+            enabled.
+        """
         if self._update and not self._update.is_alive():
             # This raises unexpected exceptions from threads
             self._update.join()
 
     def _deploy(self):
+        """Deploy new certificates.
+
+        Raises:
+            Any exception encountered by the update worker if `fail_fast` is
+            enabled.
+        """
         log.info('Deploying new certs')
         if deploy(self._config):
             self._join_update()
@@ -272,7 +316,13 @@ class DeployServer:  # pylint: disable=too-few-public-methods
             self._update.reset_update_time()
 
     def serve_forever(self):
-        """Start the server and leave it running."""
+        """Start the server and leave it running.
+
+        Raises:
+            Any exception encountered by the update worker if `fail_fast` is
+                enabled.
+            CertDeployError: When unable to listen on the socket.
+        """
         log.debug('Opening socket on port %s at address %s',
                   self._sftpd_config.listen_port,
                   self._sftpd_config.listen_address)

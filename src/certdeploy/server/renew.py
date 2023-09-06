@@ -1,3 +1,4 @@
+"""Functions for renewing certs with certbot."""
 
 import subprocess
 
@@ -7,7 +8,15 @@ from .config import ServerConfig
 
 
 def renew_certs(config: ServerConfig):
-    """Run the command to renew certificates."""
+    """Run the command to renew certificates.
+
+    Arguments:
+        config: The CertDeploy server config.
+
+    Raises:
+        CertDeployError: If the renewal command returns non-zero and
+            `config.fail_fast` is `True`
+    """
     cmd = [config.renew_exec]
     cmd.extend(config.renew_args)
     log.debug('Checking for renewable certificates. Using command: %s', cmd)

@@ -25,8 +25,19 @@ _WEEKDAYS = ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday',
              'sunday')
 
 
-def _normalize_unit(unit: str, interval: int):
-    """Convert `unit` to a plural if interval is not 1."""
+def _normalize_unit(unit: str, interval: int) -> str:
+    """Convert `unit` to a plural if interval is not 1.
+
+    Arguments:
+        unit: The time unit string.
+        interval: The time interval (number of units).
+
+    Returns:
+        A normalized unit string. Pluralized if `interval` is not 1.
+
+    Raises:
+        ConfigError: If `unit` is not a valid unit.
+    """
     # `schedule` uses plurals for `minute`, `hour`, `day`, and `week` units but
     #   only when the interval is not 1, which is overly complicated. So the
     #   conversion is being done here to keep the docs and config simpler.
@@ -41,27 +52,30 @@ def _normalize_unit(unit: str, interval: int):
 
 
 class PushMode(enum.Enum):
+    """Server push modes."""
+
     SERIAL = 'serial'
     PARALLEL = 'parallel'
 
     @classmethod
-    def validate(cls, value: Any) -> bool:
-        if str(value).lower() in (cls.SERIAL.value, cls.PARALLEL.value):
-            return True
-        return value in (cls.SERIAL, cls.PARALLEL)
+    def __call__(cls, value: Any) -> 'PushMode':
+        """Return the push mode that corresponds to `value`.
 
-    @classmethod
-    def __call__(cls, value):
-        if not cls.validate(value):
-            raise ValueError(f'\'{value}\' is not a valid {cls.__name__}')
+        Raises:
+            ValueError if `value` does not correspond to any push mode.
+        """
         if isinstance(value, str):
             super().__call__(value.lower())
         super().__call__(value)
 
+    @classmethod
+    def choices(cls) -> list['PushMode']:
+        return [cls.SERIAL, cls.PARALLEL]
+
 
 @dataclass
 class Server:
-    """Server configuration."""
+    """Base server configuration."""
 
     privkey_filename: os.PathLike
     """The path of the server's private key file."""
@@ -156,7 +170,11 @@ class Server:
     """
 
     def __post_init__(self):
-        """Validate config values."""
+        """Validate config values.
+
+        Raises:
+            ConfigInvalid: If any config values checked are invalid.
+        """
         # Set the log files right away so that the errors produced here go to
         #   the right place
         set_log_properties(
@@ -169,12 +187,15 @@ class Server:
             log_filename=self.sftp_log_filename,
             log_level=self.sftp_log_level
         )
+        # Check that the private key exists
         if not os.path.isfile(self.privkey_filename):
             raise ConfigInvalidPath('privkey_filename', self.privkey_filename,
                                     is_type='file')
+        # Check that the queue directory is an existing directory
         if not os.path.isdir(self.queue_dir):
             raise ConfigInvalidPath('queue_dir', self.queue_dir,
                                     is_type='directory')
+        # Check if the queue directory is writable.
         try:
             open(os.path.join(self.queue_dir, 'test'), 'w').close()
         except OSError as err:
@@ -182,29 +203,37 @@ class Server:
                                     is_type='directory') from err
         else:
             os.remove(os.path.join(self.queue_dir, 'test'))
-        if not PushMode.validate(self.push_mode):
+        # Check if the push mode is a push mode
+        try:
+            self.push_mode = PushMode(self.push_mode)
+        except ValueError as err:
             raise ConfigInvalidChoice(
                 'push_mode',
                 self.push_mode,
-                choices=[PushMode.SERIAL.value, PushMode.PARALLEL.value]
-            )
-        self.push_mode = PushMode(self.push_mode)
+                choices=PushMode.choices()
+            ) from err
+        # Check that the push_interval is an integer >= 0
         if not is_int(self.push_interval, 0):
             raise ConfigInvalidNumber('push_interval', self.push_interval,
                                       is_type=int, ge=0)
+        # Check that the push_retries is an integer >= 0
         if not is_int(self.push_retries, 0):
             raise ConfigInvalidNumber('push_retries', self.push_retries,
                                       is_type=int, ge=0)
+        # Check that the push_retry_interval is an integer >= 0
         if not is_int(self.push_retry_interval, 0):
             raise ConfigInvalidNumber('push_retry_interval',
                                       self.push_retry_interval, is_type=int,
                                       ge=0)
+        # Check that the join_timeout is a float or int >= 0 if it is set.
         if not is_optional_float(self.join_timeout, 0):
             raise ConfigInvalidNumber('join_timeout', self.join_timeout,
                                       is_type='float or integer', ge=0)
+        # Check that the renew_every is an integer > 0
         if not is_int(self.renew_every, 1):
             raise ConfigInvalidNumber('renew_every', self.renew_every,
                                       is_type=int, optional=True, gt=0)
+        # Normalize the renew_unit and check that it's valid
         self.renew_unit = _normalize_unit(self.renew_unit, self.renew_every)
         if self.renew_unit in _WEEKDAYS and self.renew_every != 1:
             raise ConfigInvalid('renew_unit', self.renew_unit, must=' not be a'

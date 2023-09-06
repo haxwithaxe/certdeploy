@@ -12,7 +12,14 @@ from .deploy import deploy
 from .update import update_services
 
 
-def _run(config, daemon):
+def _run(config: ClientConfig, daemon: bool):
+    """Run the CertDeploy client.
+
+    Arguments:
+        config: The CertDeploy client config.
+        daemon: If `True` run the daemon. Otherwise just run the deploy
+            function.
+    """
     if daemon:
         DeployServer(config).serve_forever()
     else:
@@ -29,7 +36,22 @@ def _typer_main(
     sftpd_log_level: LogLevel = typer.Option(None, envvar='SFTPD_LOG_LEVEL'),
     sftpd_log_file: str = typer.Option(None, envvar='SFTPD_LOG_FILE')
 ):
-    # Just in case there is a config error
+    """The entry point for the CertDeploy client command line.
+
+    Arguments:
+        config: The path to the CertDeploy client config. Defaults to
+            `DEFAULT_CLIENT_CONFIG`.
+        daemon: If `True` run the daemon. Otherwise just run the deploy process
+            once. Defaults to `False`.
+        log_level: The CertDeploy log level. Defaults to `ERROR`.
+        log_file: The CertDeploy log filename. Defaults to stdout (`logging`
+            default).
+        sftpd_log_level: The log level for the embedded SFTP server. Defaults to
+            'ERROR'.
+        sftpd_log_file: The log filename for the embedded SFTP server. Defaults
+            to stdout.
+    """
+    # Just in case there is a config error set the log level right away.
     log.setLevel(log_level or LogLevel.ERROR)
     try:
         conf = ClientConfig.load(
@@ -54,7 +76,7 @@ def _typer_main(
 
 
 def main():
-    """Function to run typer from `console_scripts`."""
+    """The function to run `typer` from `console_scripts`."""  # noqa: D401
     typer.run(_typer_main)
 
 

@@ -1,5 +1,10 @@
+"""Exceptions to use with both CertDeploy servers and CertDeploy clients"""
 
-def _double_quote(value):
+from typing import Any
+
+
+def _double_quote(value: str) -> str:
+    """Return a string with added surrounding double quotes."""
     return f'"{value}"'
 
 
@@ -8,12 +13,37 @@ class CertDeployError(Exception):
 
 
 class ConfigError(CertDeployError):
-    """Configuration error"""
+    """Configuration error."""
 
 
 class ConfigInvalid(ConfigError):
+    """Invalid configuration exception."""
 
-    def __init__(self, key, value, must=None, config_desc=''):
+    def __init__(self, key: str, value: Any, must: str = None,
+                 config_desc: str = ''):
+        """Prepare the exception.
+
+        Arguments:
+            key: The config key.
+            value: The value given in the config.
+            must: If the value must have been something set this to be that
+                thing. Defaults to `None`. For example:
+
+                    ```
+                    ConfigInvalid(
+                        'renew_unit',
+                        None,
+                        must='not be a weekday if `renew_every` is set and not'
+                             ' 1'
+                    ) -> ('Invalid value "None" for `renew_unit`. `renew_unit` '
+                          'must not be a weekday if `renew_every` is set and '
+                          'not 1.')
+
+                    ```
+
+            config_desc: The description of the config if needed. Defaults to
+                an empty string.
+        """
         if config_desc:
             config_desc = f'{config_desc} '
         if must:
@@ -25,9 +55,31 @@ class ConfigInvalid(ConfigError):
 
 
 class ConfigInvalidNumber(ConfigInvalid):
+    """Invalid numeric configuration exception."""
 
-    def __init__(self, key, value, is_type='number', optional=False, gt=None,
-                 lt=None, ge=None, le=None, config_desc=''):
+    def __init__(self, key: str, value: Any, is_type: str = 'number',
+                 optional: bool = False, gt: str = None, lt: str = None,
+                 ge: str = None, le: str = None, config_desc: str = ''):
+        """Prepare the exception.
+
+        Arguments:
+            key: The config key.
+            value: The value given in the config.
+            is_type: The name of the required number type. Defaults to
+                `'number'`.
+            optional: If `True` `'if set'` is added to the end of the message.
+                Defaults to `False`.
+            gt: Changes the phrasing to reflect the config must be
+                'greater than' the value of `gt`. Defaults to `None`.
+            lt: Changes the phrasing to reflect the config must be 'less than'
+                the value of `lt`. Defaults to `None`.
+            ge: Changes the phrasing to reflect the config must be 'greater than
+                or equal to' the value of `ge`. Defaults to `None`.
+            le: Changes the phrasing to reflect the config must be 'less than or
+                equal to' the value of `le`. Defaults to `None`.
+            config_desc: The description of the config if needed. Defaults to
+                an empty string.
+        """
         if is_type == int:
             is_type = 'integer'
         elif is_type == float:
@@ -57,8 +109,35 @@ class ConfigInvalidNumber(ConfigInvalid):
 
 
 class ConfigInvalidChoice(ConfigInvalid):
+    """Invalid configuration from selection."""
 
-    def __init__(self, key, value, choices, quote=True, config_desc=''):
+    def __init__(self, key: str, value: Any, choices: list[Any],
+                 quote: bool = True, config_desc: str = ''):
+        """Prepare the exception.
+
+        Note:
+            `choices` is a list of two or more choices. An exception is raised
+            from this exception if a list of length one is given. The universe
+            may impload if that happens.
+
+        Arguments:
+            key: The config key.
+            value: The value given in the config.
+            must: If the value must have been something set this to be that
+                thing. Defaults to `None`. See `ConfigInvalid` for an example.
+            choices: A list of two or more valid values for the config. If
+                there are only two choices they will be listed as
+                `'either A or B'`. If there are three or more choices they
+                will be listed as a comma separated list with and oxford comma
+                and an or for the last choice.
+            quote: If `True` add double quotes to the choices. Defaults to
+                `True`.
+            config_desc: The description of the config if needed. Defaults to
+                an empty string.
+
+        Raises:
+            ValueError: When the number of choices is invalid.
+        """
         if quote:
             choices = [_double_quote(c) for c in choices]
         if len(choices) == 2:
@@ -71,9 +150,34 @@ class ConfigInvalidChoice(ConfigInvalid):
 
 
 class ConfigInvalidPath(ConfigInvalid):
+    """Invalid file system path configuation exception."""
 
-    def __init__(self, key, value, exist=True, writable=False,
-                 bad_format=False, is_type='', config_desc=''):
+    def __init__(self, key: str, value: str, exist: bool = True,
+                 writable: bool = False, bad_format: bool = False,
+                 is_type: str = '', config_desc: str = ''):
+        """Prepare the exception.
+
+        Note:
+            One or more of `bad_format`, `exist`, or `writable` must be `True`
+            or an exception is raised from this exception . The universe may
+            impload if that happens.
+
+        Arguments:
+            key: The config key.
+            value: The value given in the config.
+            exist: If `True` the path must exist. Defaults to `True`.
+            writable: If `True` the path must be writable. Defaults to `False`.
+            bad_format: If `True` the format of `value` is invalid. Defaults to
+                `False`.
+            is_type: If set the message will be phrased as needing to be the
+                value of `is_type`. Defaults to an empty string.
+            config_desc: The description of the config if needed. Defaults to
+                an empty string.
+
+        Raises:
+            ValueError: When one or more of `bad_format`, `exist`, or `writable`
+                must be True.
+        """
         if bad_format:
             super().__init__(key, value,
                              must='be a file system path',

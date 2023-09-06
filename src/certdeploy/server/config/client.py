@@ -12,6 +12,7 @@ from ... import DEFAULT_CLIENT_SOURCE_DIR, DEFAULT_USERNAME
 from ...errors import ConfigError
 from ._validation import is_optional_int
 
+# A regex to match an ed25519 public key
 PUBKEY_RE = re.compile(
     r'^(?:ssh-ed25519 +)?((?:[A-Za-z\d+/]{4}){17}'
     r'(?:[A-Za-z\d+/]{3}=|[A-Za-z\d+/]{2}==|[A-Za-z\d+/]{4})?)(?: .*)?$'
@@ -78,24 +79,34 @@ class ClientConnection:  # pylint: disable=too-many-instance-attributes
     """
 
     def __post_init__(self):
-        """Validate configs."""
+        """Validate configs.
+
+        Raises:
+            ConfigError: If any config option that is checked has something
+                wrong.
+        """
+        # Validate public key
         match = PUBKEY_RE.match(self.pubkey)
         if not match:
             raise ConfigError(f'Invalid value for `pubkey`: {self.pubkey}')
         self.pubkey_blob = Ed25519Key(
             data=base64.decodebytes(match.group(1).encode())
         )
+        # Generate client connection hash
         self.hash = sha1(
             f'{self.username}{self.address}{self.port}'.encode()
         ).hexdigest()
+        # Validate push_retry_interval
         if not is_optional_int(self.push_retry_interval, 0):
             raise ConfigError('The config `push_retry_interval` must be an '
                               'integer greater than or equal to 0 not: '
                               f'{self.push_retry_interval}')
+        # Validate push_retries
         if not is_optional_int(self.push_retries, 0):
             raise ConfigError('The config `push_retries` must be an integer '
                               'greater than or equal to 0 not: '
                               f'{self.push_retries}')
 
     def __str__(self) -> str:
+        """Return the client as it would be given to the SFTP client."""
         return f'{self.username}@[{self.address}]:{self.port}'

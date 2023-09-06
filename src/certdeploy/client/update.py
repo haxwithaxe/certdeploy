@@ -20,7 +20,17 @@ from .errors import (
 
 def update_docker_container(spec: DockerContainer,
                             client_config: ClientConfig):
-    """Update a docker container."""
+    """Update a docker container.
+
+    Arguments:
+        spec: The update service specifications.
+        client_config: The CertDeploy client config.
+
+    Raises:
+        DockerContainerError: When there is a docker error while restarting the
+            container.
+        DockerContainerNotFound: When the specified container cannot be found.
+    """
     log.debug('Updating %s', spec)
     api = docker.DockerClient(base_url=client_config.docker_url)
     matches = api.containers.list(filters=spec.filters)
@@ -45,7 +55,17 @@ def update_docker_container(spec: DockerContainer,
 
 
 def update_docker_service(spec: DockerService, client_config: ClientConfig):
-    """Force update a docker service."""
+    """Force update a docker service.
+
+    Arguments:
+        spec: The update service specifications.
+        client_config: The CertDeploy client config.
+
+    Raises:
+        DockerServiceError: When there is a docker error while force updating
+            the service.
+        DockerServiceNotFound: When the specified service cannot be found.
+    """
     log.debug('Updating %s', spec)
     api = docker.DockerClient(base_url=client_config.docker_url)
     matches = api.services.list(filters=spec.filters)
@@ -63,7 +83,7 @@ def update_docker_service(spec: DockerService, client_config: ClientConfig):
             # Borrowing the formatting from the exception
             error = DockerServiceError(spec, service_name=service.name)
             if client_config.fail_fast:
-                raise UpdateError(error) from err
+                raise error from err
             log.error(error, exc_info=err)
         else:
             for warn in warnings.get('Warnings') or []:
@@ -73,7 +93,16 @@ def update_docker_service(spec: DockerService, client_config: ClientConfig):
 
 
 def update_script(script: Script, client_config: ClientConfig):
-    """Update the system with a script."""
+    """Update the system with a script.
+
+    Arguments:
+        script: The update service specifications.
+        client_config: The CertDeploy client config.
+
+    Raises:
+        ScriptError: When the script encounters an `OSError`, doesn't finish in
+            a timely manner (according to `script.timeout`), or exits non-zero.
+    """
     log.debug('Updating %s', script)
     try:
         # pylint: disable=consider-using-with
@@ -105,7 +134,17 @@ def update_script(script: Script, client_config: ClientConfig):
 
 
 def update_systemd_unit(unit: SystemdUnit, client_config: ClientConfig):
-    """Update a Systemd unit."""
+    """Update a Systemd unit.
+
+    Arguments:
+        unit: The update service specifications.
+        client_config: The CertDeploy client config.
+
+    Raises:
+        SystemdError: When the systemctl encounters an `OSError`, doesn't
+            finish in a timely manner (according to `script.timeout`), or exits
+            non-zero.
+    """
     log.debug('Updating %s', unit)
     cmd = [client_config.systemd_exec, unit.action, unit.name]
     try:
@@ -145,7 +184,11 @@ _UPDATER_MAP = {
 
 
 def update_services(config: ClientConfig):
-    """Update all services in `config.services`."""
+    """Update all services in `config.services`.
+
+    Arguments:
+        config: The CertDeploy client config.
+    """
     for service in config.services:
         try:
             _UPDATER_MAP[type(service)](service, config)
