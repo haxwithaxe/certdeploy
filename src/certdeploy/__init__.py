@@ -17,23 +17,27 @@ except PackageNotFoundError:  # pragma: no cover
 finally:
     del version, PackageNotFoundError
 
-
-logging.basicConfig()
-
-
+## Global default values
 DEFAULT_CONFIG_DIR = '/etc/certdeploy'
+# Default SFTP username for servers and clients
 DEFAULT_USERNAME = 'certdeploy'
+# Default SFTP port for servers and clients
 DEFAULT_PORT = 22
 
+# Default paths for clients
 DEFAULT_CLIENT_SOURCE_DIR = '/var/cache/certdeploy'
 DEFAULT_CLIENT_CONFIG = os.path.join(DEFAULT_CONFIG_DIR, 'client.yml')
 DEFAULT_CLIENT_DEST_DIR = '/etc/letsencrypt/live'
 
+# Default paths for servers
 DEFAULT_SERVER_CONFIG = os.path.join(DEFAULT_CONFIG_DIR, 'server.yml')
 DEFAULT_SERVER_HOST_KEYS = os.path.join(DEFAULT_CONFIG_DIR, 'server_hostkeys')
 
+# Default logging
 DEFAULT_LOG_DATE_FORMAT = '%Y.%m.%d-%H:%M:%S'
 DEFAULT_LOG_FORMAT = '%(levelname)s:%(name)s: %(message)s'
+
+## Logging Constants
 CERTDEPLOY_CLIENT_LOGGER_NAME = 'certdeploy-client'
 CERTDEPLOY_SERVER_LOGGER_NAME = 'certdeploy-server'
 # This value can be obtained from
@@ -41,8 +45,13 @@ CERTDEPLOY_SERVER_LOGGER_NAME = 'certdeploy-server'
 PARAMIKO_LOGGER_NAME = 'paramiko'
 
 
+# Initialize logging ASAP
+logging.basicConfig(format=DEFAULT_LOG_FORMAT, datefmt=DEFAULT_LOG_DATE_FORMAT,
+                    level=logging.ERROR)
+
+
 class LogLevel(enum.Enum):
-    """Logging levels as an enum of strings."""
+    """Logging levels and utilities."""
 
     DEBUG = 'DEBUG'
     INFO = 'INFO'
@@ -52,38 +61,90 @@ class LogLevel(enum.Enum):
 
     @classmethod
     def cast(cls, level: Union[int, str, 'LogLevel']) -> 'LogLevel':
-        if isinstance(level, cls):
-            return level
-        if isinstance(level, str):
-            return cls.from_str(level)
+        """Cast `level` to a `LogLevel`.
+
+        Returns:
+            A `LogLevel` corresponding to `level`.
+
+        Raises:
+            TypeError: When `level` does not correspond to any `LogLevel`.
+        """
         if isinstance(level, int):
-            return cls.from_int(level)
+            level = cls.from_int(level)
+            if level is not None:
+                return level
+        if isinstance(level, (str, cls)):
+            try:
+                return cls.__call__(level)
+            except ValueError:
+                pass
         raise TypeError(f'Invalid log level: {level}')
 
     @classmethod
     def from_int(cls, level: int) -> 'LogLevel':
-        for log_level in cls:
-            if getattr(logging, log_level.value) == level:
-                return log_level
-        return None
+        """Return an `LogLevel` corresponding to the integer `level`.
 
-    @classmethod
-    def from_str(cls, level: str) -> 'LogLevel':
-        for log_level in cls:
-            if log_level.value == level:
-                return log_level
+        Arguments:
+            level: An integer corresponding to a `logging` log level.
+
+        Returns:
+            A `LogLevel` corresponding to `level` or `None` if there is no
+            matching `LogLevel`.
+        """
+        try:
+            for log_level in cls:
+                if getattr(logging, log_level.value) == level:
+                    return log_level
+        except AttributeError:
+            pass
         return None
 
     @classmethod
     def to_int(cls, level: Union[int, str, 'LogLevel']) -> int:
-        return getattr(logging, cls.cast(level).value)
+        """Return an integer log level corresponding to `level`.
+
+        Arguments:
+            level: A log level.
+
+        Returns:
+            An integer corresponding to a `logging` log level if `level`
+            corresponds to a `LogLevel`. Otherwise return `None`.
+
+        Raises:
+            ValueError: When `level` isn't a log level or isn't equivalent to a
+                `logging` log level.
+        """
+        try:
+            return getattr(logging, cls.cast(level).value)
+        except AttributeError as err:
+            raise ValueError(f'Invalid log level: {level}') from err
 
     @classmethod
     def to_str(cls, level: Union[int, str, 'LogLevel']) -> str:
+        """Return a string log level corresponding to `level`.
+
+        Arguments:
+            level: A log level.
+
+        Returns:
+            A string corresponding to a `LogLevel` if `level` corresponds to a
+            `LogLevel`. Otherwise return `None`.
+
+        Raises:
+            ValueError: When `level` isn't a log level.
+        """
         return cls.cast(level).value
 
     @classmethod
     def validate(cls, level: Union[int, str, 'LogLevel']) -> bool:
+        """Verify `level` is a valid `LogLevel` or equivalent.
+
+        Arguments:
+            level: A log level.
+
+        Returns:
+            `True` if `level` is a log level.
+        """
         try:
             if cls.cast(level):
                 return True
@@ -92,8 +153,19 @@ class LogLevel(enum.Enum):
             return False
 
 
-def format_error(err, message_format='{name}: {message}'):
-    """Format errors consistently."""
+def format_error(err: Exception, message_format: str = '{name}: {message}'
+                 ) -> str:
+    """Format errors consistently.
+
+    Arguments:
+        err: The exception to format.
+        message_format: The format string (`.format` style) to apply the error
+            to. The keys `name` and `message` are passed to the format string.
+            Defaults to `'{name}: {message}'`.
+
+    Returns:
+        A formatted string with the name and message of the given error.
+    """
     return message_format.format(name=type(err).__name__, message=err)
 
 
@@ -146,6 +218,7 @@ class Logger:
         """Pass requests for missing attributes on to the `logging.Logger`."""
         if hasattr(self._log, attr):
             return getattr(self._log, attr)
+        # Raising from here so the traceback stops here.
         raise AttributeError(attr)
 
 
@@ -156,7 +229,7 @@ def set_log_properties(logger_name: str, log_filename: os.PathLike,
     """Set the CertDeploy logger properties.
 
     Arguments:
-        log_filename:
+        log_filename: The path to the log file.
         log_level: The desired log level. Defaults to `LogLevel.ERROR`.
         msg_format: The format for the each log entry. Defaults to
             `DEFAULT_LOG_FORMAT`.
