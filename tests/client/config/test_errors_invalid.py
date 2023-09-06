@@ -1,3 +1,4 @@
+"""Verify various invalid configs produce `ConfigError`."""
 
 import pathlib
 
@@ -8,6 +9,7 @@ from certdeploy.errors import ConfigError
 
 
 def test_config_invalid_source(tmp_path: pathlib.Path):
+    """Verify an invalid `source` config produces a `ConfigError`."""
     with pytest.raises(ConfigError) as err:
         ClientConfig(
             destination=tmp_path,
@@ -18,6 +20,7 @@ def test_config_invalid_source(tmp_path: pathlib.Path):
 
 
 def test_config_invalid_destination(tmp_path: pathlib.Path):
+    """Verify an invalid `destination` config produces a `ConfigError`."""
     with pytest.raises(ConfigError) as err:
         ClientConfig(
             destination='/dev/null',
@@ -27,17 +30,8 @@ def test_config_invalid_destination(tmp_path: pathlib.Path):
             ' a directory that exists.') in str(err)
 
 
-def test_config_invalid_sftpd_config_key(tmp_path: pathlib.Path):
-    with pytest.raises(ConfigError) as err:
-        ClientConfig(
-            destination=tmp_path,
-            source=tmp_path,
-            sftpd={'invalid_key': True}
-        )
-    assert 'Invalid SFTPD config option: ' in str(err)
-
-
 def test_config_invalid_update_delay(tmp_path: pathlib.Path):
+    """Verify an invalid `update_delay` config produces a `ConfigError`."""
     with pytest.raises(ConfigError) as err:
         ClientConfig(
             destination=tmp_path,
@@ -48,8 +42,20 @@ def test_config_invalid_update_delay(tmp_path: pathlib.Path):
 
 
 def test_config_invalid_config_key(tmp_path: pathlib.Path):
+    """Verify an invalid `ClientConfig` config key produces a `ConfigError`."""
     with pytest.raises(ConfigError) as err:
         ClientConfig(
             invalid_key=True
         )
     assert 'Invalid config option: ' in str(err)
+
+
+def test_config_invalid_sftpd_config_key(tmp_path: pathlib.Path):
+    """Verify an invalid `SFTPDConfig` config key produces a `ConfigError`."""
+    with pytest.raises(ConfigError) as err:
+        ClientConfig(
+            destination=tmp_path,
+            source=tmp_path,
+            sftpd={'invalid_key': True}
+        )
+    assert 'Invalid SFTPD config option: ' in str(err)

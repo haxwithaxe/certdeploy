@@ -1,11 +1,21 @@
+"""Verify that the client configs are validated."""
 
+from typing import Callable
+
+from fixtures.client_config import ConfigContext
 
 from certdeploy.client.config import ClientConfig
 from certdeploy.client.config.client import SFTPDConfig
 
 
-def test_config_base_kitchen_sink(tmp_client_config_file: callable):
-    # Setting update_delay here since we're checking update_delay_seconds
+def test_config_base_kitchen_sink(
+        tmp_client_config_file: Callable[[], ConfigContext]
+):
+    """Quickly verify the kitchen sink is validated.
+
+    Verify all the things that need to be validated in
+    `certdeploy.client.config.client.Config` pass valid values.
+    """
     context = tmp_client_config_file(update_delay='10s', sftpd={})
     config = ClientConfig.load(context.config_path)
     assert config.destination == context.config['destination']
@@ -22,6 +32,11 @@ def test_config_base_kitchen_sink(tmp_client_config_file: callable):
 
 def test_config_sftpd_kitchen_sink(tmp_client_config_file: callable,
                                    keypairgen: callable):
+    """Quickly verify the SFTPD kitchen sink is validated.
+
+    Verify all the things that need to be validated in
+    `certdeploy.client.config.client.SFTPDConfig` pass valid values.
+    """
     server_keypair = keypairgen()
     client_keypair = keypairgen()
     context = tmp_client_config_file(
