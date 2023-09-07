@@ -22,8 +22,9 @@ def _run(config, daemon, renew, push, lineage, domains):
     else:
         log.debug('Running manual push or hook')
         if (not lineage or not domains) and not push:
-            print('Could not find lineage or domains.',
-                  f'lineage: {lineage}, domains: {domains}', file=sys.stderr)
+            log.error('Could not find lineage or domains.',
+                      f'lineage: {lineage}, domains: {domains}',
+                      file=sys.stderr)
             sys.exit(1)
         server = Server(config)
         if domains and lineage:
