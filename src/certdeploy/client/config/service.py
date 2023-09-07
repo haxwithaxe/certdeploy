@@ -121,9 +121,6 @@ class DockerService(Service):  # pylint: disable=too-few-public-methods
         if not self.name and not self.filters:
             raise ConfigError('Either `filters` or `name` must be given in '
                               f'`docker_{self._type}` configs. Got: {config}.')
-        if self.name and not self.filters:
-            # Match the exact name as given
-            self.filters = {'name': f'^{self.name}$'}
 
     def _validate_name(self, name: str) -> str:
         if name is None:
@@ -142,6 +139,12 @@ class DockerContainer(DockerService):  # pylint: disable=too-few-public-methods
     """The default update method."""
     timeout = 10
     """The default time to wait before giving up on preforming `action`."""
+
+    def __init__(self, config: dict):
+        super().__init__(config)
+        if self.name and not self.filters:
+            # Match the exact name as given
+            self.filters = {'name': f'^{self.name}$'}
 
 
 class Script(Service):  # pylint: disable=too-few-public-methods

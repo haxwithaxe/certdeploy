@@ -68,7 +68,13 @@ def update_docker_service(spec: DockerService, client_config: ClientConfig):
     """
     log.debug('Updating %s', spec)
     api = docker.DockerClient(base_url=client_config.docker_url)
-    matches = api.services.list(filters=spec.filters)
+    if spec.name:
+        try:
+            matches = [api.services.get(spec.name)]
+        except docker.errors.NotFound:
+            matches = []
+    else:
+        matches = api.services.list(filters=spec.filters)
     if not matches:
         # Borrowing the formatting from the exception
         err = DockerServiceNotFound(spec)
