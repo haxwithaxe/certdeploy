@@ -21,13 +21,17 @@ There are three parts to the server.
 1. The daemon, which runs ``certbot renew`` on an interval (and indirectly ``certdeploy-server`` as a hook when certs are renewed). It also processes the push queue. This is optional, but is the default in the server docker container.
 
 ### Commandline Options for the command/daemon
-* `--lineage` - The path of a lineage (eg `/etc/letsencrypt/live/example.com`). This is mutually exclusive with `--daemon`.
-* `--domains` - A space separated list of domains as a single string (eg `"www.example.com example.com"`). This is mutually exclusive with `--daemon`.
-* `--push` - Run the daemon only until the queue is empty and all pushes have been processed. When used with `--lineage` and `--domains` it populates the queue and then runs the daemon until the push is complete.
 * `--config` - The path to the config file.
 * `--daemon` - Run the daemon. Without this option the server command will run once and exit.
-* `--renew` - Run the cert renewal part of the daemon once and exit.
+* `--domains` - A space separated list of domains as a single string (eg `"www.example.com example.com"`). This is mutually exclusive with `--daemon`.
+* `--lineage` - The path of a lineage (eg `/etc/letsencrypt/live/example.com`). This is mutually exclusive with `--daemon`.
+* `--log-file` - Set the log file location. Defaults to the `logging` default.
 * `--log-level` - Set the log level to `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`.
+* `--push` - Run the daemon only until the queue is empty and all pushes have been processed. When used with `--lineage` and `--domains` it populates the queue and then runs the daemon until the push is complete.
+* `--renew` - Run the cert renewal part of the daemon once and exit.
+* `--sftp-log-file` - Set the SFTP client log file location. Defaults to the `paramiko` logging default.
+* `--sftp-log-level` - Set the SFTP client log level to `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`.
+
 
 #### Examples
 To run these in the running docker container prefix the commands with `docker container exec <container name>`.
@@ -48,18 +52,24 @@ To run these in the running docker container prefix the commands with `docker co
     certdeploy-server --push
     ```
 
+
 ### Enviroment Variables
 Commandline options override environment variables.
-* ``CERTDEPLOY_RENEW_ONLY`` - If set to `true` it is the equivalent of ``--renew``.
-* ``CERTDEPLOY_SERVER_DAEMON`` - If set to `true` it is the equivalent of ``--daemon``.
 * ``CERTDEPLOY_SERVER_CONFIG`` - The path to the server config file. Equivalent to ``--config``.
-* ``CERTDEPLOY_LOG_LEVEL`` - The log level. Equivalent to ``--log-level``.
-* ``CERTDEPOLY_PUSH_ONLY`` - If set to `true` it is the equivalent of ``--push``.
+* ``CERTDEPLOY_SERVER_DAEMON`` - If set to `true` it is the equivalent of ``--daemon``.
+* ``CERTDEPLOY_SERVER_LOG_FILE`` - The path to the server log file. Equivalent to ``--log-file``.
+* ``CERTDEPLOY_SERVER_LOG_LEVEL`` - The log level. Equivalent to ``--log-level``.
+* ``CERTDEPLOY_SERVER_RENEW_ONLY`` - If set to `true` it is the equivalent of ``--renew``.
+* ``CERTDEPOLY_SERVER_PUSH_ONLY`` - If set to `true` it is the equivalent of ``--push``.
+* ``CERTDEPOLY_SERVER_SFTP_LOG_FILE`` - The log path for the SFTP client. Equivalent to ``--sftp-log-file``.
+* ``CERTDEPOLY_SERVER_SFTP_LOG_LEVEL`` - The log level of the SFTP client. Equivalent to ``--sftp-log-level``.
+
 
 #### Hook Environment Variables
 The hook (``certdeploy-server`` when it's run by Certbot) expects the following environmental variables from Certbot in addition to the optional ``CERTDEPLOY_SERVER_CONFIG`` and ``CERTDEPLOY_LOG_LEVEL`` as described above.
 * ``RENEWED_LINEAGE`` - The "lineage" or path to the renewed certs.
 * ``RENEWED_DOMAINS`` - A space separated list of domains associated to the renewed certs.
+
 
 ### Configuration
 
@@ -68,6 +78,9 @@ The hook (``certdeploy-server`` when it's run by Certbot) expects the following 
 * `privkey_filename` - The path to the CertDeploy server private key file.
 * `fail_fast` (optional) - Stop on the first failed action. Defaults to `false`.
 * `log_level` (optional) - The logging level. Options are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, ``CRITICAL``. Defaults to ``ERROR``.
+* `log_file` (optional) - The path to the log file.
+* `sftp_log_level` (optional) - The SFTP client logging level. Options are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, ``CRITICAL``. Defaults to ``ERROR``.
+* `sftp_log_file` (optional) - The path to the SFTP client log file.
 
 The following are daemon specific configs.
 * `renew_every` (optional) - The interval count to multiply `renew_unit` by. This must be a positive integer. The default is 1.
@@ -243,13 +256,19 @@ The recommended way to use the server is to have it running in a docker containe
 ### Commandline Options
 * `--config` - The path to the config file.
 * `--daemon` - Run the daemon. Without this option the sync and update actions will run once and quit.
-* `--log-level` - Set the log level to `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`.
+* `--log-file` - Set the log file location. Defaults to the `logging` logging default.
+* `--log-level` - Set the log level to `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`. Defaults to `ERROR`.
+* `--sftp-log-file` - Set the SFTP server log file location. Defaults to the `paramiko` logging default.
+* `--sftp-log-level` - Set the SFTP server log level to `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`. Defaults to the `paramiko` default log level.
 
 ### Environment Variables
 Commandline options override environment variables.
-* ``CERTDEPLOY_CLIENT_DAEMON`` - If set to `true` it is the equivalent of ``--daemon``.
 * ``CERTDEPLOY_CLIENT_CONFIG`` - The path to the client config file. Equivalent to ``--config``.
-* ``CERTDEPLOY_LOG_LEVEL`` - The log level. Equivalent to ``--log-level``.
+* ``CERTDEPLOY_CLIENT_DAEMON`` - If set to `true` it is the equivalent of ``--daemon``.
+* ``CERTDEPLOY_CLIENT_LOG_FILE`` - The path to the client log file. Equivalent to ``--log-file``.
+* ``CERTDEPLOY_CLIENT_LOG_LEVEL`` - The log level. Equivalent to ``--log-level``.
+* ``CERTDEPOLY_CLIENT_SFTP_LOG_FILE`` - The log path for the SFTP server. Equivalent to ``--sftp-log-file``.
+* ``CERTDEPOLY_CLIENT_SFTP_LOG_LEVEL`` - The log level of the SFTP server. Equivalent to ``--sftp-log-level``.
 
 ### Configuration
 
@@ -268,7 +287,7 @@ Commandline options override environment variables.
 ##### Service Definitions
 Each definition has a ``type`` key and one or more other keys. They are run in the order they are written in the config.
 * Docker swarm services have a type of ``docker_service`` and can have a `name` key with a string value or a `filters` key with a dictionary of filters. See [Docker Services and Containers](#docker-services-and-containers).
-*  Docker containers have a type of ``docker_container`` and can have a `name` key with a string value or a `filters` key with a dictionary of filters. See [Docker Services and Containers](#docker-services-and-containers).
+* Docker containers have a type of ``docker_container`` and can have a `name` key with a string value or a `filters` key with a dictionary of filters. See [Docker Services and Containers](#docker-services-and-containers).
 * Systemd units  have a type of ``docker_service``, a `name` key with the unit name, and optionally an `action` key that can be either ``restart``or ``reload``. The default `action` is ``restart``. The `name` is the full unit names (with the unit type extension eg `nginx.service`). The value of `action` corresponds the systemctl arguments. See [Systemd Units](#systemd-units).
 * Arbitrary scripts have the `type` ``script`` and a `name` key with the path of the script to execute. See [Scripts](#scripts).
 
