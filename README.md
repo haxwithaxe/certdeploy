@@ -66,7 +66,7 @@ Commandline options override environment variables.
 
 
 #### Hook Environment Variables
-The hook (``certdeploy-server`` when it's run by Certbot) expects the following environmental variables from Certbot in addition to the optional ``CERTDEPLOY_SERVER_CONFIG`` and ``CERTDEPLOY_LOG_LEVEL`` as described above.
+The hook (``certdeploy-server`` when it's run by Certbot) expects the following environmental variables from Certbot in addition to the optional ``CERTDEPLOY_SERVER_CONFIG`` and ``CERTDEPLOY_SERVER_LOG_LEVEL`` as described above.
 * ``RENEWED_LINEAGE`` - The "lineage" or path to the renewed certs.
 * ``RENEWED_DOMAINS`` - A space separated list of domains associated to the renewed certs.
 
