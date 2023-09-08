@@ -36,17 +36,66 @@ def _run(config, daemon, renew, push, lineage, domains):
 
 
 def _typer_main(
-    config: str = typer.Option(DEFAULT_SERVER_CONFIG,
-                               envvar='CERTDEPLOY_SERVER_CONFIG'),
-    lineage: str = typer.Option(None, envvar='RENEWED_LINEAGE'),
-    domains: str = typer.Option('', envvar='RENEWED_DOMAINS'),
-    daemon: bool = typer.Option(False, envvar='CERTDEPLOY_SERVER_DAEMON'),
-    renew: bool = typer.Option(False, envvar='CERTDEPLOY_RENEW_ONLY'),
-    push: bool = typer.Option(False, envvar='CERTDEPOLY_PUSH_ONLY'),
-    log_level: LogLevel = typer.Option(None, envvar='CERTDEPLOY_LOG_LEVEL'),
-    log_file: str = typer.Option(None, envvar='CERTDEPLOY_LOG_FILE'),
-    sftp_log_level: LogLevel = typer.Option(None, envvar='SFTP_LOG_LEVEL'),
-    sftp_log_file: str = typer.Option(None, envvar='SFTP_LOG_FILE')
+    config: str = typer.Option(
+        DEFAULT_SERVER_CONFIG,
+        envvar='CERTDEPLOY_SERVER_CONFIG',
+        help='The path to the CertDeploy server config.'
+    ),
+    lineage: str = typer.Option(
+        None,
+        envvar='RENEWED_LINEAGE',
+        help='The path of a lineage (eg `/etc/letsencrypt/live/example.com`). '
+             'This is mutually exclusive with `--daemon`.'
+    ),
+    domains: str = typer.Option(
+        '',
+        envvar='RENEWED_DOMAINS',
+        help='A space separated list of domains as a single string '
+             '(eg `"www.example.com example.com"`). This is mutually exclusive '
+             'with `--daemon`.'
+    ),
+    daemon: bool = typer.Option(
+        False,
+        envvar='CERTDEPLOY_SERVER_DAEMON',
+        help='Run the daemon. Without this option the server command will run '
+             'once and exit.'
+    ),
+    renew: bool = typer.Option(
+        False,
+        envvar='CERTDEPLOY_SERVER_RENEW_ONLY',
+        help='Run the cert renewal part of the daemon once and exit.'
+    ),
+    push: bool = typer.Option(
+        False,
+        envvar='CERTDEPOLY_SERVER_PUSH_ONLY',
+        help='Run the daemon only until the queue is empty and all pushes '
+             'have been processed. When used with `--linea  ge` and `--domains`'
+             ' it populates the queue and then runs the daemon until the push '
+             'is complete.'
+    ),
+    log_level: LogLevel = typer.Option(
+        None,
+        envvar='CERTDEPLOY_SERVER_LOG_LEVEL',
+        help='The CertDeploy log level. Defaults to \'ERROR\'.'
+    ),
+    log_file: str = typer.Option(
+        None,
+        envvar='CERTDEPLOY_SERVER_LOG_FILE',
+        help='The path to the CertDeploy log file. Defaults to `stdout` '
+             '(the python `logging` default).'
+    ),
+    sftp_log_level: LogLevel = typer.Option(
+        None,
+        envvar='CERTDEPOLY_SFTP_LOG_LEVEL',
+        help='The SFTP client log level. Defaults to \'ERROR\' '
+             '(the `paramiko` default).'
+    ),
+    sftp_log_file: str = typer.Option(
+        None,
+        envvar='CERTDEPOLY_SFTP_LOG_FILE',
+        help='The path to the SFTP client log file. Defaults to `stdout` '
+             '(the `paramiko` default).'
+    )
 ):
     # Just in case there is a config error
     log.setLevel(log_level or LogLevel.ERROR)

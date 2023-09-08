@@ -4,7 +4,7 @@
 mkdir -p /etc/letsencrypt/renewal-hooks/deploy
 ln -sf /usr/local/bin/certdeploy-server /etc/letsencrypt/renewal-hooks/deploy/certdeploy-hook
 
-if [[ "$CERTDEPLOY_RENEW_ONLY" == "true" ]]; then
+if [[ "$CERTDEPLOY_SERVER_RENEW_ONLY" == "true" ]]; then
 	certdeploy-server --renew
 elif [[ -n "$1" ]]; then
 	if [[ "$1" == "certdeploy-server" ]]; then

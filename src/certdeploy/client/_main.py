@@ -28,13 +28,34 @@ def _run(config: ClientConfig, daemon: bool):
 
 
 def _typer_main(
-    config: str = typer.Option(DEFAULT_CLIENT_CONFIG,
-                               envvar='CERTDEPLOY_CLIENT_CONFIG'),
-    daemon: bool = typer.Option(False, envvar='CERTDEPLOY_CLIENT_DAEMON'),
-    log_level: LogLevel = typer.Option(None, envvar='CERTDEPLOY_LOG_LEVEL'),
-    log_file: str = typer.Option(None, envvar='CERTDEPLOY_LOG_FILE'),
-    sftpd_log_level: LogLevel = typer.Option(None, envvar='SFTPD_LOG_LEVEL'),
-    sftpd_log_file: str = typer.Option(None, envvar='SFTPD_LOG_FILE')
+    config: str = typer.Option(
+        DEFAULT_CLIENT_CONFIG,
+        envvar='CERTDEPLOY_CLIENT_CONFIG',
+        help='The path to the CertDeploy client config.'
+    ),
+    daemon: bool = typer.Option(
+        False,
+        envvar='CERTDEPLOY_CLIENT_DAEMON',
+        help='Run the daemon.'
+    ),
+    log_level: LogLevel = typer.Option(
+        None,
+        envvar='CERTDEPLOY_CLIENT_LOG_LEVEL',
+        help='The CertDeploy log level. Defaults to \'ERROR\'.'
+    ),
+    log_file: str = typer.Option(None, envvar='CERTDEPLOY_CLIENT_LOG_FILE'),
+    sftpd_log_level: LogLevel = typer.Option(
+        None,
+        envvar='CERTDEPOLY_CLIENT_SFTP_LOG_LEVEL',
+        help='The log level for the embedded SFTP server. Defaults to '
+             '\'ERROR\'.'
+    ),
+    sftpd_log_file: str = typer.Option(
+        None,
+        envvar='CERTDEPOLY_CLIENT_SFTP_LOG_FILE',
+        help='The path to the log file for the embedded SFTP server (paramiko).'
+             ' Defaults to the paramiko default.'
+    )
 ):
     """The entry point for the CertDeploy client command line.
 
@@ -48,9 +69,9 @@ def _typer_main(
             default).
         sftpd_log_level: The log level for the embedded SFTP server. Defaults to
             'ERROR'.
-        sftpd_log_file: The log filename for the embedded SFTP server. Defaults
-            to stdout.
-    """
+        sftpd_log_file: The path to the log file for the embedded SFTP server.
+            Defaults to the `paramiko` default.
+    """  # noqa: D401
     # Just in case there is a config error set the log level right away.
     log.setLevel(log_level or LogLevel.ERROR)
     try:
