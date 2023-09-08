@@ -14,7 +14,7 @@
 - Added/removed some files included/excluded by mistake
 - Added server install docs
 - Added systemd unit examples
-- Fixed debug log call that should have been an info log call in the Docker update code.
+- Fixed debug log call that should have been an info log call in the Docker update code
 - Other documentation fixes
 
 ## Version 0.2.0 (alpha)
@@ -28,7 +28,23 @@
 - Removed a lot cruft from the sdist
 
 ## Version 0.2.2 (alpha)
-- Bumped dependency version
+- Bumped dependency versions
 - Fixed missing f's on some f-strings
 - Changed tests to match different performance
 - Changed tests to match paramiko errors
+
+## Version 0.3.0 (alpha)
+Hopefully the last non-patch release alpha.
+
+- Bumped dependency versions
+- Removed bash based tests because of extreme fragility
+- Added tons of tests to compensate for removing bash based tests
+- Fixed a bunch of formatting
+- Added tons of doc comments
+- Added partial workarounds for https://github.com/moby/moby/issues/46341
+- Changed some environment variables to be explicitly for the server or client.
+- Added the ability to control the location of the log file of both the client and the server.
+- Added the ability to control the log file location and log level of the SFTP component of both the client and server. The SFTP (paramiko) logs can just be noise sometimes so it's nice to be able to siphon them off and/or tune them down.
+
+### Known bugs
+See [this](https://github.com/moby/moby/issues/46341) upstream bug with docker. This means matching services by filters with any kind of explicit regex has been broken for a while. The docker service update code has been adjusted to directly get containers by name when the `name` option is given rather than using filters to get them. Filtering still works so long as it's used for substring matching and not regex (I know they're the same thing in this case but bugs will be bugs).
