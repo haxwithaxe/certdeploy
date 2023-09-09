@@ -47,6 +47,11 @@ cleanly directly on GitHub. Doc-strings are handled slightly differently than
 \*.md files. Just follow the existing patterns in the documentation unless your
 changes are specifically (and only) changing patterns globally.
 
+Some extra rules for the README.md:
+- variable and dictionary key names, and inline commands and code get single back ticks.
+- Environmental variables, literal values, variable values including numbers get double back ticks.
+- Anywhere a default value from the code is redeclared add an html comment like the following ``<!--DEFAULT FROM CODE-->`` at the end of the line to make it easier to audit the docs for defaults that need updating. Most of the instances of this are in just three places, but not all of them.
+
 :::{tip}
    Please notice that the [GitHub web interface] provides a quick way of
    propose changes in `certdeploy`'s files. While this mechanism can
