@@ -23,7 +23,6 @@ class Service:
     Note: Some simple validation is done in this base class and its subclasses.
         The goal is to catch obvious mistakes like invalid names or values of
         the wrong type.
-
     """
 
     action: str = None
@@ -31,7 +30,7 @@ class Service:
     name: str = None  # Just so it's there when exceptions look for it
     timeout: Union[float, int] = None
 
-    def __init__(self, config: dict):
+    def __init__(self, config: dict):  # noqa: D107
         log.debug(
             'New service %s from config: config=%s',
             self.__class__.__name__,
@@ -111,12 +110,11 @@ class DockerService(Service):  # pylint: disable=too-few-public-methods
             filters will be set to exactly match `name`.
         * If no value is given for both `filters` and `name` in `config`,
             `ConfigError` is raised.
-
     """
 
     _type = 'service'
 
-    def __init__(self, config: dict):
+    def __init__(self, config: dict):  # noqa: D107
         super().__init__(config)
         if not self.name and not self.filters:
             raise ConfigError('Either `filters` or `name` must be given in '
@@ -140,7 +138,7 @@ class DockerContainer(DockerService):  # pylint: disable=too-few-public-methods
     timeout = 10
     """The default time to wait before giving up on preforming `action`."""
 
-    def __init__(self, config: dict):
+    def __init__(self, config: dict):  # noqa: D107
         super().__init__(config)
         if self.name and not self.filters:
             # Match the exact name as given
@@ -156,10 +154,9 @@ class Script(Service):  # pylint: disable=too-few-public-methods
             the current working directory of the client if they aren't found
             with `shutil.which()`. If the script isn't found `ConfigError` is
             raised.
-
     """
 
-    def __init__(self, config: dict):
+    def __init__(self, config: dict):  # noqa: D107
         super().__init__(config)
         if os.path.isabs(self.name):
             self.script_path = self.name

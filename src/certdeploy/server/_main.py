@@ -78,10 +78,10 @@ def _typer_main(
         envvar='CERTDEPLOY_SERVER_LOG_LEVEL',
         help='The CertDeploy log level. Defaults to \'ERROR\'.'
     ),
-    log_file: str = typer.Option(
+    log_filename: str = typer.Option(
         None,
-        envvar='CERTDEPLOY_SERVER_LOG_FILE',
-        help='The path to the CertDeploy log file. Defaults to `stdout` '
+        envvar='CERTDEPLOY_SERVER_LOG_FILENAME',
+        help='The path to the CertDeploy log file. Defaults to `/dev/stdout` '
              '(the python `logging` default).'
     ),
     sftp_log_level: LogLevel = typer.Option(
@@ -90,10 +90,10 @@ def _typer_main(
         help='The SFTP client log level. Defaults to \'ERROR\' '
              '(the `paramiko` default).'
     ),
-    sftp_log_file: str = typer.Option(
+    sftp_log_filename: str = typer.Option(
         None,
-        envvar='CERTDEPOLY_SFTP_LOG_FILE',
-        help='The path to the SFTP client log file. Defaults to `stdout` '
+        envvar='CERTDEPOLY_SFTP_LOG_FILENAME',
+        help='The path to the SFTP client log file. Defaults to `/dev/stdout` '
              '(the `paramiko` default).'
     )
 ):
@@ -102,9 +102,9 @@ def _typer_main(
     try:
         conf = ServerConfig.load(
             config,
-            override_log_file=log_file,
+            override_log_filename=log_filename,
             override_log_level=log_level,
-            override_sftp_log_file=sftp_log_file,
+            override_sftp_log_filename=sftp_log_filename,
             override_sftp_log_level=sftp_log_level
         )
         log.setLevel(log_level or conf.log_level)

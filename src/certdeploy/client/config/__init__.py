@@ -27,18 +27,17 @@ _DURATION_RE = re.compile(r'\s*(?:\s*(\d+(?:\.\d+)?)([{0}]))\s*'.format(
 
 
 class ClientConfig(Config):  # pylint: disable=too-few-public-methods
-    """CertDeploy client configuration."""
+    """CertDeploy client configuration.
+
+    See `certdeploy.client.config.client.Config` for details about
+    arguments.
+    """
 
     # This is meant to validate as much of the config as possible so that
     #   errors are more likely to occur while a human is looking and before
     #   the system is cluttered with possible causes.
 
-    def __init__(self, *args: Any, **kwargs: Any):
-        """Prepare the client config.
-
-        See `certdeploy.client.config.client.Config` for details about
-        arguments.
-        """
+    def __init__(self, *args: Any, **kwargs: Any):  # noqa: D107
         try:
             super().__init__(*args, **kwargs)
         except TypeError as err:

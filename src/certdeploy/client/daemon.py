@@ -204,18 +204,17 @@ class StubSFTPServer(paramiko.SFTPServerInterface):
 
 
 class _Update(threading.Thread):
-    """Service update worker thread."""
+    """Service update worker thread.
+
+    Arguments:
+        config: CertDeploy client config.
+        update_func: The function to use to update services.
+    """
 
     min_wait_seconds: int = 1
     """The interval to wait between checks for time to update in seconds"""
 
-    def __init__(self, config: ClientConfig, update_func: callable):
-        """Prepare update worker.
-
-        Arguments:
-            config: CertDeploy client config.
-            update_func: The function to use to update services.
-        """
+    def __init__(self, config: ClientConfig, update_func: callable):  # noqa: D107,E501
         threading.Thread.__init__(self, daemon=True)
         self._config: ClientConfig = config
         self.update_func: callable = update_func
@@ -269,14 +268,13 @@ class _Update(threading.Thread):
 
 
 class DeployServer:  # pylint: disable=too-few-public-methods
-    """SFTP server to accept certs from the CertDeploy server."""
+    """SFTP server to accept certs from the CertDeploy server.
 
-    def __init__(self, config: ClientConfig):
-        """Prepare the server.
+    Arguments:
+        config: The CertDeploy client config.
+    """
 
-        Arguments:
-            config: The CertDeploy client config.
-        """
+    def __init__(self, config: ClientConfig):  # noqa: D107
         self._config: ClientConfig = config
         self._sftpd_config: SFTPDConfig = self._config.sftpd_config
         self._update: _Update = None

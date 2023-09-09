@@ -11,14 +11,13 @@ from .server import Server
 
 
 class ServerConfig(Server):
-    """Server configuration."""
+    """Server configuration.
 
-    def __init__(self, *args, **kwargs):
-        """Prepare the config.
+    See `certdeploy.server.config.server.Server` for arguments and keyword
+    arguments.
+    """
 
-        See `certdeploy.server.config.server.Server` for arguments and keyword
-        arguments.
-        """
+    def __init__(self, *args, **kwargs):  # noqa: D107
         try:
             super().__init__(*args, **kwargs)
         except TypeError as err:
@@ -42,22 +41,22 @@ class ServerConfig(Server):
     def load(
         cls,
         filename: os.PathLike,
-        override_log_file: Optional[os.PathLike] = None,
+        override_log_filename: Optional[os.PathLike] = None,
         override_log_level: Optional[LogLevel] = None,
-        override_sftp_log_file: Optional[os.PathLike] = None,
+        override_sftp_log_filename: Optional[os.PathLike] = None,
         override_sftp_log_level: Optional[LogLevel] = None
     ) -> 'ServerConfig':
         """Load the `ServerConfig` from a file.
 
         Arguments:
             filename: The path of the CertDeploy server config.
-            override_log_file: The path of the CertDeploy log file as given by
-                the command line arguments. Defaults to the `log_filename`
+            override_log_filename: The path of the CertDeploy log file as given
+                by the command line arguments. Defaults to the `log_filename`
                 option in the config.
             override_log_level: The CertDeploy log level as given by the command
                 line arguments. Defaults to the `log_level` option in the
                 config.
-            override_sftp_log_file: The path of the SFTP client log file as
+            override_sftp_log_filename: The path of the SFTP client log file as
                 given by the command line arguments. Defaults to the
                 `sftp_log_level` option in the config.
             override_sftp_log_level: The SFTP client log level as given by the
@@ -68,10 +67,10 @@ class ServerConfig(Server):
             config = yaml.safe_load(config_file)
         if override_sftp_log_level:
             config['sftp_log_level'] = override_sftp_log_level
-        if override_sftp_log_file:
-            config['sftp_log_filename'] = override_sftp_log_file
+        if override_sftp_log_filename:
+            config['sftp_log_filename'] = override_sftp_log_filename
         if override_log_level:
             config['log_level'] = override_log_level
-        if override_log_file:
-            config['log_filename'] = override_log_file
+        if override_log_filename:
+            config['log_filename'] = override_log_filename
         return cls(**config)

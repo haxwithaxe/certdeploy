@@ -8,20 +8,19 @@ from ..errors import CertDeployError
 
 
 class UpdateError(CertDeployError):
-    """Base class for all service update related errors."""
+    """Base class for all service update related errors.
 
-    def __init__(self, service: Any, message: Union[Exception, str] = None,
+    Arguments:
+        service: The `certdeploy.client.config.service.Service` with the
+            problem.
+        message: Either a message string or an exception. An exception will
+            be formatted.
+        service_name: The name of the service with a problem in the event
+            it needs to be different than `service.name`.
+    """
+
+    def __init__(self, service: Any, message: Union[Exception, str] = None,  # noqa: D107,E501
                  service_name: str = None):
-        """Prepare the error.
-
-        Arguments:
-            service: The `certdeploy.client.config.service.Service` with the
-                problem.
-            message: Either a message string or an exception. An exception will
-                be formatted.
-            service_name: The name of the service with a problem in the event
-                it needs to be different than `service.name`.
-        """
         if service.name or service_name:
             service_name = f' {service.name or service_name}'
         else:
@@ -36,19 +35,18 @@ class UpdateError(CertDeployError):
 
 
 class DockerNotFound(UpdateError):
-    """Base class for failed docker API searches."""
+    """Base class for failed docker API searches.
+
+    Arguments:
+        service: The `certdeploy.client.config.service.Service` with the
+            problem.
+        service_name: The name of the service with a problem in the event
+            it needs to be different than `service.name`.
+    """
 
     _type: str = None
 
-    def __init__(self, service: Any, service_name: str = None):
-        """Prepare the error.
-
-        Arguments:
-            service: The `certdeploy.client.config.service.Service` with the
-                problem.
-            service_name: The name of the service with a problem in the event
-                it needs to be different than `service.name`.
-        """
+    def __init__(self, service: Any, service_name: str = None):  # noqa: D107
         message = (f'Could not find any docker {self._type} matching the '
                    f'following filter: {service.filters}')
         super().__init__(service, message, service_name)
@@ -67,11 +65,19 @@ class DockerServiceNotFound(DockerNotFound):
 
 
 class DockerError(UpdateError):
-    """Base class for docker related errors."""
+    """Base class for docker related errors.
+
+    Arguments:
+        service: The `DockerService` object associated with the error.
+        message: Either the `Exception` or the error message string. Defaults
+            to `None`.
+        service_name: The name of the service in the event the name is unclear
+            or unavailable from `service`. Defaults to `None`.
+    """
 
     _type = None
 
-    def __init__(self, service: Any, message: Union[Exception, str] = None,
+    def __init__(self, service: Any, message: Union[Exception, str] = None,  # noqa: D107,E501
                  service_name: str = None):
         # Reverse order from UpdateError because the docker service/container
         #   name may need to override the `service.name` if the error is for a
@@ -95,19 +101,18 @@ class DockerServiceError(DockerError):
 
 
 class SystemdError(UpdateError):
-    """Error updating a systemd unit."""
+    """Error updating a systemd unit.
 
-    def __init__(self, service: Any, message: Union[Exception, str] = None,
+    Arguments:
+        service: The `certdeploy.client.config.service.Service` with the
+            problem.
+        message: Either a message string or an exception. An exception will
+            be formatted.
+        stdout: The combined stdout/stderr from the systemctl command.
+    """
+
+    def __init__(self, service: Any, message: Union[Exception, str] = None,  # noqa: D107,E501
                  stdout: str = None):
-        """Prepare the error.
-
-        Arguments:
-            service: The `certdeploy.client.config.service.Service` with the
-                problem.
-            message: Either a message string or an exception. An exception will
-                be formatted.
-            stdout: The combined stdout/stderr from the systemctl command.
-        """
         if not message:
             message = (f'Failed to {service.action} systemd unit '
                        f'{service.name}')
@@ -119,20 +124,19 @@ class SystemdError(UpdateError):
 
 
 class ScriptError(UpdateError):
-    """Error running an update script."""
+    """Error running an update script.
 
-    def __init__(self, service: Any, message: Union[Exception, str] = None,
+    Arguments:
+        service: The `certdeploy.client.config.service.Service` with the
+            problem.
+        message: Either a message string or an exception. An exception will
+            be formatted.
+        proc: The `Popen` object that ran the script.
+        stdout: The combined stdout/stderr from the script execution.
+    """
+
+    def __init__(self, service: Any, message: Union[Exception, str] = None,  # noqa: D107,E501
                  proc: Popen = None, stdout: str = None):
-        """Prepare the error.
-
-        Arguments:
-            service: The `certdeploy.client.config.service.Service` with the
-                problem.
-            message: Either a message string or an exception. An exception will
-                be formatted.
-            proc: The `Popen` object that ran the script.
-            stdout: The combined stdout/stderr from the script execution.
-        """
         if not message:
             if proc:
                 message = (f'Failed to run the update script {service.name} '
@@ -151,12 +155,11 @@ class ScriptError(UpdateError):
 
 
 class InvalidKey(CertDeployError):
-    """Certificate validation error."""
+    """Certificate validation error.
 
-    def __init__(self, key_path: os.PathLike):
-        """Prepare the error.
+    Arguments:
+        key_path: The path to the invalid key.
+    """
 
-        Arguments:
-            key_path: The path to the invalid key.
-        """
+    def __init__(self, key_path: os.PathLike):  # noqa: D107
         super().__init__(f'Invalid key {key_path}')

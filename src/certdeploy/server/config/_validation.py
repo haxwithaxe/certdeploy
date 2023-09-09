@@ -28,7 +28,7 @@ def is_int(value: Any, min_value: Optional[int] = None,
 
 def is_optional_int(value: Any, min_value: Optional[int] = None,
                     max_value: Optional[int] = None) -> bool:
-    """Verify `value` is `None` or an integer between `min_value` and  # noqa: D205,D400,E501
+    """Verify `value` is `None` or an integer between `min_value` and
     `max_value`.
 
     The range is exclusive.
@@ -41,7 +41,7 @@ def is_optional_int(value: Any, min_value: Optional[int] = None,
 
     If neither `min_value` or `max_value` are set this is equivalent to:
     `value` is an integer or `None`.
-    """
+    """  # noqa: D205,D400
     if value is None:
         return True
     return is_int(value, min_value, max_value)
@@ -73,7 +73,7 @@ def is_float(value: Any, min_value: Optional[float] = None,
 
 def is_optional_float(value: Any, min_value: Optional[float] = None,
                       max_value: Optional[float] = None) -> bool:
-    """Verify `value` is `None` or a float or integer between `min_value` and  # noqa: D205,D400,E501
+    """Verify `value` is `None` or a float or integer between `min_value` and
     `max_value`.
 
     The range is exclusive.
@@ -86,7 +86,7 @@ def is_optional_float(value: Any, min_value: Optional[float] = None,
 
     If neither `min_value` or `max_value` are set this is equivalent to:
     `value` is a float, integer, or `None`.
-    """
+    """  # noqa: D205,D400
     if value is None:
         return True
     return is_float(value, min_value, max_value)

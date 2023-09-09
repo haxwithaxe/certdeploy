@@ -151,14 +151,13 @@ def format_error(err: Exception, message_format: str = '{name}: {message}'
 
 
 class Logger:
-    """A logging helper with some modified behavior."""
+    """A logging helper with some modified behavior.
 
-    def __init__(self, name: str):
-        """Prepare the `Logger`.
+    Arguments:
+        name: The name of the `logging.Logger`.
+    """
 
-        Arguments:
-            name: The name of the `logging.Logger`.
-        """
+    def __init__(self, name: str):  # noqa: D107
         self._log = logging.getLogger(name=name)
 
     def error(self, *args: Any, exc_info=None, **kwargs):

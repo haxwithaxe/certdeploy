@@ -43,16 +43,19 @@ def _typer_main(
         envvar='CERTDEPLOY_CLIENT_LOG_LEVEL',
         help='The CertDeploy log level. Defaults to \'ERROR\'.'
     ),
-    log_file: str = typer.Option(None, envvar='CERTDEPLOY_CLIENT_LOG_FILE'),
+    log_filename: str = typer.Option(
+        None,
+        envvar='CERTDEPLOY_CLIENT_LOG_FILENAME'
+    ),
     sftpd_log_level: LogLevel = typer.Option(
         None,
         envvar='CERTDEPOLY_CLIENT_SFTP_LOG_LEVEL',
         help='The log level for the embedded SFTP server. Defaults to '
              '\'ERROR\'.'
     ),
-    sftpd_log_file: str = typer.Option(
+    sftpd_log_filename: str = typer.Option(
         None,
-        envvar='CERTDEPOLY_CLIENT_SFTP_LOG_FILE',
+        envvar='CERTDEPOLY_CLIENT_SFTP_LOG_FILENAME',
         help='The path to the log file for the embedded SFTP server (paramiko).'
              ' Defaults to the paramiko default.'
     )
@@ -65,21 +68,21 @@ def _typer_main(
         daemon: If `True` run the daemon. Otherwise just run the deploy process
             once. Defaults to `False`.
         log_level: The CertDeploy log level. Defaults to `ERROR`.
-        log_file: The CertDeploy log filename. Defaults to stdout (`logging`
+        log_filename: The CertDeploy log filename. Defaults to stdout (`logging`
             default).
         sftpd_log_level: The log level for the embedded SFTP server. Defaults to
             'ERROR'.
-        sftpd_log_file: The path to the log file for the embedded SFTP server.
-            Defaults to the `paramiko` default.
+        sftpd_log_filename: The path to the log file for the embedded SFTP
+            server. Defaults to the `paramiko` default.
     """  # noqa: D401
     # Just in case there is a config error set the log level right away.
     log.setLevel(log_level or LogLevel.ERROR)
     try:
         conf = ClientConfig.load(
             config,
-            override_log_file=log_file,
+            override_log_filename=log_filename,
             override_log_level=log_level,
-            override_sftpd_log_file=sftpd_log_file,
+            override_sftpd_log_filename=sftpd_log_filename,
             override_sftpd_log_level=sftpd_log_level
         )
     except FileNotFoundError as err:
