@@ -38,6 +38,7 @@ Hopefully the last non-patch release alpha.
 
 - Bumped dependency versions
 - Removed bash based tests because of extreme fragility
+- Removed all test and build requirements for docker-compose
 - Added tons of tests to compensate for removing bash based tests
 - Fixed a bunch of formatting
 - Added tons of doc comments
