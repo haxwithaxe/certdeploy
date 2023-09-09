@@ -119,6 +119,15 @@ All code should:
 * Have accompanying unit or integration tests. It's not required. The project
    isn't starting with 100% coverage so it's not going to ruin anything.
 
+Tests fixtures that return plain `callable`s should use the `typing.Callable` with as much of the detail as is relevant to how it's being used. Arguments are less important than return values in general on the test side. For example:
+
+```
+def test_foo_does_bar(dummy_foo_factory: Callable[[important_config, ...], DummyFoo]):
+   ...
+```
+
+`dummy_foo_factory` could take a dozen more arguments but `important_config` is all the test uses and `DummyFoo` is what the test interacts with. This is just to make IDEs happier.
+
 ### Submit an issue
 
 Before you work on any non-trivial code contribution it's best to first create
@@ -238,6 +247,10 @@ conda activate certdeploy
 
    You can also use [tox] to run several other pre-configured tasks in the
    repository. Try `tox -av` to see a list of the available checks.
+
+   The pytest tests are split into tests that test the code and tests that test
+   the docker images. There will be "skipped" tests unless calling pytest
+   directly.
 
 
 ### Submit your contribution
