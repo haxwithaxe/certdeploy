@@ -1,9 +1,11 @@
+"""Tests to verify the behavior of the CertDeploy Server config."""
 
 from certdeploy.server.config import ServerConfig
 from certdeploy.server.config.server import PushMode
 
 
 def test_loads_valid_server(tmp_server_config_file: callable):
+    """Test a bunch of stuff all at once."""
     config_filename, src_config = tmp_server_config_file()
     config = ServerConfig.load(config_filename)
     assert config.privkey_filename == src_config['privkey_filename']
@@ -27,6 +29,7 @@ def test_loads_valid_server(tmp_server_config_file: callable):
 
 
 def test_loads_valid_server_push_mode_serial(tmp_server_config_file: callable):
+    """Verify the `push_mode` ``serial`` is translated correctly."""
     config_filename, _ = tmp_server_config_file(
         push_mode='serial'
     )
@@ -37,6 +40,7 @@ def test_loads_valid_server_push_mode_serial(tmp_server_config_file: callable):
 def test_loads_valid_server_push_mode_parallel(
         tmp_server_config_file: callable
 ):
+    """Verify the `push_mode` ``parallel`` is translated correctly."""
     config_filename, _ = tmp_server_config_file(
         push_mode='parallel'
     )
@@ -47,6 +51,7 @@ def test_loads_valid_server_push_mode_parallel(
 def test_loads_valid_server_push_interval_zero(
         tmp_server_config_file: callable
 ):
+    """Verify that a valid `push_interval` is accepted."""
     config_filename, _ = tmp_server_config_file(
         push_interval=0
     )
@@ -55,6 +60,7 @@ def test_loads_valid_server_push_interval_zero(
 
 
 def test_loads_valid_server_push_retries_zero(tmp_server_config_file: callable):
+    """Verify that a valid `push_retries` is accepted."""
     config_filename, _ = tmp_server_config_file(
         push_retries=0
     )
@@ -65,6 +71,7 @@ def test_loads_valid_server_push_retries_zero(tmp_server_config_file: callable):
 def test_loads_valid_server_push_retry_interval_zero(
         tmp_server_config_file: callable
 ):
+    """Verify that a valid `push_retry_interval` is accepted."""
     config_filename, _ = tmp_server_config_file(
         push_retry_interval=0
     )
@@ -73,6 +80,7 @@ def test_loads_valid_server_push_retry_interval_zero(
 
 
 def test_loads_valid_server_join_timeout_none(tmp_server_config_file: callable):
+    """Verify that a valid `join_timeout` (`None`) is accepted."""
     config_filename, _ = tmp_server_config_file(
         join_timeout=None
     )
@@ -81,6 +89,7 @@ def test_loads_valid_server_join_timeout_none(tmp_server_config_file: callable):
 
 
 def test_loads_valid_server_join_timeout_int(tmp_server_config_file: callable):
+    """Verify that a valid `join_timeout` (number) is accepted."""
     config_filename, _ = tmp_server_config_file(
         join_timeout=1
     )
@@ -90,6 +99,7 @@ def test_loads_valid_server_join_timeout_int(tmp_server_config_file: callable):
 
 def test_loads_valid_client(tmp_server_config_file: callable,
                             pubkeygen: callable):
+    """Verify that a valid client config is populated correctly."""
     config_filename, src_config = tmp_server_config_file(
         client_configs=[dict(
             address='1.2.3.4',
@@ -123,6 +133,7 @@ def test_loads_valid_client(tmp_server_config_file: callable,
 
 def test_loads_valid_client_push_retries_none(tmp_server_config_file: callable,
                                               pubkeygen: callable):
+    """Verify that a valid client `push_retries` (`None`) is accepted."""
     config_filename, _ = tmp_server_config_file(
         client_configs=[dict(
             address='1.2.3.4',
@@ -138,6 +149,7 @@ def test_loads_valid_client_push_retries_none(tmp_server_config_file: callable,
 
 def test_loads_valid_client_push_retries_zero(tmp_server_config_file: callable,
                                               pubkeygen: callable):
+    """Verify that a valid client `push_retries` (number) is accepted."""
     config_filename, _ = tmp_server_config_file(
         client_configs=[dict(
             address='1.2.3.4',
@@ -155,6 +167,7 @@ def test_loads_valid_client_push_retry_interval_none(
         tmp_server_config_file: callable,
         pubkeygen: callable
 ):
+    """Verify that a valid client `push_retry_interval` (`None`) is accepted."""
     config_filename, _ = tmp_server_config_file(
         client_configs=[dict(
             address='1.2.3.4',
@@ -172,6 +185,7 @@ def test_loads_valid_client_push_retry_interval_zero(
         tmp_server_config_file: callable,
         pubkeygen: callable
 ):
+    """Verify that a valid client `push_retry_interval` (number) is accepted."""
     config_filename, _ = tmp_server_config_file(
         client_configs=[dict(
             address='1.2.3.4',
