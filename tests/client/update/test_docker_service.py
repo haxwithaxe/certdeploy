@@ -56,6 +56,7 @@ def test_updates_docker_service_by_filter(
     assert canned_docker_service.updated_at != canned_docker_service.created_at
 
 
+@pytest.mark.skip(reason='broken by https://github.com/moby/moby/issues/46341')
 @pytest.mark.docker
 @pytest.mark.swarm
 def test_updates_docker_service_by_filter_with_regex(
@@ -96,10 +97,10 @@ def test_fail_fast_docker_service(
     # Do the thing under test
     with pytest.raises(DockerServiceNotFound) as err:
         update_docker_service(
-            DockerService({'filters': {'name': 'doesn\'t exist'}}),
+            DockerService({'filters': {'label': 'doesn\'t exist'}}),
             client_config
         )
-    msg = ('''DockerService failed to update: Could not find any docker '''
-           '''service matching the following filter: '''
-           '''{'label': 'doesn\'t exist'}''')
+    msg = ('<ExceptionInfo DockerServiceNotFound(\'DockerService failed to '
+           'update: Could not find any docker service matching the following '
+           'filter: {\\\'label\\\': "doesn\\\'t exist"}\')')
     assert msg in str(err)
