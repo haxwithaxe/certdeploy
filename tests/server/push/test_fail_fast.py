@@ -37,7 +37,8 @@ def test_fail_fast_on_serial_push(
         client_configs=[client0_config, client1_config],
         fail_fast=True,
         push_mode=PushMode.SERIAL.value,
-        push_retries=push_retries
+        push_retries=push_retries,
+        log_level='DEBUG'
     )
     ## Setup the lineage
     # The filename doesn't matter because it will never get far enough to
