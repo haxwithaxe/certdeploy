@@ -1,7 +1,9 @@
+"""Shared CertDeploy code."""
 
 import enum
 import logging
 import os
+import sys
 from importlib.metadata import (  # pragma: no cover
     PackageNotFoundError,
     version
@@ -36,6 +38,7 @@ DEFAULT_SERVER_HOST_KEYS = os.path.join(DEFAULT_CONFIG_DIR, 'server_hostkeys')
 # Default logging
 DEFAULT_LOG_DATE_FORMAT = '%Y.%m.%d-%H:%M:%S'
 DEFAULT_LOG_FORMAT = '%(levelname)s:%(name)s: %(message)s'
+DEFAULT_LOG_FILENAME = '/dev/stdout'
 
 ## Logging Constants
 CERTDEPLOY_CLIENT_LOGGER_NAME = 'certdeploy-client'
@@ -46,8 +49,12 @@ PARAMIKO_LOGGER_NAME = 'paramiko'
 
 
 # Initialize logging ASAP
-logging.basicConfig(format=DEFAULT_LOG_FORMAT, datefmt=DEFAULT_LOG_DATE_FORMAT,
-                    level=logging.ERROR)
+logging.basicConfig(
+    format=DEFAULT_LOG_FORMAT,
+    datefmt=DEFAULT_LOG_DATE_FORMAT,
+    stream=sys.stdout,
+    level=logging.ERROR
+)
 
 
 class LogLevel(enum.Enum):
@@ -69,52 +76,18 @@ class LogLevel(enum.Enum):
         Raises:
             TypeError: When `level` does not correspond to any `LogLevel`.
         """
+        if isinstance(level, cls):
+            return level
         if isinstance(level, int):
             for log_level in cls:
                 if getattr(logging, log_level.value) == level:
                     return log_level
-        if isinstance(level, (str, cls)):
+        if isinstance(level, str):
             try:
-                return cls.__call__(level)
-            except ValueError:
+                return getattr(cls, level)
+            except AttributeError:
                 pass
-        raise TypeError(f'Invalid log level: {level}')
-
-    @classmethod
-    def to_int(cls, level: Union[int, str, 'LogLevel']) -> int:
-        """Return an integer log level corresponding to `level`.
-
-        Arguments:
-            level: A log level.
-
-        Returns:
-            An integer corresponding to a `logging` log level if `level`
-            corresponds to a `LogLevel`. Otherwise return `None`.
-
-        Raises:
-            ValueError: When `level` isn't a log level or isn't equivalent to a
-                `logging` log level.
-        """
-        try:
-            return getattr(logging, cls.cast(level).value)
-        except AttributeError as err:
-            raise ValueError(f'Invalid log level: {level}') from err
-
-    @classmethod
-    def to_str(cls, level: Union[int, str, 'LogLevel']) -> str:
-        """Return a string log level corresponding to `level`.
-
-        Arguments:
-            level: A log level.
-
-        Returns:
-            A string corresponding to a `LogLevel` if `level` corresponds to a
-            `LogLevel`. Otherwise return `None`.
-
-        Raises:
-            ValueError: When `level` isn't a log level.
-        """
-        return cls.cast(level).value
+        raise ValueError(f'Invalid log level: {level}')
 
     @classmethod
     def validate(cls, level: Union[int, str, 'LogLevel']) -> bool:
@@ -132,6 +105,14 @@ class LogLevel(enum.Enum):
             return False
         except TypeError:
             return False
+
+    def __int__(self) -> int:
+        """Return an integer equivalent to a `logging` level."""
+        return getattr(logging, self.value)
+
+    def __str__(self) -> str:
+        """Return a string representation of the log level."""
+        return self.value
 
 
 def format_error(err: Exception, message_format: str = '{name}: {message}'
@@ -183,6 +164,11 @@ class Logger:
         else:
             self._log.error(*args, **kwargs)
 
+    def purgeHandlers(self):
+        """Purge all handlers from the logger."""
+        for old_handler in self._log.handlers:
+            self._log.removeHandler(old_handler)
+
     def setLevel(self, level: Union[int, str, LogLevel]):
         """Set the logging level for this `Logger`.
 
@@ -192,7 +178,21 @@ class Logger:
             level: The desired log level as either the `logging` log level, the
                 string log level, or the `LogLevel`.
         """
-        self._log.setLevel(LogLevel.to_str(level))
+        self._log.setLevel(LogLevel.cast(level).value)
+
+    @classmethod
+    def fromLogger(cls, logger: logging.Logger) -> 'Logger':
+        """Create a `Logger` from a `logging.Logger`.
+
+        Arguments:
+            logger: The source `logging.Logger`.
+
+        Returns:
+            A new `Logger` with `logger` as the wrapped logger.
+        """
+        _logger = cls('dummy')
+        _logger._log = logger
+        return _logger
 
     def __getattr__(self, attr: str):
         """Pass requests for missing attributes on to the `logging.Logger`."""
@@ -202,11 +202,13 @@ class Logger:
         raise AttributeError(attr)
 
 
-def set_log_properties(logger_name: str, log_filename: os.PathLike,
-                       log_level: Union[int, str, LogLevel] = LogLevel.ERROR,
-                       msg_format: str = DEFAULT_LOG_FORMAT,
-                       date_format: str = DEFAULT_LOG_DATE_FORMAT):
-    """Set the CertDeploy logger properties.
+def set_paramiko_log_properties(
+    log_filename: os.PathLike = None,
+    log_level: Union[int, str, LogLevel] = None,
+    msg_format: str = DEFAULT_LOG_FORMAT,
+    date_format: str = DEFAULT_LOG_DATE_FORMAT
+):
+    """Set the paramiko logger properties.
 
     Arguments:
         log_filename: The path to the log file.
@@ -217,13 +219,46 @@ def set_log_properties(logger_name: str, log_filename: os.PathLike,
             the `msg_format` has the date in it. Defaults to
             `DEFAULT_LOG_DATE_FORMAT`.
     """
-    logger = logging.getLogger(name=logger_name)
-    if log_level:
-        logger.setLevel(LogLevel.to_str(log_level))
+    if log_filename and not os.path.isfile(log_filename):
+        with open(log_filename, 'w') as log_file:
+            log_file.write('')
+    set_log_properties(PARAMIKO_LOGGER_NAME, log_filename, log_level,
+                       msg_format, date_format)
+
+
+def set_log_properties(
+    logger_name: str,
+    log_filename: os.PathLike,
+    log_level: Union[int, str, LogLevel] = None,
+    msg_format: str = DEFAULT_LOG_FORMAT,
+    date_format: str = DEFAULT_LOG_DATE_FORMAT
+):
+    """Set logger properties.
+
+    Arguments:
+        logger_name: The name of the logger.
+        log_filename: The path to the log file.
+        log_level: The desired log level. Defaults to `LogLevel.ERROR`.
+        msg_format: The format for the each log entry. Defaults to
+            `DEFAULT_LOG_FORMAT`.
+        date_format: The date format for each log entry. This is only used if
+            the `msg_format` has the date in it. Defaults to
+            `DEFAULT_LOG_DATE_FORMAT`.
+    """
+    logger = Logger(name=logger_name)
     if log_filename:
-        for old_handler in logger.handlers:
-            logger.removeHandler(old_handler)
-        log_file = open(log_filename, 'a')
-        handler = logging.StreamHandler(log_file)
+        logger.purgeHandlers()
+        if log_filename == '/dev/null':
+            handler = logging.NullHandler()
+        else:
+            if log_filename in ('/dev/stdout', 'stdout', sys.stdout.name):
+                log_file = sys.stdout
+            elif log_filename in ('/dev/stderr', 'stderr', sys.stderr.name):
+                log_file = sys.stderr
+            else:
+                log_file = open(log_filename, 'a')
+            handler = logging.StreamHandler(log_file)
         handler.setFormatter(logging.Formatter(msg_format, date_format))
         logger.addHandler(handler)
+    if log_level:
+        logger.setLevel(LogLevel.cast(log_level).value)

@@ -11,6 +11,8 @@ from .daemon import DeployServer
 from .deploy import deploy
 from .update import update_services
 
+_app = typer.Typer()
+
 
 def _run(config: ClientConfig, daemon: bool):
     """Run the CertDeploy client.
@@ -21,12 +23,16 @@ def _run(config: ClientConfig, daemon: bool):
             function.
     """
     if daemon:
+        log.debug('Running daemon')
         DeployServer(config).serve_forever()
     else:
+        log.debug('Running one off deploy')
         if deploy(config):
+            log.debug('Updating services')
             update_services(config)
 
 
+@_app.command()
 def _typer_main(
     config: str = typer.Option(
         DEFAULT_CLIENT_CONFIG,
@@ -47,34 +53,19 @@ def _typer_main(
         None,
         envvar='CERTDEPLOY_CLIENT_LOG_FILENAME'
     ),
-    sftpd_log_level: LogLevel = typer.Option(
+    sftp_log_level: LogLevel = typer.Option(
         None,
         envvar='CERTDEPOLY_CLIENT_SFTP_LOG_LEVEL',
         help='The log level for the embedded SFTP server. Defaults to '
              '\'ERROR\'.'
     ),
-    sftpd_log_filename: str = typer.Option(
+    sftp_log_filename: str = typer.Option(
         None,
         envvar='CERTDEPOLY_CLIENT_SFTP_LOG_FILENAME',
         help='The path to the log file for the embedded SFTP server (paramiko).'
              ' Defaults to the paramiko default.'
     )
 ):
-    """The entry point for the CertDeploy client command line.
-
-    Arguments:
-        config: The path to the CertDeploy client config. Defaults to
-            `DEFAULT_CLIENT_CONFIG`.
-        daemon: If `True` run the daemon. Otherwise just run the deploy process
-            once. Defaults to `False`.
-        log_level: The CertDeploy log level. Defaults to `ERROR`.
-        log_filename: The CertDeploy log filename. Defaults to stdout (`logging`
-            default).
-        sftpd_log_level: The log level for the embedded SFTP server. Defaults to
-            'ERROR'.
-        sftpd_log_filename: The path to the log file for the embedded SFTP
-            server. Defaults to the `paramiko` default.
-    """  # noqa: D401
     # Just in case there is a config error set the log level right away.
     log.setLevel(log_level or LogLevel.ERROR)
     try:
@@ -82,8 +73,8 @@ def _typer_main(
             config,
             override_log_filename=log_filename,
             override_log_level=log_level,
-            override_sftpd_log_filename=sftpd_log_filename,
-            override_sftpd_log_level=sftpd_log_level
+            override_sftp_log_filename=sftp_log_filename,
+            override_sftp_log_level=sftp_log_level
         )
     except FileNotFoundError as err:
         log.error('Config file "%s" not found: %s', config, err, exc_info=err)
@@ -99,10 +90,5 @@ def _typer_main(
         sys.exit(1)
 
 
-def main():
-    """The function to run `typer` from `console_scripts`."""  # noqa: D401
-    typer.run(_typer_main)
-
-
 if __name__ == '__main__':
-    main()
+    _app()

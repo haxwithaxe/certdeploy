@@ -1,3 +1,4 @@
+"""CertDeploy Client config backends."""
 
 import os
 import shutil
@@ -89,19 +90,19 @@ class Config:
         filename: os.PathLike,
         override_log_filename: Optional[os.PathLike] = None,
         override_log_level: Optional[LogLevel] = None,
-        override_sftpd_log_filename: Optional[os.PathLike] = None,
-        override_sftpd_log_level: Optional[LogLevel] = None
+        override_sftp_log_filename: Optional[os.PathLike] = None,
+        override_sftp_log_level: Optional[LogLevel] = None
     ):
         """Load the config from a file."""
         with open(filename, 'r', encoding='utf-8') as config_file:
             config = yaml.safe_load(config_file)
         if 'sftpd' in config:
-            if override_sftpd_log_level:
-                config['sftpd']['log_level'] = override_sftpd_log_level
-            if override_sftpd_log_filename:
-                config['sftpd']['log_filename'] = override_sftpd_log_filename
+            if override_sftp_log_level:
+                config['sftpd']['log_level'] = override_sftp_log_level
+            if override_sftp_log_filename:
+                config['sftpd']['log_filename'] = override_sftp_log_filename
         if override_log_level:
             config['log_level'] = override_log_level
         if override_log_filename:
-            config['log_file'] = override_log_filename
+            config['log_filename'] = override_log_filename
         return cls(**config)

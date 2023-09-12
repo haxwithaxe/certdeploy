@@ -1,3 +1,4 @@
+"""CertDeploy Server daemon and SFTP parts."""
 
 import json
 import os
@@ -390,6 +391,9 @@ class PushWorker(Thread):
 class Server:
     """Accept new sync requests and push new certs to clients."""
 
+    # Just for testing so that the daemon can be shutdown cleanly.
+    _stop_running: bool = False
+
     def __init__(self, config: ServerConfig):
         """Prepare the server.
 
@@ -413,7 +417,7 @@ class Server:
         #   if it takes too long. In order to use it set `ONE_SHOT_TIMEOUT`
         #   to a positive integer.
         timeout = _TimeoutTimer.start(ONE_SHOT_TIMEOUT)
-        while True:
+        while not self._stop_running:
             main_loop_sleep = GO_FAST_SLEEP
             queue = Queue(self._config, 'r').load()
             log.debug('Queue length is %s, worker count is %s', len(queue),

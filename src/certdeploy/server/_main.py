@@ -9,6 +9,8 @@ from .config import ServerConfig
 from .renew import renew_certs
 from .server import Server
 
+_app = typer.Typer()
+
 
 def _run(config, daemon, renew, push, lineage, domains):
     if renew:
@@ -22,12 +24,12 @@ def _run(config, daemon, renew, push, lineage, domains):
     else:
         log.debug('Running manual push or hook')
         if (not lineage or not domains) and not push:
-            log.error('Could not find lineage or domains.',
-                      f'lineage: {lineage}, domains: {domains}',
-                      file=sys.stderr)
+            log.error('Could not find lineage or domains. lineage: %s, '
+                      'domains: %s', lineage, domains)
             sys.exit(1)
         server = Server(config)
         if domains and lineage:
+            log.debug('Adding lineage to queue.')
             domains = domains.split()
             server.sync(lineage, domains)
         if push:
@@ -35,6 +37,7 @@ def _run(config, daemon, renew, push, lineage, domains):
             server.serve_forever(one_shot=True)
 
 
+@_app.command()
 def _typer_main(
     config: str = typer.Option(
         DEFAULT_SERVER_CONFIG,
@@ -116,4 +119,4 @@ def _typer_main(
 
 def main():
     """`certdeploy-server` script entrypoint."""
-    typer.run(_typer_main)
+    _app()

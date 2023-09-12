@@ -1,3 +1,4 @@
+"""Public CertDeploy Client Config."""
 
 import os
 import re
@@ -5,8 +6,8 @@ from typing import Any
 
 from ... import (
     CERTDEPLOY_CLIENT_LOGGER_NAME,
-    PARAMIKO_LOGGER_NAME,
-    set_log_properties
+    set_log_properties,
+    set_paramiko_log_properties
 )
 from ...errors import ConfigError, ConfigInvalid, ConfigInvalidPath
 from .client import Config, SFTPDConfig
@@ -51,11 +52,6 @@ class ClientConfig(Config):  # pylint: disable=too-few-public-methods
             log_filename=self.log_filename,
             log_level=self.log_level
         )
-        set_log_properties(
-            logger_name=PARAMIKO_LOGGER_NAME,
-            log_filename=self.sftpd.get('log_filename'),
-            log_level=self.sftpd.get('log_level')
-        )
         if not os.path.isdir(self.source):
             raise ConfigInvalidPath('source', self.source, is_type='directory')
         if not os.path.isdir(self.destination):
@@ -70,6 +66,10 @@ class ClientConfig(Config):  # pylint: disable=too-few-public-methods
                     f'Invalid SFTPD config option: {err}'
                     ) from err
             raise
+        set_paramiko_log_properties(
+            log_filename=self.sftpd_config.log_filename,
+            log_level=self.sftpd_config.log_level
+        )
         seconds = 0
         # `null` in the config is eqivalent to 0s
         if self.update_delay is not None:

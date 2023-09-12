@@ -1,3 +1,4 @@
+"""CertDeploy Client update service config types."""
 
 import os
 import re
@@ -67,13 +68,18 @@ class Service:
         # Don't return self.name since it always needs to be set or None.
         return name
 
-    def __eq__(self, other):
-        if not isinstance(other, type(self)):
+    def __eq__(self, other) -> bool:
+        """Test if `other` is the same as this instance.
+
+        Return `True` if `other` is the same type and some attributes match.
+        """
+        if not isinstance(other, self.__class__):
             return False
         return (self.action == other.action and self.filters == other.filters
                 and self.name == other.name and self.timeout == other.timeout)
 
     def __repr__(self) -> str:
+        """Return a pragmatic representation of this instance."""
         return (f'<{self.__class__.__name__}: action={self.action}, '
                 f'filters={self.filters}, name={self.name}, '
                 f'timeout={self.timeout}>')

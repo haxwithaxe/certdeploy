@@ -1,3 +1,4 @@
+"""CertDeploy Server config backend."""
 
 import enum
 import os
@@ -70,6 +71,7 @@ class PushMode(enum.Enum):
 
     @classmethod
     def choices(cls) -> list['PushMode']:
+        """Return a list of available values."""
         return [cls.SERIAL, cls.PARALLEL]
 
 

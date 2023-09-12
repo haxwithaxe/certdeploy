@@ -1,3 +1,4 @@
+"""CertDeploy Server client connection configs."""
 
 import base64
 import os

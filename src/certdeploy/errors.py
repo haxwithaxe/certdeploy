@@ -1,4 +1,4 @@
-"""Exceptions to use with both CertDeploy servers and CertDeploy clients"""
+"""Exceptions to use with both CertDeploy servers and CertDeploy clients."""
 
 from typing import Any
 
@@ -23,22 +23,23 @@ class ConfigInvalid(ConfigError):
         key: The config key.
         value: The value given in the config.
         must: If the value must have been something set this to be that
-            thing. Defaults to `None`. For example:
-
-                ```
-                ConfigInvalid(
-                    'renew_unit',
-                    None,
-                    must='not be a weekday if `renew_every` is set and not'
-                         ' 1'
-                ) -> ('Invalid value "None" for `renew_unit`. `renew_unit` '
-                      'must not be a weekday if `renew_every` is set and '
-                      'not 1.')
-
-                ```
-
+            thing. Defaults to `None`.
         config_desc: The description of the config if needed. Defaults to
             an empty string.
+
+    Example:
+        An example of formatting using `must`.
+
+            ConfigInvalid(
+                'renew_unit',
+                None,
+                must='not be a weekday if `renew_every` is set and not'
+                     ' 1'
+            ) -> ('Invalid value "None" for `renew_unit`. `renew_unit` '
+                  'must not be a weekday if `renew_every` is set and '
+                  'not 1.')
+
+
     """
 
     def __init__(self, key: str, value: Any, must: str = None,  # noqa: D107

@@ -24,9 +24,23 @@ SOCKET_TIMEOUT = 1
 
 
 class SSHServer(paramiko.ServerInterface):
-    """Base SSH server to hand off SFTP connections."""
+    """Base SSH server to hand off SFTP connections.
 
-    def __init__(self, config, *args, **kwargs):
+    Attributes:
+        valid_username (str): The username that is valid for login.
+        valid_public_key (paramiko.PublicBlob): The server's public key.
+
+    Arguments:
+        config (ClientConfig): The CertDeploy client config.
+        args (list[Any], optional): Passthrough positional arguments to the
+            parent class.
+
+    Keyword Arguments:
+        kwargs (dict[Any, Any]): Passthrough keyword arguments to the parent
+            class.
+    """
+
+    def __init__(self, config, *args, **kwargs):  # noqa: D107
         super().__init__(*args, **kwargs)
         self.valid_username = config.sftpd_config.username
         # Key is in the config file
@@ -274,13 +288,12 @@ class DeployServer:  # pylint: disable=too-few-public-methods
         config: The CertDeploy client config.
     """
 
+    _stop_running: bool = False
+
     def __init__(self, config: ClientConfig):  # noqa: D107
         self._config: ClientConfig = config
         self._sftpd_config: SFTPDConfig = self._config.sftpd_config
         self._update: _Update = None
-        # A kill switch for testing.
-        # This is just for testing within a thread for now.
-        self._stop_running = threading.Event()
         StubSFTPServer._working_dir: os.PathLike = self._config.source
 
     def _join_update(self):
@@ -343,7 +356,7 @@ class DeployServer:  # pylint: disable=too-few-public-methods
         log.info('Listening for incoming connections at %s:%s',
                  self._sftpd_config.listen_address or '0.0.0.0',
                  self._sftpd_config.listen_port)
-        while not self._stop_running.is_set():
+        while not self._stop_running:
             # socket timeout acts like sleep for this loop
             try:
                 conn, addr = server_socket.accept()
@@ -376,3 +389,4 @@ class DeployServer:  # pylint: disable=too-few-public-methods
                     raise err from err
                 log.error(err, exc_info=err)
             self._deploy()
+        log.debug('Loop finished gracefully')
