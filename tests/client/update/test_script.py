@@ -1,3 +1,4 @@
+"""Tests to verify the behavior of the `Script` update type config."""
 
 import pytest
 from fixtures import utils
