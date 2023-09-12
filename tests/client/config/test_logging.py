@@ -1,17 +1,29 @@
 """Check that the various logging configs do what they say they do."""
 
+import logging
 import pathlib
 from typing import Callable
 
 import paramiko
-from fixtures.threading import CleanThread
+from fixtures.keys import KeyPair
+from fixtures.mock_server import MockPushContext
+from fixtures.threading import CleanThread, KillSwitch
 
+from certdeploy import (
+    CERTDEPLOY_CLIENT_LOGGER_NAME,
+    PARAMIKO_LOGGER_NAME,
+    LogLevel
+)
+from certdeploy.client import log
 from certdeploy.client.config import ClientConfig
 from certdeploy.client.daemon import DeployServer
 
+# String from certdeploy.client.daemon.DeployServer.serve_forever
+CLIENT_DAEMON_READY = 'Listening for incoming connections at '
+
 
 def test_logs_at_given_level_to_given_file(
-    simple_thread: Callable[[...], CleanThread],
+    managed_thread: Callable[[...], CleanThread],
     wait_for_condition: Callable[[Callable[[], bool], int], None],
     tmp_client_config: Callable[[...], ClientConfig],
     tmp_path: pathlib.Path
@@ -21,10 +33,11 @@ def test_logs_at_given_level_to_given_file(
     This also exercises the `log_level` config.
     """
     ## Define some variables to avoid magic values
+    log_level = LogLevel.DEBUG
     log_path = tmp_path.joinpath('test.log')
     ## Setup client
     client_config = tmp_client_config(
-        log_level='DEBUG',
+        log_level=log_level.value,
         log_filename=str(log_path),
         sftpd=dict(
             listen_address='127.0.0.1',
@@ -33,25 +46,31 @@ def test_logs_at_given_level_to_given_file(
         )
     )
     ## Setup test
+    kill_switch = KillSwitch()
     client = DeployServer(client_config)
-
-    client_thread = simple_thread(
+    client._stop_running = kill_switch
+    ## Run test
+    client_thread = managed_thread(
         client.serve_forever,
         allowed_exceptions=[paramiko.ssh_exception.SSHException],
-        kill_switch=client._stop_running
+        kill_switch=kill_switch,
+        teardown=kill_switch.teardown(client)
     )
-    ## Run test
-    client_thread.start()
-    wait_for_condition((lambda: 'DEBUG' in log_path.read_text()), 300)
-    client_thread.stop()
+    client_thread.wait_for_text_in_log(CLIENT_DAEMON_READY,
+                                       lambda _: log_path.read_text())
+    client_thread.reraise_unexpected()
     ## Formally verify results
-    assert 'DEBUG' in log_path.read_text()
+    assert f'{log_level.value}:{CERTDEPLOY_CLIENT_LOGGER_NAME}' in \
+        log_path.read_text()
+    assert LogLevel.cast(log.level) == log_level
+    assert log.handlers[0].stream.name == str(log_path)
 
 
 def test_sftpd_logs_at_given_level_to_given_file(
-    simple_thread: Callable[[...], CleanThread],
-    socket_poker: Callable[[str, int, str], None],
+    managed_thread: Callable[[...], CleanThread],
     wait_for_condition: Callable[[Callable[[], bool], int], None],
+    keypairgen: Callable[[...], KeyPair],
+    mock_server_push: Callable[[...], MockPushContext],
     tmp_client_config: Callable[[...], ClientConfig],
     tmp_path: pathlib.Path
 ):
@@ -60,33 +79,55 @@ def test_sftpd_logs_at_given_level_to_given_file(
     This also exercises the `log_level` config.
     """
     ## Define some variables to avoid magic values
-    log_path = tmp_path.joinpath('test.log')
+    listen_address = '127.0.0.1'
+    log_level = LogLevel.DEBUG
+    log_path = tmp_path.joinpath('paramiko.log')
     ## Setup client
+    tester_keypair = keypairgen()
+    tester_keypair.update(tmp_path, 'tester_key')
+    client_keypair = keypairgen()
+    client_keypair.update(tmp_path, 'client_key')
     client_config = tmp_client_config(
-        log_level='CRITICAL',
-        log_filename='/dev/null',
+        tmp_path=tmp_path,
+        client_keypair=client_keypair,
+        server_keypair=tester_keypair,
+        log_level='DEBUG',
+        log_filename='/dev/stderr',
         sftpd=dict(
-            listen_address='127.0.0.1',
-            log_level='DEBUG',
-            log_filename=str(log_path)
+            listen_address=listen_address,
+            log_level=log_level.value,
+            log_filename=str(log_path),
+            server_pubkey=tester_keypair.pubkey_text
         )
     )
     ## Setup test
+    mock_server = mock_server_push(
+        client_config,
+        pathlib.Path('staging'),
+        client_keypair=client_keypair,
+        server_keypair=tester_keypair
+    )
+    kill_switch = KillSwitch()
     client = DeployServer(client_config)
-    client_thread = simple_thread(
+    client._stop_running = kill_switch
+    client_thread = managed_thread(
         client.serve_forever,
         allowed_exceptions=[paramiko.ssh_exception.SSHException],
-        kill_switch=client._stop_running
+        kill_switch=kill_switch,
+        teardown=kill_switch.teardown(client)
     )
-    client_thread.start()
+    client_thread.wait_for_text_in_log(CLIENT_DAEMON_READY,
+                                       lambda x: x.caplog.text)
+    assert client_thread.is_alive() is True, \
+        f'Client is dead too soon: {client_thread.caplog.messages[-1]}'
     ## Run test
     # Connect to the client to generate some paramiko log traffic
-    socket_poker(client_config.sftpd_config.listen_address,
-                 client_config.sftpd_config.listen_port,
-                 'Just testing logging')
-    # Wait for the logs to have what we want
-    wait_for_condition((lambda: 'DEBUG' in log_path.read_text()), 300)
-    ## Clean up
-    client_thread.stop()
-    ## Formally verify results
-    assert 'DEBUG' in log_path.read_text()
+    mock_server.push()
+    ## Verify results
+    client_thread.reraise_unexpected()
+    paramiko_log = logging.getLogger(name=PARAMIKO_LOGGER_NAME)
+    assert LogLevel.cast(paramiko_log.getEffectiveLevel()) == log_level
+    assert paramiko_log.handlers[0].stream.name == str(log_path)
+    assert f'{log_level.value}:{PARAMIKO_LOGGER_NAME}' in log_path.read_text()
+    assert f'{log_level.value}:{PARAMIKO_LOGGER_NAME}.transport.sftp' in \
+        log_path.read_text()

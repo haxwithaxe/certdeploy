@@ -130,6 +130,15 @@ class ServiceWrapper:
 
     def filter_tasks(self, task_filter: Callable[[dict], bool]
                      ) -> Generator[dict, None, None]:
+        """Filter service tasks with `task_filter`.
+
+        Arguments:
+            task_filter: A `callable` that accepts a task `dict` and returns
+                `True` if the task matches.
+
+        Yields:
+            Task `dict`s as they are identified.
+        """
         self._service.reload()
         for task in self._service.tasks():
             if task_filter(task):

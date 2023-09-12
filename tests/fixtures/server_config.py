@@ -135,8 +135,9 @@ def tmp_server_config_file(
         config = dict(
             fail_fast=False,
             log_level='DEBUG',
+            log_filename=str(tmp_path.joinpath('certdeploy-server.log')),
             sftp_log_level='DEBUG',
-            sftp_log_filename='/dev/null',
+            sftp_log_filename=str(tmp_path.joinpath('sftp.log')),
             renew_every=2,
             renew_unit='hour',
             renew_at=':00',

@@ -90,7 +90,7 @@ class MockClientTCPServer(threading.Thread):
                 server.handle_request()
 
 
-@pytest.fixture()
+@pytest.fixture(scope='function')
 def mock_fail_client(free_port: Callable[[...], int]
                      ) -> Callable[[str, int], MockClientTCPServer]:
     """Return a mock CertDeploy client factory."""

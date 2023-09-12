@@ -3,7 +3,9 @@
 import pathlib
 import socket
 import stat
+import threading
 import time
+import uuid
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -90,6 +92,45 @@ class _Ports:
         return True
 
 
+class KillSwitch(threading.Event):
+    """A thread-safe boolean signal.
+
+    Defaults to `False`.
+
+    Attributes:
+        id: A unique ID for each instance of `KillSwitch`. Just for debugging.
+
+    Example:
+
+        ...
+        kill_switch = KillSwitch()
+        client = DeployServer(my_client_config)
+        client._stop_running = kill_switch
+        managed_thread(
+            client.serve_forever,
+            kill_switch=kill_switch,
+            teardown=kill_switch.teardown(client)
+        )
+        ...
+
+    """
+
+    def __init__(self):  # noqa: D107
+        threading.Event.__init__(self)
+        self.id = uuid.uuid4()
+
+    def teardown(self, looper: Any) -> callable:
+        """Return a function that sets the `looper` back to defaults."""
+        def _teardown():
+            self.clear()
+            looper._stop_running = False
+        return _teardown
+
+    def __bool__(self):
+        """Return `True` if the event is set."""
+        return self.is_set()
+
+
 @dataclass
 class Script:
     """A wrapper for a temporary script and a flag file."""
@@ -164,7 +205,7 @@ def tmp_script(tmp_path_factory: pytest.TempPathFactory
     return _tmp_script
 
 
-@pytest.fixture()
+@pytest.fixture(scope='function')
 def lineage_factory(tmp_path_factory: pytest.TempPathFactory
                     ) -> Callable[[str, list[str]], pathlib.Path]:
     """Return a temporary lineage factory."""
@@ -231,24 +272,13 @@ def get_free_port(min_port: int = 1025, max_port: int = 65535,
     raise NoFeePort()
 
 
-@pytest.fixture()
+@pytest.fixture(scope='function')
 def free_port() -> Callable[[int, int, str], int]:
     """Return a free port number factory."""
     return get_free_port
 
 
-@pytest.fixture()
-def socket_poker() -> Callable[[str, int, str], None]:
-
-    def _socket_poker(address: str, port: int, message: str = 'testing'):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.connect((address, port))
-            sock.sendall(message.encode())
-
-    return _socket_poker
-
-
-@pytest.fixture()
+@pytest.fixture(scope='function')
 def wait_for_condition() -> Callable[[Callable[[], bool], int], None]:
     """Return a utility that waits for a function to be `True`."""
 

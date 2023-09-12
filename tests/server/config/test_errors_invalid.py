@@ -1,3 +1,5 @@
+"""Test that verify the CertDeploy Server config fails given bad values."""
+
 import os
 
 import pytest
@@ -7,6 +9,7 @@ from certdeploy.server.config import ServerConfig
 
 
 def test_fails_invalid_key(tmp_server_config_file: callable):
+    """Verify unexpected config keys cause an error."""
     config_filename, src_config = tmp_server_config_file(bad_config=True)
     with pytest.raises(ConfigError) as err:
         ServerConfig.load(config_filename)
@@ -14,6 +17,7 @@ def test_fails_invalid_key(tmp_server_config_file: callable):
 
 
 def test_fails_nonexistent_privkey(tmp_server_config_file: callable):
+    """Verify a nonexistent `privkey_filename` causes an error."""
     assert not os.path.exists('/nonexistent/privkey')
     config_filename, src_config = tmp_server_config_file(
         privkey_filename='/nonexistent/privkey'
@@ -25,6 +29,7 @@ def test_fails_nonexistent_privkey(tmp_server_config_file: callable):
 
 
 def test_fails_missing_client_configs(tmp_server_config_file: callable):
+    """Verify an empty `client_configs` causes an error."""
     assert not os.path.exists('/nonexistent/privkey')
     config_filename, src_config = tmp_server_config_file(
         client_configs=[]
@@ -36,6 +41,7 @@ def test_fails_missing_client_configs(tmp_server_config_file: callable):
 
 def test_fails_invalid_client_key(tmp_server_config_file: callable,
                                   pubkeygen: callable):
+    """Verify unexpected client config keys cause an error."""
     config_filename, src_config = tmp_server_config_file(
         client_configs=[dict(
             address='1.2.3.4',
@@ -51,6 +57,7 @@ def test_fails_invalid_client_key(tmp_server_config_file: callable,
 
 def test_fails_invalid_client_pubkey(tmp_server_config_file: callable,
                                      pubkeygen: callable):
+    """Verify an invalid client `pubkey` causes an error."""
     config_filename, src_config = tmp_server_config_file(
         client_configs=[dict(
             address='1.2.3.4',
@@ -64,6 +71,7 @@ def test_fails_invalid_client_pubkey(tmp_server_config_file: callable,
 
 
 def test_fails_invalid_push_mode(tmp_server_config_file: callable):
+    """Verify an invalid `push_mode` causes an error."""
     config_filename, src_config = tmp_server_config_file(
         push_mode='Invalid push_mode'
     )
@@ -73,6 +81,7 @@ def test_fails_invalid_push_mode(tmp_server_config_file: callable):
 
 
 def test_fails_invalid_push_interval(tmp_server_config_file: callable):
+    """Verify an invalid `push_interval` causes an error."""
     config_filename, src_config = tmp_server_config_file(
         push_interval=-1
     )
@@ -82,6 +91,7 @@ def test_fails_invalid_push_interval(tmp_server_config_file: callable):
 
 
 def test_fails_invalid_push_retries(tmp_server_config_file: callable):
+    """Verify an invalid `push_retries` causes an error."""
     config_filename, src_config = tmp_server_config_file(
         push_retries=-1
     )
@@ -91,6 +101,7 @@ def test_fails_invalid_push_retries(tmp_server_config_file: callable):
 
 
 def test_fails_invalid_push_retry_interval(tmp_server_config_file: callable):
+    """Verify an invalid `push_retry_interval` causes an error."""
     config_filename, src_config = tmp_server_config_file(
         push_retry_interval=-1
     )
@@ -100,6 +111,7 @@ def test_fails_invalid_push_retry_interval(tmp_server_config_file: callable):
 
 
 def test_fails_invalid_join_timeout(tmp_server_config_file: callable):
+    """Verify an invalid `join_timeout` causes an error."""
     config_filename, src_config = tmp_server_config_file(
         join_timeout=-1
     )

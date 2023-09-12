@@ -3,7 +3,7 @@
 import base64
 import pathlib
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Union
 
 import paramiko
 import pytest
@@ -11,6 +11,7 @@ from fixtures.docker_container import ContainerInternalPaths
 from fixtures.keys import CLIENT_KEY_NAME, SERVER_KEY_NAME, KeyPair
 from paramiko.ed25519key import Ed25519Key
 
+from certdeploy.client.config import ClientConfig
 from certdeploy.server.server import _sftp_mkdir
 
 
@@ -82,7 +83,7 @@ def mock_server_push(
     """Return a mock CertDeploy server push context factory."""
 
     def _mock_server_push(
-        client_config: dict,
+        client_config: Union[ClientConfig, dict],
         client_path: pathlib.Path = None,
         client_address: str = None,
         client_keypair: KeyPair = None,
@@ -130,11 +131,13 @@ def mock_server_push(
         filenames = filenames or ['fullchain.pem', 'privkey.pem']
         lineage_path = lineage_factory(lineage_name or 'test.example.com',
                                        filenames)
+        if isinstance(client_config, dict):
+            client_config = ClientConfig(**client_config)
         if not client_address:
-            client_address = client_config['sftpd']['listen_address']
+            client_address = client_config.sftpd_config.listen_address
         if client_address == '0.0.0.0':
             client_address = '127.0.0.1'
-        client_port = client_config['sftpd']['listen_port']
+        client_port = client_config.sftpd_config.listen_port
 
         def _pusher():
             _push_to_client(client_path, client_address, client_port,

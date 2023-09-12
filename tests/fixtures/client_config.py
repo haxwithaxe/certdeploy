@@ -159,16 +159,17 @@ def tmp_client_config(tmp_path_factory: pytest.TempPathFactory,
                       ) -> Callable[[KeyPair, KeyPair, ...], ClientConfig]:
     """Return a temporary client config factory."""
 
-    def _tmp_client_config(client_keypair: KeyPair = None,
-                           server_keypair: KeyPair = None, **conf: Any
-                           ) -> ClientConfig:
+    def _tmp_client_config(
+        tmp_path: pathlib.Path = None,
+        client_keypair: KeyPair = None,
+        server_keypair: KeyPair = None, **conf: Any
+    ) -> ClientConfig:
         """Finish configuring the temporary client config.
 
         Arguments:
-            client_keypair: The key pair for the
-                CertDeploy client.
-            server_keypair: The key pair for the CertDeploy
-                server.
+            tmp_path: The temporary directory path to put files in.
+            client_keypair: The key pair for the CertDeploy client.
+            server_keypair: The key pair for the CertDeploy server.
 
         Keyword Arguments:
             conf: Key value pairs corresponding to
@@ -177,7 +178,7 @@ def tmp_client_config(tmp_path_factory: pytest.TempPathFactory,
         Returns:
             The client config with the given values.
         """
-        tmp_path = tmp_path_factory.mktemp('tmp_client_config')
+        tmp_path = tmp_path or tmp_path_factory.mktemp('tmp_client_config')
         client_keypair = client_keypair or keypairgen()
         server_keypair = server_keypair or keypairgen()
         config_context = client_config_file(tmp_path, client_keypair,
