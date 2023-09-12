@@ -1,4 +1,4 @@
-
+"""Tests to verify the behavior of the docker service update type."""
 
 import pytest
 
@@ -8,9 +8,7 @@ from certdeploy.errors import ConfigError
 
 def test_accepts_valid_name(tmp_client_config_file: callable,
                             tmp_path_factory: pytest.TempPathFactory):
-    """Verify the valid values for the `systemd` update service type are
-    accepted.
-    """
+    """Verify the valid values for the `systemd` are accepted."""
     names = [
         'a-z0-9:_,.\\-@a-z0-9:_,.\\-.service',
         'a-z0-9:_,.\\-.service',
