@@ -34,11 +34,13 @@ DEFAULT_CLIENT_DEST_DIR = '/etc/letsencrypt/live'
 # Default paths for servers
 DEFAULT_SERVER_CONFIG = os.path.join(DEFAULT_CONFIG_DIR, 'server.yml')
 DEFAULT_SERVER_HOST_KEYS = os.path.join(DEFAULT_CONFIG_DIR, 'server_hostkeys')
+DEFAULT_SERVER_QUEUE_DIR = '/var/run/certdeploy'
 
 # Default logging
 DEFAULT_LOG_DATE_FORMAT = '%Y.%m.%d-%H:%M:%S'
 DEFAULT_LOG_FORMAT = '%(levelname)s:%(name)s: %(message)s'
-DEFAULT_LOG_FILENAME = '/dev/stdout'
+DEFAULT_LOG_FILENAME = '/dev/stdout'  # maps to sys.stdout
+DEFAULT_LOG_LEVEL = logging.ERROR
 
 ## Logging Constants
 CERTDEPLOY_CLIENT_LOGGER_NAME = 'certdeploy-client'
@@ -52,8 +54,8 @@ PARAMIKO_LOGGER_NAME = 'paramiko'
 logging.basicConfig(
     format=DEFAULT_LOG_FORMAT,
     datefmt=DEFAULT_LOG_DATE_FORMAT,
-    stream=sys.stdout,
-    level=logging.ERROR
+    stream=sys.stdout,  # DEFAULT_LOG_FILENAME
+    level=DEFAULT_LOG_LEVEL
 )
 
 

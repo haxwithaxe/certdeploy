@@ -8,6 +8,7 @@ from typing import Any, Optional, Union
 
 from ... import (
     CERTDEPLOY_SERVER_LOGGER_NAME,
+    DEFAULT_SERVER_QUEUE_DIR,
     PARAMIKO_LOGGER_NAME,
     LogLevel,
     set_log_properties
@@ -165,7 +166,7 @@ class Server:
         seconds.
     * `None` will cause the join to wait indefinitely.
     """
-    queue_dir: os.PathLike = '/var/run/certdeploy'
+    queue_dir: os.PathLike = DEFAULT_SERVER_QUEUE_DIR
     """The directory where runtime files will be stored.
 
     The queue and its lockfile are stored here.
