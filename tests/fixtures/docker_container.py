@@ -250,8 +250,7 @@ class CertDeployContainerWrapper(ContainerWrapper):
     """Docker image name."""
     type_name: str = 'generic'
     """Internal use only. Used in log messages and errors."""
-    has_started_flag: bytes = (b'INFO:certdeploy-client:Listening for incoming '
-                               b'connections at ')
+    has_started_flag: bytes = None
     """The encoded string that signals the client or server is ready to use."""
 
     @property
@@ -301,6 +300,8 @@ class CertDeployContainerWrapper(ContainerWrapper):
         self.etc_path.mkdir()
         self.output_path = tmp_path.joinpath('output')
         self.output_path.mkdir()
+        self.input_path = tmp_path.joinpath('input')
+        self.input_path.mkdir()
         self.client_keypair = client_keypair
         self.server_keypair = server_keypair
         # Assemble config dir
@@ -376,7 +377,7 @@ class CertDeployContainerWrapper(ContainerWrapper):
             return (container.status == ContainerStatus.RUNNING and
                     container.has_started)
 
-        self.wait_for_condition(_condition)
+        self.wait_for_condition(_condition, timeout)
 
     def _assemble_volumes(self, volumes: list[str], with_docker: bool
                           ) -> list[str]:
@@ -397,6 +398,10 @@ class CertDeployContainerWrapper(ContainerWrapper):
             real_volumes.append(
                 f'''{self.output_path}:{self.config['destination']}'''
             )
+        if 'source' in self.config:
+            real_volumes.append(
+                f'''{self.input_path}:{self.config['source']}'''
+            )
         if 'queue_dir' in self.config:
             real_volumes.append(
                 f'''{self.output_path}:{self.config['queue_dir']}'''
@@ -413,7 +418,7 @@ class ClientContainer(CertDeployContainerWrapper):
     This naively uses the latest `certdeploy-client` locally available.
     """
 
-    has_started_flag: bytes = (b'INFO:certdeploy-client:Listening for '
+    has_started_flag: bytes = (b'INFO:certdeploy-client: Listening for '
                                b'incoming connections at ')
     image: str = 'certdeploy-client:latest'
     """Docker image name."""
