@@ -47,10 +47,10 @@ cleanly directly on GitHub. Doc-strings are handled slightly differently than
 \*.md files. Just follow the existing patterns in the documentation unless your
 changes are specifically (and only) changing patterns globally.
 
-Some extra rules for the README.md:
-- variable and dictionary key names, and inline commands and code get single back ticks.
-- Environmental variables, literal values, variable values including numbers get double back ticks.
-- Anywhere a default value from the code is redeclared add an html comment like the following ``<!--DEFAULT FROM CODE-->`` at the end of the line to make it easier to audit the docs for defaults that need updating. Most of the instances of this are in just three places, but not all of them.
+Some extra rules for the README.md and other .md files:
+- Variable and dictionary key names, and inline commands and code get single back ticks.
+- Literal values, variable values including numbers get double back ticks.
+- Anywhere a default value from the code is redeclared add an html comment like the following ``<!--DEFAULT FROM CODE- certdeploy.where_ever.the.value.lives -->`` at the end of the line to make it easier to audit the docs for defaults that need updating.
 
 :::{tip}
    Please notice that the [GitHub web interface] provides a quick way of
@@ -86,7 +86,7 @@ python3 -m http.server --directory 'docs/_build/html'
 All code must:
 * Conform to [Google's python style guide] with a few exceptions. Look at the
    existing code for a lead on those changes. Bellow are some of them.
-   * Always preffer single quotes except around doc-strings or inside single
+   * Always prefer single quotes except around doc-strings or inside single
       quotes.
    * Use `Arguments:` instead of `Args:` in doc-strings.
    * No trailing commas except in single item tuples.
@@ -119,14 +119,18 @@ All code should:
 * Have accompanying unit or integration tests. It's not required. The project
    isn't starting with 100% coverage so it's not going to ruin anything.
 
-Tests fixtures that return plain `callable`s should use the `typing.Callable` with as much of the detail as is relevant to how it's being used. Arguments are less important than return values in general on the test side. For example:
+Notes on testing:
+* The tests are split into tests for the code and tests for the docker containers. There will be some ``deselected`` tests. Don't worry about that. They all get run eventually throughout the testing process.
 
-```
-def test_foo_does_bar(dummy_foo_factory: Callable[[important_config, ...], DummyFoo]):
-   ...
-```
+Notes on writing tests:
+* Tests fixtures that return plain `callable`s should use the `typing.Callable` with as much of the detail as is relevant to how it's being used. Arguments are less important than return values in general on the test side. For example:
 
-`dummy_foo_factory` could take a dozen more arguments but `important_config` is all the test uses and `DummyFoo` is what the test interacts with. This is just to make IDEs happier.
+   ```
+   def test_foo_does_bar(dummy_foo_factory: Callable[[important_config, ...], DummyFoo]):
+      ...
+   ```
+
+   `dummy_foo_factory` could take a dozen more arguments but `important_config` is all the test uses and `DummyFoo` is what the test interacts with. This is just to make IDEs happier.
 
 ### Submit an issue
 
