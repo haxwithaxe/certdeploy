@@ -36,6 +36,11 @@
 ## Version 0.3.0 (alpha)
 Hopefully the last non-patch release alpha.
 
+- Changed some environment variables to be explicitly for the server or client.
+- Changed some config and environmental variable names ending in ``_file`` or ``_FILE`` to ``_filename`` (preserving case).
+- Changed most config and environmental references to ``sftpd`` to ``sftp``. The `sftpd` client config is still the same.
+- Added the ability to control the location of the log file of both the client and the server.
+- Added the ability to control the log file location and log level of the SFTP component of both the client and server. The SFTP (paramiko) logs can just be noise sometimes so it's nice to be able to siphon them off and/or tune them down.
 - Bumped dependency versions
 - Removed bash based tests because of extreme fragility
 - Removed all test and build requirements for docker-compose
@@ -43,9 +48,10 @@ Hopefully the last non-patch release alpha.
 - Fixed a bunch of formatting
 - Added tons of doc comments
 - Added partial workarounds for https://github.com/moby/moby/issues/46341
-- Changed some environment variables to be explicitly for the server or client.
-- Added the ability to control the location of the log file of both the client and the server.
-- Added the ability to control the log file location and log level of the SFTP component of both the client and server. The SFTP (paramiko) logs can just be noise sometimes so it's nice to be able to siphon them off and/or tune them down.
+
+### Logging changes
+* In this release all logs go to `stdout` at ``ERROR`` log level by default.
+* A log filename of ``/dev/null`` gets translated to a `logging.NullHandler`.
 
 ### Known bugs
 See [this](https://github.com/moby/moby/issues/46341) upstream bug with docker. This means matching services by filters with any kind of explicit regex has been broken for a while. The docker service update code has been adjusted to directly get containers by name when the `name` option is given rather than using filters to get them. Filtering still works so long as it's used for substring matching and not regex (I know they're the same thing in this case but bugs will be bugs).
