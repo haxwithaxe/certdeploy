@@ -12,7 +12,7 @@ build_client() {
 		-f $CONTEXT/docker/client/Dockerfile \
 		-t certdeploy-client:latest \
 		$@ \
-		$CONTEXT
+		$CONTEXT 2>&1
 }
 
 
@@ -22,7 +22,7 @@ build_server() {
 		-f $CONTEXT/docker/server/Dockerfile \
 		-t certdeploy-server:latest \
 		$@ \
-		$CONTEXT
+		$CONTEXT 2>&1
 }
 
 
@@ -41,5 +41,6 @@ case $1 in
 		build_client $@ &
 		build_server $@
 		wait
+		exit 0
 		;;
 esac
