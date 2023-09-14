@@ -132,12 +132,17 @@ def mock_server_push(
         lineage_path = lineage_factory(lineage_name or 'test.example.com',
                                        filenames)
         if isinstance(client_config, dict):
-            client_config = ClientConfig(**client_config)
-        if not client_address:
-            client_address = client_config.sftpd_config.listen_address
-        if client_address == '0.0.0.0':
-            client_address = '127.0.0.1'
-        client_port = client_config.sftpd_config.listen_port
+            if not client_address:
+                client_address = client_config['sftpd']['listen_address']
+            if client_address == '0.0.0.0':
+                client_address = '127.0.0.1'
+            client_port = client_config['sftpd']['listen_port']
+        else:
+            if not client_address:
+                client_address = client_config.sftpd_config.listen_address
+            if client_address == '0.0.0.0':
+                client_address = '127.0.0.1'
+            client_port = client_config.sftpd_config.listen_port
 
         def _pusher():
             _push_to_client(client_path, client_address, client_port,
