@@ -56,9 +56,9 @@ def test_updates_other_container(
     server_context.push()
     # Wait for the update workflow to finish
     #   Don't wait forever though
-    client.wait_for_updated(timeout=300)
+    client.wait_for_updated(timeout=120)
     # Wait for the container to come back up
-    canned.wait_for_status(ContainerStatus.RUNNING, timeout=300)
+    canned.wait_for_status(ContainerStatus.RUNNING, timeout=120)
     # Take the after measurement
     canned_restarted_at = canned.started_at
     assert canned_restarted_at != canned_started_at
