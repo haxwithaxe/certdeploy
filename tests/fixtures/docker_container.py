@@ -1,5 +1,6 @@
 """Docker container fixtures and utilities."""
 
+import logging
 import pathlib
 import re
 import time
@@ -16,6 +17,9 @@ from fixtures.server_config import server_config_file
 import docker
 
 CLIENT_CONTAINER_PYTHON_VERSION = '3.10'
+
+
+log = logging.getLogger(name=__name__)
 
 
 class ContainerStatus:
@@ -60,10 +64,13 @@ class ContainerWrapper:
         state = self._container.attrs['State']
         if not state['Running']:
             if state['Error']:
+                self._log_on_fatal_error()
                 return True
             if state['ExitCode'] != 0:
+                self._log_on_fatal_error()
                 return True
             if state['OOMKilled']:
+                self._log_on_fatal_error()
                 return True
         return False
 
@@ -152,6 +159,7 @@ class ContainerWrapper:
         while not condition(self):
             self._container.reload()
             if timeout and countdown < 1:
+                self._log_on_fatal_error()
                 raise TimeoutError(
                     f'Waited {timeout} seconds for container '
                     f'{self._container.name} to meet the condition {condition}'
@@ -194,6 +202,11 @@ class ContainerWrapper:
         except docker.errors.NotFound:
             return
         old.remove(force=True)
+
+    def _log_on_fatal_error(self):
+        """Dump the container logs as an error log."""
+        log.error('logs for %s:\n%s', self._container.name,
+                  self._container.logs().decode())
 
     def __getattr__(self, attr: Any) -> Any:
         """Passthrough any attribute requests.
@@ -428,7 +441,7 @@ class ClientContainer(CertDeployContainerWrapper):
     @property
     def has_updated(self) -> bool:
         """`True` if the client has finished updating services."""
-        if (b'INFO:certdeploy-client:Updated services\n' in
+        if (b'INFO:certdeploy-client: Updated services\n' in
                 self._container.logs()):
             return True
         return False
@@ -779,4 +792,5 @@ def server_docker_container(
 
     yield _server_docker_container
     for server in servers:
+        log.debug('logs for %s:\n%s', server.name, server.logs().decode())
         server.teardown()
