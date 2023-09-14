@@ -8,7 +8,7 @@ Note:
 
 import pytest
 
-CLIENT_STARTED_TEXT = (b'INFO:certdeploy-client:Listening for incoming '
+CLIENT_STARTED_TEXT = (b'INFO:certdeploy-client: Listening for incoming '
                        b'connections at ')
 CLIENT_HELP_TEXT = b'Usage: certdeploy-client [OPTIONS]'
 
