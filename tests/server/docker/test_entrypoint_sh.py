@@ -1,4 +1,4 @@
-"""Tests for the full server docker container.
+"""Tests for the entrypoint.sh of the server docker container.
 
 Note:
     These tests use the `certdeploy-server:latest` on the host system. If
