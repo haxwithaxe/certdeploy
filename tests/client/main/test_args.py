@@ -57,13 +57,9 @@ def test_daemon_runs_daemon(
     )
     assert thread.is_alive()
     # Wait for the magic string to show up in the log
-    print('wait for condition')
     thread.wait_for_text_in_log(trigger, lambda _: client_log.read_text())
-    print('done waiting')
     thread.reraise_unexpected()
-    print('reraised exceptions')
     ## Verify the results
-    print('verify', trigger in client_log.read_text())
     assert trigger in client_log.read_text()
 
 

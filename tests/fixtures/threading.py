@@ -137,16 +137,11 @@ class CleanThread(threading.Thread):
             TimeoutError: When `timeout` seconds have passed and `conditions`
                 are still not met.
         """
-        print(timeout)
         countdown = int(timeout / 0.1)
         for tick in range(countdown):
-            print(tick)
             if not self.is_alive():
-                print('thread died')
                 return False
-            print('running condition')
             if condition(self):
-                print('condition met')
                 return True
             time.sleep(0.1)
         raise TimeoutError()
@@ -174,7 +169,6 @@ class CleanThread(threading.Thread):
             TimeoutError: When `timeout` seconds have passed and `text` has not
                 been found in the logs.
         """
-        print('wait for text in log')
         return self.wait_for_condition(
             lambda x: text in log_selector(x),
             timeout
@@ -186,13 +180,9 @@ class CleanThread(threading.Thread):
         Also join the thread and raise any unexpected exception if
         `self.reraise` is `True`.
         """
-        print('Set kill switch')
         self.kill_switch.set()
-        print('Kill switch status', self.kill_switch.id, bool(self.kill_switch))
         time.sleep(0.1)
-        print('Join thread')
         self.join(timeout=timeout)
-        print('Teardown')
         self.teardown()
         if reraise is False:
             return
