@@ -6,6 +6,7 @@ from typing import Callable
 
 import paramiko
 from fixtures.keys import KeyPair
+from fixtures.logging import CLIENT_HAS_STARTED_MESSAGE
 from fixtures.mock_server import MockPushContext
 from fixtures.threading import CleanThread, KillSwitch
 
@@ -17,9 +18,6 @@ from certdeploy import (
 from certdeploy.client import log
 from certdeploy.client.config import ClientConfig
 from certdeploy.client.daemon import DeployServer
-
-# String from certdeploy.client.daemon.DeployServer.serve_forever
-CLIENT_DAEMON_READY = 'Listening for incoming connections at '
 
 
 def test_logs_at_given_level_to_given_file(
@@ -56,7 +54,7 @@ def test_logs_at_given_level_to_given_file(
         kill_switch=kill_switch,
         teardown=kill_switch.teardown(client)
     )
-    client_thread.wait_for_text_in_log(CLIENT_DAEMON_READY,
+    client_thread.wait_for_text_in_log(CLIENT_HAS_STARTED_MESSAGE,
                                        lambda _: log_path.read_text())
     client_thread.reraise_unexpected()
     ## Formally verify results
@@ -116,7 +114,7 @@ def test_sftpd_logs_at_given_level_to_given_file(
         kill_switch=kill_switch,
         teardown=kill_switch.teardown(client)
     )
-    client_thread.wait_for_text_in_log(CLIENT_DAEMON_READY,
+    client_thread.wait_for_text_in_log(CLIENT_HAS_STARTED_MESSAGE,
                                        lambda x: x.caplog.text)
     assert client_thread.is_alive() is True, \
         f'Client is dead too soon: {client_thread.caplog.messages[-1]}'

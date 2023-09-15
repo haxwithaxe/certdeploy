@@ -7,9 +7,8 @@ Note:
 """
 
 import pytest
+from fixtures.docker_container import CLIENT_HAS_STARTED_MESSAGE
 
-CLIENT_STARTED_TEXT = (b'INFO:certdeploy-client: Listening for incoming '
-                       b'connections at ')
 CLIENT_HELP_TEXT = b'Usage: certdeploy-client [OPTIONS]'
 
 
@@ -24,7 +23,7 @@ def test_starts_daemon_by_default(client_docker_container: callable):
         config=dict(log_level='DEBUG')
     )
     client.start(timeout=300)
-    assert CLIENT_STARTED_TEXT in client.logs()
+    assert CLIENT_HAS_STARTED_MESSAGE in client.logs()
 
 
 @pytest.mark.certdeploy_docker
