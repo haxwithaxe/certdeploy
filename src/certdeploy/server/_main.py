@@ -17,7 +17,7 @@ def _run(config, daemon, renew, push, lineage, domains):
         # This is used in tests to indicate the renew process has begun.
         log.debug('Running renew')
         renew_certs(config)
-    elif daemon:
+    elif daemon and not push:
         # This is used in tests to indicate the daemon is being run.
         log.debug('Running daemon')
         Server(config).serve_forever()
