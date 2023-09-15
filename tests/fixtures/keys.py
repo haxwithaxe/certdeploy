@@ -16,7 +16,13 @@ SERVER_KEY_NAME = 'server_key'
 
 @dataclass
 class KeyPair:
-    """A representation of a cryptographic key pair."""
+    """A representation of a cryptographic key pair.
+
+    Note:
+        When passing the same key to multiple containers use the `copy()`
+        method to prevent the `path` from getting switched out from under
+        the other containers in the key prep step.
+    """
 
     privkey_pem: str
     """The PEM formatted private key."""
@@ -31,6 +37,11 @@ class KeyPair:
     path: pathlib.Path = None
     """The default value for `tmp_path` in `privkey_file` and `pubkey_file`.
     It can be set using `set_path`."""
+
+    def copy(self) -> 'KeyPair':
+        """Create a duplicate key pair that can be modified separately."""
+        return KeyPair(self.privkey_pem, self.privkey_text, self.pubkey_text,
+                       self.privkey_name, self.pubkey_name, self.path)
 
     def privkey_file(self, tmp_path: pathlib.Path = None, name: str = None
                      ) -> pathlib.Path:
@@ -98,9 +109,23 @@ class KeyPair:
             self.pubkey_name = f'{self.privkey_name}.pub'
         return self
 
+    def __post_init__(self):
+        """Do the automatic key naming if all the required parts are set."""
+        self.update(self.path, self.privkey_name, self.pubkey_name)
 
-def _keypairgen() -> KeyPair:
+
+def _keypairgen(tmp_path: pathlib.Path = None, privkey_name: str = None,
+                pubkey_name: str = None) -> KeyPair:
     """Generate a private and public key pair.
+
+    Any arguments omitted or set to a falsey value are ignored. If
+    `privkey_name` is given and the `pubkey_name` argument is falsey the value
+    of `privkey_name` will be used as the base for `pubkey_name`.
+
+    Arguments:
+        tmp_path: The default path to put the keys in.
+        privkey_name: The filename (basename) of the private key file.
+        pubkey_name: The filename (basename) of the public key file.
 
     Returns:
         private key and a public key in a wrapper.
@@ -123,7 +148,10 @@ def _keypairgen() -> KeyPair:
     return KeyPair(
         privkey_pem=privkey_pem.decode(),
         privkey_text=privkey.get_base64(),
-        pubkey_text=openssh_pub.decode()
+        pubkey_text=openssh_pub.decode(),
+        privkey_name=privkey_name,
+        pubkey_name=pubkey_name,
+        path=tmp_path
     )
 
 
