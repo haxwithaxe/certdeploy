@@ -11,8 +11,8 @@ from certdeploy.server._main import _app
 
 
 def test_as_hook(
-    tmp_server_config_file: Callable[[...], ConfigContext],
-    log_file: pathlib.Path
+    log_file: pathlib.Path,
+    tmp_server_config_file: Callable[[...], ConfigContext]
 ):
     """Verify that the server runs as a hook.
 
