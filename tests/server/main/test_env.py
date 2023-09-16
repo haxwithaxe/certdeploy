@@ -1,8 +1,9 @@
 """Verify the behavior of the command line options."""
 
+import pathlib
 from typing import Callable
 
-import pytest
+from fixtures.logging import ServerRefLogMessages as RefMsgs
 from fixtures.utils import ConfigContext
 from typer.testing import CliRunner
 
@@ -11,7 +12,7 @@ from certdeploy.server._main import _app
 
 def test_as_hook(
     tmp_server_config_file: Callable[[...], ConfigContext],
-    caplog: pytest.LogCaptureFixture
+    log_file: pathlib.Path
 ):
     """Verify that the server runs as a hook.
 
@@ -23,7 +24,8 @@ def test_as_hook(
     # String taken from certdeploy.server._main
     context = tmp_server_config_file(
         fail_fast=True,
-        log_level='DEBUG'
+        log_level='DEBUG',
+        log_filename=str(log_file)
     )
     ## Run the test
     results = CliRunner(mix_stderr=True).invoke(
@@ -34,4 +36,4 @@ def test_as_hook(
     )
     ## Verify the results
     assert results.exception is None
-    assert 'Adding lineage to queue.' in caplog.messages
+    assert RefMsgs.ADD_TO_QUEUE_MESSAGE.log in log_file.read_bytes()

@@ -6,15 +6,13 @@ from typing import Callable
 
 import paramiko
 from fixtures.keys import KeyPair
-from fixtures.logging import CLIENT_HAS_STARTED_MESSAGE
+from fixtures.logging import ClientRefLogMessage
+from fixtures.logging import ClientRefLogMessages as RefMsgs
+from fixtures.logging import ParamikoRefLogMessages as ParamikoRefMsgs
 from fixtures.mock_server import MockPushContext
 from fixtures.threading import CleanThread, KillSwitch
 
-from certdeploy import (
-    CERTDEPLOY_CLIENT_LOGGER_NAME,
-    PARAMIKO_LOGGER_NAME,
-    LogLevel
-)
+from certdeploy import PARAMIKO_LOGGER_NAME, LogLevel
 from certdeploy.client import log
 from certdeploy.client.config import ClientConfig
 from certdeploy.client.daemon import DeployServer
@@ -54,12 +52,12 @@ def test_logs_at_given_level_to_given_file(
         kill_switch=kill_switch,
         teardown=kill_switch.teardown(client)
     )
-    client_thread.wait_for_text_in_log(CLIENT_HAS_STARTED_MESSAGE,
-                                       lambda _: log_path.read_text())
+    client_thread.wait_for_text_in_log(RefMsgs.HAS_STARTED.log,
+                                       lambda _: log_path.read_bytes())
     client_thread.reraise_unexpected()
     ## Formally verify results
-    assert f'{log_level.value}:{CERTDEPLOY_CLIENT_LOGGER_NAME}' in \
-        log_path.read_text()
+    assert ClientRefLogMessage(log_level.value, '', 'made up here').log in \
+        log_path.read_bytes()
     assert LogLevel.cast(log.level) == log_level
     assert log.handlers[0].stream.name == str(log_path)
 
@@ -77,6 +75,7 @@ def test_sftpd_logs_at_given_level_to_given_file(
     This also exercises the `log_level` config.
     """
     ## Define some variables to avoid magic values
+    client_log_path = tmp_path.joinpath('client.log')
     listen_address = '127.0.0.1'
     log_level = LogLevel.DEBUG
     log_path = tmp_path.joinpath('paramiko.log')
@@ -90,7 +89,7 @@ def test_sftpd_logs_at_given_level_to_given_file(
         client_keypair=client_keypair,
         server_keypair=tester_keypair,
         log_level='DEBUG',
-        log_filename='/dev/stderr',
+        log_filename=str(client_log_path),
         sftpd=dict(
             listen_address=listen_address,
             log_level=log_level.value,
@@ -114,8 +113,8 @@ def test_sftpd_logs_at_given_level_to_given_file(
         kill_switch=kill_switch,
         teardown=kill_switch.teardown(client)
     )
-    client_thread.wait_for_text_in_log(CLIENT_HAS_STARTED_MESSAGE,
-                                       lambda x: x.caplog.text)
+    client_thread.wait_for_text_in_log(RefMsgs.HAS_STARTED.log,
+                                       lambda x: client_log_path.read_bytes())
     assert client_thread.is_alive() is True, \
         f'Client is dead too soon: {client_thread.caplog.messages[-1]}'
     ## Run test
@@ -126,6 +125,5 @@ def test_sftpd_logs_at_given_level_to_given_file(
     paramiko_log = logging.getLogger(name=PARAMIKO_LOGGER_NAME)
     assert LogLevel.cast(paramiko_log.getEffectiveLevel()) == log_level
     assert paramiko_log.handlers[0].stream.name == str(log_path)
-    assert f'{log_level.value}:{PARAMIKO_LOGGER_NAME}' in log_path.read_text()
-    assert f'{log_level.value}:{PARAMIKO_LOGGER_NAME}.transport.sftp' in \
-        log_path.read_text()
+    assert ParamikoRefMsgs.TRANSPORT_EMPTY.log in log_path.read_bytes()
+    assert ParamikoRefMsgs.TRANSPORT_SFTP_EMPTY.log in log_path.read_bytes()

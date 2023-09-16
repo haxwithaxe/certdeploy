@@ -4,12 +4,15 @@ A helper utility that keeps pytest from throwing warnings without generating
 noise in pytest.
 """
 
+import logging
 import threading
 import time
 from typing import Any, Callable
 
 import pytest
 from fixtures.utils import KillSwitch
+
+log = logging.getLogger(name=__file__)
 
 
 class _WontBeThrownException(Exception):
@@ -169,8 +172,16 @@ class CleanThread(threading.Thread):
             TimeoutError: When `timeout` seconds have passed and `text` has not
                 been found in the logs.
         """
+
+        def _log_selector(x):
+            try:
+                return log_selector(x)
+            except FileNotFoundError as err:
+                log.warning('wait_for_text_in_log: %s', str(err))
+                return []  # safe __contains__
+
         return self.wait_for_condition(
-            lambda x: text in log_selector(x),
+            lambda x: text in _log_selector(x),
             timeout
         )
 

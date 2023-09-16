@@ -7,9 +7,7 @@ Note:
 """
 
 import pytest
-from fixtures.docker_container import CLIENT_HAS_STARTED_MESSAGE
-
-CLIENT_HELP_TEXT = b'Usage: certdeploy-client [OPTIONS]'
+from fixtures.logging import ClientRefLogMessages as RefMsgs
 
 
 @pytest.mark.certdeploy_docker
@@ -23,7 +21,7 @@ def test_starts_daemon_by_default(client_docker_container: callable):
         config=dict(log_level='DEBUG')
     )
     client.start(timeout=300)
-    assert CLIENT_HAS_STARTED_MESSAGE in client.logs()
+    assert RefMsgs.HAS_STARTED.log in client.logs()
 
 
 @pytest.mark.certdeploy_docker
@@ -37,5 +35,5 @@ def test_passes_args_to_client(client_docker_container: callable):
         entrypoint=['/entrypoint.sh', '--help']
     )
     client.start(timeout=None)
-    client.wait_for_log(CLIENT_HELP_TEXT, timeout=300)
-    assert CLIENT_HELP_TEXT in client.logs()
+    client.wait_for_log(RefMsgs.HELP_TEXT.log, timeout=300)
+    assert RefMsgs.HELP_TEXT.log in client.logs()

@@ -12,12 +12,9 @@ import pytest
 from docker.models.containers import Container
 from fixtures.client_config import client_config_file
 from fixtures.keys import CLIENT_KEY_NAME, SERVER_KEY_NAME, KeyPair
-from fixtures.logging import (
-    CLIENT_HAS_STARTED_MESSAGE,
-    CLIENT_UPDATED_MESSAGE,
-    SERVER_HAS_STARTED_MESSAGE,
-    log_level_gt
-)
+from fixtures.logging import ClientRefLogMessages as CliRefMsgs
+from fixtures.logging import ServerRefLogMessages as SrvRefMsgs
+from fixtures.logging import log_level_gt
 from fixtures.server_config import server_config_file
 from fixtures.utils import ConfigContext
 
@@ -482,7 +479,7 @@ class ClientContainer(CertDeployContainerWrapper):
     This naively uses the latest `certdeploy-client` locally available.
     """
 
-    has_started_flag: bytes = CLIENT_HAS_STARTED_MESSAGE
+    has_started_flag: bytes = CliRefMsgs.HAS_STARTED.log
     image: str = 'certdeploy-client:latest'
     """Docker image name."""
     type_name: str = 'client'
@@ -491,7 +488,7 @@ class ClientContainer(CertDeployContainerWrapper):
     @property
     def has_updated(self) -> bool:
         """`True` if the client has finished updating services."""
-        if (CLIENT_UPDATED_MESSAGE in
+        if (CliRefMsgs.HAS_UPDATED.log in
                 self._container.logs()):
             return True
         return False
@@ -575,7 +572,7 @@ class ClientContainer(CertDeployContainerWrapper):
         # had issues with has_updated not being found on the object to it's
         #   been un-DRYed
         self.wait_for_condition(
-            lambda x: CLIENT_UPDATED_MESSAGE in x._container.logs(),
+            lambda x: CliRefMsgs.HAS_UPDATED.log in x._container.logs(),
             timeout,
             'client has updated services'
         )
@@ -587,9 +584,9 @@ class ServerContainer(CertDeployContainerWrapper):
     This naively uses the latest `certdeploy-server` available on the host.
     """
 
-    has_started_flag: bytes = SERVER_HAS_STARTED_MESSAGE
+    has_started_flag: bytes = SrvRefMsgs.HAS_STARTED.log
     """The string in the logs that indicates the server is ready."""
-    has_started_log_level: str = 'DEBUG'
+    has_started_log_level: str = SrvRefMsgs.HAS_STARTED.level
     """The maximum log level required for `has_started` to work.
     The `has_started_flag` is a `DEBUG` message."""
     image: str = 'certdeploy-server:latest'

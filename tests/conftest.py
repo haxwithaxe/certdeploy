@@ -18,6 +18,7 @@ from fixtures.docker_container import (  # noqa: F401
 )
 from fixtures.docker_service import canned_docker_service  # noqa: F401
 from fixtures.keys import keypairgen, pubkeygen  # noqa: F401
+from fixtures.logging import log_file  # noqa: F401
 from fixtures.mock_certbot import mock_certbot  # noqa: F401
 from fixtures.mock_fail_client import mock_fail_client  # noqa: F401
 from fixtures.mock_server import mock_server_push  # noqa: F401

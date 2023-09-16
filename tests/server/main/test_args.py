@@ -10,6 +10,7 @@ import pathlib
 from typing import Callable
 
 import pytest
+from fixtures.logging import ServerRefLogMessages as RefMsgs
 from fixtures.threading import CleanThread
 from fixtures.utils import ConfigContext, KillSwitch
 from typer.testing import CliRunner
@@ -31,7 +32,8 @@ def test_help_shows_help():
 
 def test_daemon_runs_daemon(
     managed_thread: Callable[[...], CleanThread],
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
+    log_file: pathlib.Path
 ):
     """Verify that the daemon runs for the `--daemon` arg.
 
@@ -39,10 +41,10 @@ def test_daemon_runs_daemon(
     """
     # String taken from certdeploy.client.daemon.DeployServer.serve_forever
     # The `False` is the expected value of `one_shot` given it's daemon mode
-    trigger = 'Server.serve_forever: one_shot=False'
     context = tmp_server_config_file(
         fail_fast=True,
-        log_level='DEBUG'
+        log_level='DEBUG',
+        log_filename=str(log_file)
     )
     kill_switch = KillSwitch()
     Server._stop_running = kill_switch
@@ -54,15 +56,16 @@ def test_daemon_runs_daemon(
         teardown=kill_switch.teardown(Server)
     )
     # Wait for the magic string to show up in the log
-    thread.wait_for_text_in_log(trigger, lambda x: x.caplog.text)
+    thread.wait_for_text_in_log(RefMsgs.DAEMON_HAS_STARTED.log,
+                                lambda x: log_file.read_bytes())
     thread.reraise_unexpected()
     ## Verify the results
-    assert trigger in thread.caplog.text
+    assert RefMsgs.DAEMON_HAS_STARTED.log in log_file.read_bytes()
 
 
 def test_renew_runs_renew(
     tmp_server_config_file: Callable[[...], ConfigContext],
-    caplog: pytest.LogCaptureFixture
+    log_file: pathlib.Path
 ):
     """Verify that renew runs for the `--renew` arg.
 
@@ -71,7 +74,8 @@ def test_renew_runs_renew(
     context = tmp_server_config_file(
         renew_exec='/usr/bin/true',
         fail_fast=True,
-        log_level='DEBUG'
+        log_level='DEBUG',
+        log_filename=str(log_file)
     )
     ## Run the test
     results = CliRunner(mix_stderr=True).invoke(
@@ -80,13 +84,12 @@ def test_renew_runs_renew(
     )
     ## Verify the results
     assert results.exception is None
-    # String taken from certdeploy.server._main._run
-    assert 'Running renew' in caplog.messages
+    assert RefMsgs.RENEW_ONLY.log in log_file.read_bytes()
 
 
 def test_push_runs_push(
     tmp_server_config_file: Callable[[...], ConfigContext],
-    caplog: pytest.LogCaptureFixture
+    log_file: pathlib.Path
 ):
     """Verify that the daemon runs for the `--daemon` arg.
 
@@ -94,7 +97,8 @@ def test_push_runs_push(
     """
     context = tmp_server_config_file(
         fail_fast=True,
-        log_level='DEBUG'
+        log_level='DEBUG',
+        log_filename=str(log_file)
     )
     ## Run the test
     results = CliRunner(mix_stderr=True).invoke(
@@ -103,14 +107,12 @@ def test_push_runs_push(
     )
     ## Verify the results
     assert results.exception is None
-    # String taken from certdeploy.server.server.Server.serve_forever
-    # The `True` is the expected value of `one_shot` given it's push mode
-    assert 'Server.serve_forever: one_shot=True' in caplog.messages
+    assert RefMsgs.PUSH_HAS_STARTED.log in log_file.read_bytes()
 
 
 def test_no_args_with_config_exits(
     tmp_server_config_file: Callable[[...], ConfigContext],
-    caplog: pytest.LogCaptureFixture
+    log_file: pathlib.Path
 ):
     """Verify the server errors out when no args besides `--config` are given.
 
@@ -119,7 +121,8 @@ def test_no_args_with_config_exits(
     # String taken from certdeploy.server._main
     context = tmp_server_config_file(
         fail_fast=True,
-        log_level='DEBUG'
+        log_level='DEBUG',
+        log_filename=str(log_file)
     )
     ## Run the test
     results = CliRunner(mix_stderr=True).invoke(
@@ -129,8 +132,7 @@ def test_no_args_with_config_exits(
     ## Verify the results
     assert isinstance(results.exception, SystemExit)
     assert results.exception.code == 1
-    # String taken from certdeploy.server._main._run
-    assert 'Could not find lineage or domains.' in caplog.text
+    assert RefMsgs.MISSING_LINEAGE.log in log_file.read_bytes()
 
 
 def test_no_args_exits(
@@ -149,10 +151,7 @@ def test_no_args_exits(
     ## Verify the results
     assert isinstance(results.exception, SystemExit)
     assert results.exception.code == 1
-    # String taken from running `certdeploy-server` with no args
-    error = ('FileNotFoundError: [Errno 2] No such file or directory: '
-             '\'/etc/certdeploy/server.yml\'')
-    assert error in caplog.messages
+    assert RefMsgs.MISSING_CONFIG.message in caplog.messages
 
 
 def test_overrides_log_level_and_log_filename(
@@ -183,16 +182,11 @@ def test_overrides_log_level_and_log_filename(
     )
     ## Collect results
 
-    def _test(record):
-        return (record[0] == 'certdeploy-server' and
-                record[1] == int(LogLevel.DEBUG))
-
-    debug_server_records = [True for x in caplog.record_tuples if _test(x)]
     ## Verify the results
     # If an exception occurred the test failed
     assert results.exception is None
     # At least one DEBUG message was sent
-    assert True in debug_server_records
+    assert RefMsgs.PUSH_ONLY.log in final_log_filename.read_bytes()
     assert LogLevel.cast(log.level) == final_log_level
     assert log.handlers[0].stream.name == str(final_log_filename)
 
@@ -233,7 +227,7 @@ def test_overrides_sftp_log_level_and_sftp_log_filename(
 
 def test_push_lineage_and_domains_queues_and_pushes(
     tmp_server_config_file: Callable[[...], ConfigContext],
-    caplog: pytest.LogCaptureFixture
+    log_file: pathlib.Path
 ):
     """Verify that the server queues and pushes.
 
@@ -248,7 +242,8 @@ def test_push_lineage_and_domains_queues_and_pushes(
     lineage_domain = 'dont.match'
     context = tmp_server_config_file(
         fail_fast=True,
-        log_level='DEBUG'
+        log_level='DEBUG',
+        log_filename=str(log_file)
     )
     for client in context.config['client_configs']:
         assert lineage_domain not in client['domains'], \
@@ -263,5 +258,5 @@ def test_push_lineage_and_domains_queues_and_pushes(
     )
     ## Verify the results
     assert results.exception is None
-    assert 'Adding lineage to queue.' in caplog.messages
-    assert 'Running manual push without a running daemon' in caplog.messages
+    assert RefMsgs.ADD_TO_QUEUE_MESSAGE.log in log_file.read_bytes()
+    assert RefMsgs.PUSH_ONLY.log in log_file.read_bytes()
