@@ -47,13 +47,15 @@ def client_config_file(tmp_path: pathlib.Path, client_keypair: KeyPair = None,
                                             server_keypair, **sftpd)
     config.update(conf)
     yaml.safe_dump(config, config_filename.open('w'))
-    return ConfigContext(config_filename, config)
+    return ConfigContext(config_filename, config, client_keypair,
+                         server_keypair)
 
 
 def client_sftpd_config(
     tmp_path: pathlib.Path = None,
     client_keypair: KeyPair = None,
     server_keypair: KeyPair = None,
+    listen_address: str = '127.0.0.1',
     listen_port: int = None,
     **conf: Any
 ) -> dict:
@@ -73,8 +75,11 @@ def client_sftpd_config(
     Returns:
         The client SFTPD config with the given values or minimum values.
     """
+    if not listen_port:
+        listen_port = get_free_port(address=listen_address)
     config = dict(
-        listen_port=listen_port if listen_port else get_free_port(),
+        listen_address=listen_address,
+        listen_port=listen_port,
         privkey_filename=f'/etc/certdeploy/{CLIENT_KEY_NAME}',
     )
     if client_keypair:
