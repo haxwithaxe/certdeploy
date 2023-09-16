@@ -14,9 +14,21 @@ from certdeploy import (
 
 
 class _RefLogMessage:
+    """Base class for formatted log messages.
 
-    _logger_name = None
+    Arguments:
+        level: The log level as a string.
+        message: The log message.
+        source: The source of `message`. This should be the path to the method
+            or function (eg `certdeploy.server._main._run`). If it's made up
+            for a test the string ``made up`` is appropriate.
+        logger_name (optional): The name of the `logging.Logger`. This is just
+            for extra custom, one off instances. Defaults to the class's
+            defined `_logger_name`.
+    """
+
     _log_format = DEFAULT_LOG_FORMAT
+    _logger_name = None
 
     def __init__(self, level: str, message: str, source: str,
                  logger_name: str = None):
@@ -26,22 +38,25 @@ class _RefLogMessage:
         self._logger_name = logger_name or self._logger_name
 
     @property
-    def level(self):
+    def level(self) -> str:
+        """The log level as a string."""
         return self._level
 
     @property
-    def message(self):
-        return self._message
-
-    @property
-    def log(self):
+    def log(self) -> bytes:
+        """The formatted log message."""
         return (self._log_format % dict(
             levelname=self._level,
             name=self._logger_name,
             message=self._message
         )).encode()
 
-    def __repr__(self):
+    @property
+    def message(self) -> str:
+        """The message from the log."""
+        return self._message
+
+    def __repr__(self) -> str:
         return (
             f'<self.__class__.__name__ '
             f'logger={self._logger_name}, '
@@ -54,22 +69,26 @@ class _RefLogMessage:
 
 
 class PlainText(_RefLogMessage):
+    """An unformatted message."""
 
-    _logger_name: str = 'Plain text'
     _log_format: str = '%(message)'
+    _logger_name: str = 'Plain text'
 
 
 class ClientRefLogMessage(_RefLogMessage):
+    """A client log message."""
 
     _logger_name: str = CERTDEPLOY_CLIENT_LOGGER_NAME
 
 
 class ServerRefLogMessage(_RefLogMessage):
+    """A server log message."""
 
     _logger_name: str = CERTDEPLOY_SERVER_LOGGER_NAME
 
 
 class ClientRefLogMessages:
+    """Reference client log messages."""
 
     HAS_STARTED: ClientRefLogMessage = ClientRefLogMessage(
         'INFO',
@@ -101,16 +120,17 @@ class ClientRefLogMessages:
 
 
 class ParamikoRefLogMessages:
+    """Reference paramiko log messages."""
 
-    EMPTY = _RefLogMessage('DEBUG', '', 'made up',
-                           PARAMIKO_LOGGER_NAME)
-    TRANSPORT_EMPTY = _RefLogMessage(
+    EMPTY: _RefLogMessage = _RefLogMessage('DEBUG', '', 'made up',
+                                           PARAMIKO_LOGGER_NAME)
+    TRANSPORT_EMPTY: _RefLogMessage = _RefLogMessage(
         'DEBUG',
         '',
         'made up',
         f'{PARAMIKO_LOGGER_NAME}.transport'
     )
-    TRANSPORT_SFTP_EMPTY = _RefLogMessage(
+    TRANSPORT_SFTP_EMPTY: _RefLogMessage = _RefLogMessage(
         'DEBUG',
         '',
         'made up',
@@ -119,6 +139,7 @@ class ParamikoRefLogMessages:
 
 
 class ServerRefLogMessages:
+    """Reference server log messages."""
 
     ADD_TO_QUEUE_MESSAGE: ServerRefLogMessage = ServerRefLogMessage(
         'DEBUG',
@@ -197,6 +218,6 @@ def log_level_lt(log_level_1: str, log_level_2: str) -> bool:
 
 
 @pytest.fixture()
-def log_file(tmp_path: pathlib.Path):
-    """A temporary log file."""
+def log_file(tmp_path: pathlib.Path) -> pathlib.Path:
+    """Returns a temporary log file."""
     return tmp_path.joinpath('tmp.log')
