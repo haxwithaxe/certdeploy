@@ -10,7 +10,7 @@ from typing import Optional
 from paramiko.ed25519key import Ed25519Key
 
 from ... import DEFAULT_CLIENT_SOURCE_DIR, DEFAULT_USERNAME
-from ...errors import ConfigError
+from ...errors import ConfigInvalid, ConfigInvalidNumber
 from ._validation import is_optional_int
 
 # A regex to match an ed25519 public key
@@ -89,7 +89,7 @@ class ClientConnection:  # pylint: disable=too-many-instance-attributes
         # Validate public key
         match = PUBKEY_RE.match(self.pubkey)
         if not match:
-            raise ConfigError(f'Invalid value for `pubkey`: {self.pubkey}')
+            raise ConfigInvalid('pubkey', self.pubkey)
         self.pubkey_blob = Ed25519Key(
             data=base64.decodebytes(match.group(1).encode())
         )
@@ -99,14 +99,13 @@ class ClientConnection:  # pylint: disable=too-many-instance-attributes
         ).hexdigest()
         # Validate push_retry_interval
         if not is_optional_int(self.push_retry_interval, 0):
-            raise ConfigError('The config `push_retry_interval` must be an '
-                              'integer greater than or equal to 0 not: '
-                              f'{self.push_retry_interval}')
+            raise ConfigInvalidNumber('push_retry_interval',
+                                      self.push_retry_interval,
+                                      'integer', ge=0)
         # Validate push_retries
         if not is_optional_int(self.push_retries, 0):
-            raise ConfigError('The config `push_retries` must be an integer '
-                              'greater than or equal to 0 not: '
-                              f'{self.push_retries}')
+            raise ConfigInvalidNumber('push_retries', self.push_retries,
+                                      'integer', ge=0)
 
     def __str__(self) -> str:
         """Return the client as it would be given to the SFTP client."""
