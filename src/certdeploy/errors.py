@@ -44,6 +44,7 @@ class ConfigInvalid(ConfigError):
 
     def __init__(self, key: str, value: Any, must: str = None,  # noqa: D107
                  config_desc: str = ''):
+        # Add a space to the description if it is set
         if config_desc:
             config_desc = f'{config_desc} '
         if must:
