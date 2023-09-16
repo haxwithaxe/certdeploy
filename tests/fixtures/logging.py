@@ -90,6 +90,11 @@ class ServerRefLogMessage(_RefLogMessage):
 class ClientRefLogMessages:
     """Reference client log messages."""
 
+    DEPLOY_ONLY: ClientRefLogMessage = ClientRefLogMessage(
+        'DEBUG',
+        'Running one off deploy',
+        'certdeploy.client._main._run'
+    )
     HAS_STARTED: ClientRefLogMessage = ClientRefLogMessage(
         'INFO',
         'Listening for incoming connections at ',
@@ -108,7 +113,7 @@ class ClientRefLogMessages:
     HELP_TEXT_ALT: PlainText = PlainText(
         'Plain text',
         'Usage: -typer-main [OPTIONS]',
-        'CliRunner output'
+        'typer.testing.CliRunner output'
     )
     MISSING_CONFIG: ClientRefLogMessage = ClientRefLogMessage(
         'ERROR',
@@ -170,7 +175,7 @@ class ServerRefLogMessages:
     HELP_TEXT_ALT: PlainText = PlainText(
         'Plain text',
         'Usage: -typer-main [OPTIONS]',
-        'CliRunner output'
+        'typer.testing.CliRunner output'
     )
     MISSING_CONFIG: ServerRefLogMessage = ServerRefLogMessage(
         'ERROR',
@@ -219,5 +224,5 @@ def log_level_lt(log_level_1: str, log_level_2: str) -> bool:
 
 @pytest.fixture()
 def log_file(tmp_path: pathlib.Path) -> pathlib.Path:
-    """Returns a temporary log file."""
+    """Return a temporary log file."""
     return tmp_path.joinpath('tmp.log')
