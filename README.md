@@ -61,7 +61,7 @@ Commandline options override environment variables.
 * `CERTDEPLOY_SERVER_LOG_FILENAME` - The path to the server log file. Equivalent to `--log-filename`.
 * `CERTDEPLOY_SERVER_LOG_LEVEL` - The log level. Equivalent to `--log-level`.
 * `CERTDEPLOY_SERVER_RENEW_ONLY` - If set to ``true`` it is the equivalent of `--renew`.
-* `CERTDEPOLY_SERVER_PUSH_ONLY` - If set to ``true`` it is the equivalent of `--push`.
+* `CERTDEPOLY_SERVER_PUSH_ONLY` - If set to ``true`` it is the equivalent of `--push`. This overrides `CERTDEPLOY_SERVER_DAEMON` and `--daemon` so that the docker container respects this environment variable.
 * `CERTDEPOLY_SERVER_SFTP_LOG_FILENAME` - The log path for the SFTP client. Equivalent to `--sftp-log-filename`.
 * `CERTDEPOLY_SERVER_SFTP_LOG_LEVEL` - The log level of the SFTP client. Equivalent to `--sftp-log-level`.
 
