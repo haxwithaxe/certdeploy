@@ -6,10 +6,10 @@ MAX_SECONDS_OFF = 1
 
 
 def test_tries_on_interval(
-        mock_fail_client: callable,
-        tmp_server_config: callable,
-        client_conn_config_factory: callable,
-        lineage_factory: callable
+    client_conn_config_factory: callable,
+    lineage_factory: callable,
+    mock_fail_client: callable,
+    tmp_server_config: callable
 ):
     """Verify that the `push_interval` tries on an interval."""
     ## Define some variables to avoid magic values

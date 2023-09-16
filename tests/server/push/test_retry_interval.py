@@ -9,10 +9,10 @@ MAX_SECONDS_OFF = 1
 
 
 def test_retries_on_server_interval_is_timely(
-        mock_fail_client: callable,
-        tmp_server_config: callable,
-        client_conn_config_factory: callable,
-        lineage_factory: callable
+    client_conn_config_factory: callable,
+    lineage_factory: callable,
+    mock_fail_client: callable,
+    tmp_server_config: callable
 ):
     """Verify that the `push_retry_interval` retries on the given interval."""
     ## Define some variables to avoid magic values
@@ -57,10 +57,10 @@ def test_retries_on_server_interval_is_timely(
 
 
 def test_retries_on_client_interval_is_timely(
-        mock_fail_client: callable,
-        tmp_server_config: callable,
         client_conn_config_factory: callable,
-        lineage_factory: callable
+        lineage_factory: callable,
+        mock_fail_client: callable,
+        tmp_server_config: callable
 ):
     """Verify that the client `push_retry_interval` overrides the server."""
     ## Define some variables to avoid magic values

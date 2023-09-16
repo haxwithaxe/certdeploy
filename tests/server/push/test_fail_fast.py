@@ -2,6 +2,7 @@
 
 import paramiko
 import pytest
+from fixtures.errors import ServerErrors
 
 from certdeploy.server.server import PushMode, Server
 
@@ -52,7 +53,7 @@ def test_fail_fast_on_serial_push(
         server.serve_forever(one_shot=True)
     ## Verify results
     # Server raises the right exception given the mock client
-    assert 'Error reading SSH protocol banner' in str(err)
+    assert ServerErrors.SSH_BANNER_ERROR in str(err)
     # First client has a connection attempt
     assert len(client0_server.log) == 1
     # Second client never gets a connection attempt
@@ -108,7 +109,7 @@ def test_fail_fast_on_parallel_push(
         server.serve_forever(one_shot=True)
     ## Verify the results
     # Server raises the right exception given the mock client
-    assert 'Error reading SSH protocol banner' in str(err)
+    assert ServerErrors.SSH_BANNER_ERROR in str(err)
     # First client has a connection attempt
     assert len(client0_server.log) == 1
     # Second client never gets a connection attempt

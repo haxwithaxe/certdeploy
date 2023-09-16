@@ -6,6 +6,7 @@ import shutil
 
 import py
 import pytest
+from fixtures.errors import ClientErrors
 
 from certdeploy.client.config import ClientConfig
 from certdeploy.client.config.service import Script
@@ -101,8 +102,10 @@ def test_fails_invalid_name_values(tmp_client_config_file: callable,
     )
     with pytest.raises(ConfigError) as err:
         ClientConfig.load(context.config_path)
-    assert (f'Script file "{os.path.abspath(script_name)}" for service '
-            f'{script_name} not found.') in str(err)
+    assert ClientErrors.format_missing_script_service(
+        script_name,
+        os.path.abspath(script_name)
+    ) in str(err)
 
 
 def test_fails_missing_name_values(tmp_client_config_file: callable,
@@ -118,4 +121,5 @@ def test_fails_missing_name_values(tmp_client_config_file: callable,
     )
     with pytest.raises(ConfigError) as err:
         ClientConfig.load(context.config_path)
-    assert 'Invalid value "None" for script config `name`.' in str(err)
+    assert ClientErrors.format_invalid_value('name', 'None',
+                                             'script config') in str(err)

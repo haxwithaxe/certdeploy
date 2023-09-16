@@ -4,14 +4,23 @@ from typing import Any, Callable
 import pytest
 
 INVALID_CONFIG_FMT: str = 'Invalid value "{value}" for {config_desc}`{key}`.'
-INVALID_CONFIG_MUST_FMT: str = ('Invalid value "{value}" for {config_desc} '
+INVALID_CONFIG_MUST_FMT: str = ('Invalid value "{value}" for {config_desc}'
                                 '`{key}`. `{key}` must {must}.')
+MISSING_SCRIPT_SERVICE_FILE_FMT = ('Script file "{path}" for service {name} '
+                                   'not found.')
+MISSING_DOCKER_SERVICE_FMT = (
+    '''DockerServiceNotFound(\'DockerService failed to update: Could not '''
+    '''find any docker service matching the following filter: '''
+    '''{{\\\'label\\\': "{label}"}}\')'''
+)
 
 
 class Errors:
     """Base class for error strings and formatting."""
 
-    INVALID_CONFIG_OPTION = 'Invalid config option: '
+    INVALID_CONFIG_OPTION: str = 'Invalid config option: '
+    MUST_DIR_EXISTS: str = 'be a directory that exists'
+    SSH_BANNER_ERROR: str = 'Error reading SSH protocol banner'
 
     @staticmethod
     def format_invalid_value(key: str, value: Any, config_desc: str = ''
@@ -51,9 +60,8 @@ class Errors:
         # Add a space to the description if it's set.
         if config_desc:
             config_desc = f'{config_desc} '
-        return INVALID_CONFIG_MUST_FMT.format(
-            dict(key=key, value=value, must=must, config_desc=config_desc)
-        )
+        return INVALID_CONFIG_MUST_FMT.format(key=key, value=value, must=must,
+                                              config_desc=config_desc)
 
 
 class ClientErrors(Errors):
@@ -61,24 +69,21 @@ class ClientErrors(Errors):
 
     INVALID_SFTPD_CONFIG_OPTION: str = 'Invalid SFTPD config option: '
 
+    @staticmethod
+    def format_missing_script_service(name: str, path: str):
+        return MISSING_SCRIPT_SERVICE_FILE_FMT.format(name=name, path=path)
+
+    @staticmethod
+    def format_missing_docker_service(label: str):
+        label = label.replace("'", """\\\'""")
+        return MISSING_DOCKER_SERVICE_FMT.format(label=label)
+
 
 class ServerErrors(Errors):
     """A collection of server errors and formatters."""
 
     NO_CLIENT_CONFIG: str = 'No client configs given.'
     INVALID_CLIENT_CONFIG_OPTION: str = 'Invalid client config option: '
-
-
-@pytest.fixture()
-def client_errors() -> ClientErrors:
-    """Return a collection of CertDeploy client errors and formatters."""
-    return ClientErrors
-
-
-@pytest.fixture()
-def server_errors() -> ServerErrors:
-    """Return a collection of CertDeploy server errors and formatters."""
-    return ServerErrors
 
 
 @pytest.fixture(scope='function')

@@ -1,6 +1,7 @@
 """Tests to verify the behavior of the docker service update type."""
 
 import pytest
+from fixtures.errors import ClientErrors
 
 from certdeploy.client.config import ClientConfig
 from certdeploy.errors import ConfigError
@@ -63,8 +64,11 @@ def test_fails_invalid_name_values(tmp_client_config_file: callable,
         )
         with pytest.raises(ConfigError) as err:
             ClientConfig.load(context.config_path)
-        assert (f'Invalid value "{bad_name}" for systemd update '
-                f'service config `name`.' in str(err))
+        assert ClientErrors.format_invalid_value(
+            'name',
+            bad_name,
+            'systemd update service config'
+        ) in str(err)
 
 
 def test_fails_null_name_values(tmp_client_config_file: callable):
@@ -76,8 +80,11 @@ def test_fails_null_name_values(tmp_client_config_file: callable):
     )
     with pytest.raises(ConfigError) as err:
         ClientConfig.load(context.config_path)
-    assert ('Invalid value "None" for systemd update service config `name`.' in
-            str(err))
+    assert ClientErrors.format_invalid_value(
+        'name',
+        'None',
+        'systemd update service config'
+    ) in str(err)
 
 
 def test_fails_missing_name_values(tmp_client_config_file: callable):
@@ -89,5 +96,8 @@ def test_fails_missing_name_values(tmp_client_config_file: callable):
     )
     with pytest.raises(ConfigError) as err:
         ClientConfig.load(context.config_path)
-    assert ('Invalid value "None" for systemd update service config `name`.' in
-            str(err))
+    assert ClientErrors.format_invalid_value(
+        'name',
+        'None',
+        'systemd update service config'
+    ) in str(err)

@@ -151,6 +151,11 @@ class ServerRefLogMessages:
         'Adding lineage to queue.',
         'certdeploy.server._main._run'
     )
+    CERTBOT_HELP_TEXT: PlainText = PlainText(
+        'Plain text',
+        'certbot [SUBCOMMAND] [options] [-d DOMAIN] [-d DOMAIN]',
+        'first line of `certbot --help`'
+    )
     HAS_STARTED: ServerRefLogMessage = ServerRefLogMessage(
         'DEBUG',
         'Server.serve_forever: one_shot=',

@@ -67,9 +67,9 @@ def test_daemon_runs_daemon(
 
 
 def test_no_args_runs_deploy(
+    log_file: pathlib.Path,
     managed_thread: Callable[[...], CleanThread],
-    tmp_client_config_file: Callable[[...], ConfigContext],
-    log_file: pathlib.Path
+    tmp_client_config_file: Callable[[...], ConfigContext]
 ):
     """Verify that the client deploys when no args are given.
 
@@ -166,7 +166,7 @@ def test_overrides_sftp_log_level_and_sftp_log_filename(
     )
     thread.wait_for_text_in_log(RefMsgs.HAS_STARTED.log,
                                 lambda x: client_log.read_bytes())
-    assert thread.is_alive(), 'The client died early.'
+    assert thread.is_alive(), 'The client died too soon.'
     mock_server.push()
     thread.wait_for_text_in_log(
         ParamikoMsgs.TRANSPORT_EMPTY.log,

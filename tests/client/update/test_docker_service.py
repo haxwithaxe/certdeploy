@@ -4,6 +4,7 @@ import time
 
 import pytest
 from fixtures.docker_service import ServiceWrapper
+from fixtures.errors import ClientErrors
 
 from certdeploy.client.config.service import DockerService
 from certdeploy.client.errors import DockerServiceNotFound
@@ -90,6 +91,7 @@ def test_fail_fast_docker_service(
         tmp_client_config: callable
 ):
     """Verify that the client fails fast."""
+    bad_label = '''does't exist'''
     client_config = tmp_client_config(
         docker_url='unix://var/run/docker.sock',
         fail_fast=True
@@ -97,10 +99,7 @@ def test_fail_fast_docker_service(
     # Do the thing under test
     with pytest.raises(DockerServiceNotFound) as err:
         update_docker_service(
-            DockerService({'filters': {'label': 'doesn\'t exist'}}),
+            DockerService({'filters': {'label': bad_label}}),
             client_config
         )
-    msg = ('<ExceptionInfo DockerServiceNotFound(\'DockerService failed to '
-           'update: Could not find any docker service matching the following '
-           'filter: {\\\'label\\\': "doesn\\\'t exist"}\')')
-    assert msg in str(err)
+    assert ClientErrors.format_missing_docker_service(bad_label) in str(err)

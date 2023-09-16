@@ -7,10 +7,10 @@ MAX_SECONDS_OFF = 1
 
 
 def test_push_mode_parallel_pushes_all_at_once(
-        mock_fail_client: callable,
-        tmp_server_config: callable,
         client_conn_config_factory: callable,
-        lineage_factory: callable
+        lineage_factory: callable,
+        mock_fail_client: callable,
+        tmp_server_config: callable
 ):
     """Verify that the `parallel` `push_mode` pushes to clients all at once.
 

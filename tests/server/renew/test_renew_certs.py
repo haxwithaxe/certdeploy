@@ -6,8 +6,8 @@ from certdeploy.errors import CertDeployError
 from certdeploy.server.renew import renew_certs
 
 
-def test_runs_renew_command(tmp_server_config: callable,
-                            mock_certbot: callable):
+def test_runs_renew_command(mock_certbot: callable,
+                            tmp_server_config: callable):
     """Verify that the renew_exec is called with the right args."""
     mock_certbot = mock_certbot()
     ## Setup server config
@@ -20,8 +20,8 @@ def test_runs_renew_command(tmp_server_config: callable,
     assert mock_certbot.flag_file.exists()
 
 
-def test_fail_fast_fails_renew_command(tmp_server_config: callable,
-                                       mock_certbot: callable):
+def test_fail_fast_fails_renew_command(mock_certbot: callable,
+                                       tmp_server_config: callable):
     """Verify that the `renew_certs()` function fails fast."""
     mock_certbot = mock_certbot()
     ## Setup server config

@@ -9,12 +9,7 @@ Note:
 import pathlib
 
 import pytest
-
-CERTBOT_HELP_TEXT: bytes = (b'certbot [SUBCOMMAND] [options] [-d DOMAIN] '
-                            b'[-d DOMAIN]')
-CERTDEPLOY_RENEW_TEXT: bytes = b'DEBUG:certdeploy-server: Running renew'
-CERTDEPLOY_DAEMON_TEXT: bytes = b'DEBUG:certdeploy-server: Running daemon'
-CERTDEPLOY_HELP_TEXT: bytes = b'Usage: certdeploy-server [OPTIONS]'
+from fixtures.logging import ServerRefLogMessages as RefMsgs
 
 
 @pytest.mark.certdeploy_docker
@@ -35,8 +30,8 @@ def test_certbot_passthrough(
     )
     # Start and wait for the target log message to appear
     server.start(timeout=None)
-    server.wait_for_log(CERTBOT_HELP_TEXT)
-    assert CERTBOT_HELP_TEXT in server.logs()
+    server.wait_for_log(RefMsgs.CERTBOT_HELP_TEXT.log)
+    assert RefMsgs.CERTBOT_HELP_TEXT.log in server.logs()
 
 
 @pytest.mark.certdeploy_docker
@@ -60,8 +55,8 @@ def test_renew_when_env(
     )
     # Start and wait for the target log message to appear
     server.start(timeout=None)
-    server.wait_for_log(CERTDEPLOY_RENEW_TEXT)
-    assert CERTDEPLOY_RENEW_TEXT in server.logs()
+    server.wait_for_log(RefMsgs.RENEW_ONLY.log)
+    assert RefMsgs.RENEW_ONLY.log in server.logs()
 
 
 @pytest.mark.certdeploy_docker
@@ -84,8 +79,8 @@ def test_runs_daemon_by_default(
     )
     # Start and wait for the container and daemon to be running
     server.start(timeout=None)
-    server.wait_for_log(CERTDEPLOY_DAEMON_TEXT)
-    assert CERTDEPLOY_DAEMON_TEXT in server.logs()
+    server.wait_for_log(RefMsgs.DAEMON_HAS_STARTED.log)
+    assert RefMsgs.DAEMON_HAS_STARTED.log in server.logs()
 
 
 @pytest.mark.certdeploy_docker
@@ -110,5 +105,5 @@ def test_runs_cli_with_args(
     )
     # Start and wait for the target log message to appear
     server.start(timeout=None)
-    server.wait_for_log(CERTDEPLOY_HELP_TEXT)
-    assert CERTDEPLOY_HELP_TEXT in server.logs()
+    server.wait_for_log(RefMsgs.HELP_TEXT.log)
+    assert RefMsgs.HELP_TEXT.log in server.logs()
