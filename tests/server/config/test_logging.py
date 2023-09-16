@@ -3,6 +3,8 @@ import pathlib
 from typing import Callable
 
 import pytest
+from fixtures.logging import ParamikoRefLogMessages as ParamikoRefMsgs
+from fixtures.logging import ServerRefLogMessages as RefMsgs
 from fixtures.mock_fail_client import MockClientTCPServer
 
 from certdeploy.server.config import ServerConfig
@@ -14,7 +16,7 @@ _TEST_LINEAGE_NAME = 'lineage.test'
 @pytest.fixture()
 def canned_client_conn_config(
     client_conn_config_factory: Callable[[...], dict],
-    mock_fail_client: Callable[[...], MockClientTCPServer]
+    mock_fail_client: Callable[[...], MockClientTCPServer],
 ) -> dict:
     """Return a canned client connection config `dict` for these tests."""
     client_server = mock_fail_client('127.0.0.1')
@@ -28,25 +30,24 @@ def canned_client_conn_config(
 
 
 def test_logs_at_given_level_to_given_file(
-    mock_fail_client: Callable[[...], MockClientTCPServer],
     canned_client_conn_config: dict,
     lineage_factory: Callable[[...], pathlib.Path],
+    log_file: pathlib.Path,
+    mock_fail_client: Callable[[...], MockClientTCPServer],
     tmp_server_config: Callable[[...], ServerConfig],
-    tmp_path: pathlib.Path
+    wait_for_condition: Callable[[callable, int], None]
 ):
     """Verify the `log_filename` config changes where the server logs.
 
     This also exercises the `log_level` config.
     """
-    ## Define some variables to avoid magic values
-    log_path = tmp_path.joinpath('sftp.log')
     ## Setup Server
     server_config = tmp_server_config(
         client_configs=[canned_client_conn_config],
         push_retries=0,
         push_interval=0,
         log_level='DEBUG',
-        log_filename=str(log_path),
+        log_filename=str(log_file),
         sftp_log_level='CRITICAL',
         sftp_log_filename='/dev/null'
     )
@@ -59,23 +60,25 @@ def test_logs_at_given_level_to_given_file(
     server.sync(str(lineage_path), [_TEST_LINEAGE_NAME])
     ## Run test
     server.serve_forever(one_shot=True)
+    wait_for_condition(
+        lambda: RefMsgs.PUSH_HAS_STARTED.log in log_file.read_bytes()
+    )
     ## Verify results
-    assert 'DEBUG' in log_path.read_text()
+    assert RefMsgs.PUSH_HAS_STARTED.log in log_file.read_bytes()
 
 
 def test_sftp_client_logs_at_given_level_to_given_file(
-    mock_fail_client: Callable[[...], MockClientTCPServer],
     canned_client_conn_config: dict,
     lineage_factory: Callable[[...], pathlib.Path],
+    log_file: pathlib.Path,
+    mock_fail_client: Callable[[...], MockClientTCPServer],
     tmp_server_config: Callable[[...], ServerConfig],
-    tmp_path: pathlib.Path
+    wait_for_condition: Callable[[callable, int], None]
 ):
     """Verify the `sftp_log_filename` changes where the SFTP client logs.
 
     This also exercises the `sftp_log_level` config.
     """
-    ## Define some variables to avoid magic values
-    log_path = tmp_path.joinpath('sftp.log')
     ## Setup Server
     server_config = tmp_server_config(
         client_configs=[canned_client_conn_config],
@@ -84,7 +87,7 @@ def test_sftp_client_logs_at_given_level_to_given_file(
         log_level='CRITICAL',
         log_filename='/dev/null',
         sftp_log_level='DEBUG',
-        sftp_log_filename=str(log_path)
+        sftp_log_filename=str(log_file)
     )
     ## Setup lineage
     # The filename doesn't matter because it will never get far enough to
@@ -95,5 +98,8 @@ def test_sftp_client_logs_at_given_level_to_given_file(
     server.sync(str(lineage_path), [_TEST_LINEAGE_NAME])
     ## Run test
     server.serve_forever(one_shot=True)
+    wait_for_condition(
+        lambda: ParamikoRefMsgs.TRANSPORT_EMPTY.log in log_file.read_bytes()
+    )
     ## Verify results
-    assert 'DEBUG' in log_path.read_text()
+    assert ParamikoRefMsgs.TRANSPORT_EMPTY.log in log_file.read_bytes()

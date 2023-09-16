@@ -27,13 +27,13 @@ def test_help_shows_help():
     result = CliRunner(mix_stderr=True).invoke(_app, ['--help'])
     ## Verify the results
     # The command name is different when it's being called from the runner
-    assert 'Usage: -typer-main [OPTIONS]' in result.output
+    assert RefMsgs.HELP_TEXT_ALT.message in result.output
 
 
 def test_daemon_runs_daemon(
+    log_file: pathlib.Path,
     managed_thread: Callable[[...], CleanThread],
-    tmp_server_config_file: Callable[[...], ConfigContext],
-    log_file: pathlib.Path
+    tmp_server_config_file: Callable[[...], ConfigContext]
 ):
     """Verify that the daemon runs for the `--daemon` arg.
 
@@ -63,9 +63,10 @@ def test_daemon_runs_daemon(
     assert RefMsgs.DAEMON_HAS_STARTED.log in log_file.read_bytes()
 
 
+@pytest.mark.slow
 def test_renew_runs_renew(
-    tmp_server_config_file: Callable[[...], ConfigContext],
-    log_file: pathlib.Path
+    log_file: pathlib.Path,
+    tmp_server_config_file: Callable[[...], ConfigContext]
 ):
     """Verify that renew runs for the `--renew` arg.
 
@@ -88,8 +89,8 @@ def test_renew_runs_renew(
 
 
 def test_push_runs_push(
-    tmp_server_config_file: Callable[[...], ConfigContext],
-    log_file: pathlib.Path
+    log_file: pathlib.Path,
+    tmp_server_config_file: Callable[[...], ConfigContext]
 ):
     """Verify that the daemon runs for the `--daemon` arg.
 
@@ -111,8 +112,8 @@ def test_push_runs_push(
 
 
 def test_no_args_with_config_exits(
-    tmp_server_config_file: Callable[[...], ConfigContext],
-    log_file: pathlib.Path
+    log_file: pathlib.Path,
+    tmp_server_config_file: Callable[[...], ConfigContext]
 ):
     """Verify the server errors out when no args besides `--config` are given.
 
@@ -135,13 +136,17 @@ def test_no_args_with_config_exits(
     assert RefMsgs.MISSING_LINEAGE.log in log_file.read_bytes()
 
 
+@pytest.mark.real
 def test_no_args_exits(
-    tmp_server_config_file: Callable[[...], ConfigContext],
-    caplog: pytest.LogCaptureFixture
+    caplog: pytest.LogCaptureFixture,
+    tmp_server_config_file: Callable[[...], ConfigContext]
 ):
     """Verify that the server errors out when no args are given.
 
     This also covers the `--config` option loading the given config file.
+
+    This test uses `caplog` because the error doesn't show up in the
+    `results.output`. It shows up in stdout or stderr when run manually.
     """
     assert not os.path.exists(DEFAULT_SERVER_CONFIG), \
         (f'The default server config ({DEFAULT_SERVER_CONFIG}) exists. This '
@@ -155,15 +160,13 @@ def test_no_args_exits(
 
 
 def test_overrides_log_level_and_log_filename(
-    tmp_server_config_file: Callable[[...], ConfigContext],
-    caplog: pytest.LogCaptureFixture,
-    tmp_path: pathlib.Path
+    log_file: pathlib.Path,
+    tmp_server_config_file: Callable[[...], ConfigContext]
 ):
     """Verify that the client log level and log file are overridden.
 
     This also covers the `--config` option loading the given config file.
     """
-    final_log_filename = tmp_path.joinpath('final.log')
     final_log_level = LogLevel.DEBUG
     context = tmp_server_config_file(
         fail_fast=True,
@@ -176,31 +179,27 @@ def test_overrides_log_level_and_log_filename(
         [
             '--push',
             '--log-level', final_log_level.value,
-            '--log-filename', final_log_filename,
+            '--log-filename', str(log_file),
             '--config', context.config_path
         ]
     )
-    ## Collect results
-
     ## Verify the results
     # If an exception occurred the test failed
     assert results.exception is None
     # At least one DEBUG message was sent
-    assert RefMsgs.PUSH_ONLY.log in final_log_filename.read_bytes()
+    assert RefMsgs.PUSH_ONLY.log in log_file.read_bytes()
     assert LogLevel.cast(log.level) == final_log_level
-    assert log.handlers[0].stream.name == str(final_log_filename)
+    assert log.handlers[0].stream.name == str(log_file)
 
 
 def test_overrides_sftp_log_level_and_sftp_log_filename(
-    tmp_server_config_file: Callable[[...], ConfigContext],
-    caplog: pytest.LogCaptureFixture,
-    tmp_path: pathlib.Path
+    log_file: pathlib.Path,
+    tmp_server_config_file: Callable[[...], ConfigContext]
 ):
     """Verify that the client log level and log file are overridden.
 
     This also covers the `--config` option loading the given config file.
     """
-    final_log_filename = tmp_path.joinpath('final.log')
     final_log_level = LogLevel.DEBUG
     context = tmp_server_config_file(
         fail_fast=True,
@@ -213,7 +212,7 @@ def test_overrides_sftp_log_level_and_sftp_log_filename(
         [
             '--push',
             '--sftp-log-level', final_log_level.value,
-            '--sftp-log-filename', final_log_filename,
+            '--sftp-log-filename', str(log_file),
             '--config', context.config_path
         ]
     )
@@ -222,12 +221,12 @@ def test_overrides_sftp_log_level_and_sftp_log_filename(
     # No paramiko logs are expected to be generated in this code path
     paramiko_log = logging.getLogger(name=PARAMIKO_LOGGER_NAME)
     assert LogLevel.cast(paramiko_log.getEffectiveLevel()) == final_log_level
-    assert paramiko_log.handlers[0].stream.name == str(final_log_filename)
+    assert paramiko_log.handlers[0].stream.name == str(log_file)
 
 
 def test_push_lineage_and_domains_queues_and_pushes(
-    tmp_server_config_file: Callable[[...], ConfigContext],
-    log_file: pathlib.Path
+    log_file: pathlib.Path,
+    tmp_server_config_file: Callable[[...], ConfigContext]
 ):
     """Verify that the server queues and pushes.
 
