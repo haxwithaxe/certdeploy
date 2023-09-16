@@ -9,6 +9,7 @@ import paramiko
 import pytest
 from fixtures.docker_container import ContainerInternalPaths
 from fixtures.keys import CLIENT_KEY_NAME, SERVER_KEY_NAME, KeyPair
+from fixtures.utils import ConfigContext
 from paramiko.ed25519key import Ed25519Key
 
 from certdeploy.client.config import ClientConfig
@@ -83,18 +84,20 @@ def mock_server_push(
     """Return a mock CertDeploy server push context factory."""
 
     def _mock_server_push(
-        client_config: Union[ClientConfig, dict],
+        client_config: Union[ClientConfig, dict] = None,
         client_path: pathlib.Path = None,
         client_address: str = None,
         client_keypair: KeyPair = None,
         server_keypair: KeyPair = None,
         lineage_name: str = None,
-        filenames: list[pathlib.Path] = None
+        filenames: list[pathlib.Path] = None,
+        client_context: ConfigContext = None
     ) -> MockPushContext:
         """Prepare to push arbitrarily named certs to a client.
 
         Arguments:
-            client_config: CertDeploy client config `dict`.
+            client_config: CertDeploy client config `dict`. Optional if
+                `client_context` is given.
             client_path: The path on the client to dump the lineage in.
                 Defaults to a new temporary directory.
             client_address: The listen address of the CertDeploy client.
@@ -109,25 +112,40 @@ def mock_server_push(
                 Defaults to `'test.example.com'`.
             filenames: A list of filenames to transfer from `lineage_path` to
                 `client_path`. Defaults to `['fullchain.pem', 'privkey.pem']`.
+            client_context: A config context for the target client. Defaults to
+                `None`. This acts as the primary source of default values if
+                other arguments are given.
 
         Returns:
             A context object with the pusher function, key pairs, lineage
             filenames, and client address.
         """
+        # Use client_context as an initial fallback for key pairs and config
+        if client_context:
+            client_keypair = client_keypair or client_context.client_keypair
+            server_keypair = server_keypair or client_context.server_keypair
+            client_config = client_config or client_context.config
         ## Reconcile the variables
         # Calling out the places where things are added to the context so they
         #   don't get lost in the noise.
-        client_path = client_path or ContainerInternalPaths.source
-        default_client_keypair = keypairgen().update(
-            path=tmp_path,
-            privkey_name=CLIENT_KEY_NAME
-        )
-        client_keypair = client_keypair or default_client_keypair
-        default_server_keypair = keypairgen().update(
-            path=tmp_path,
-            privkey_name=SERVER_KEY_NAME
-        )
-        server_keypair = server_keypair or default_server_keypair
+        if not client_path:
+            if isinstance(client_config, dict) and client_config.get('source'):
+                client_path = pathlib.Path(client_config['source'])
+            elif (isinstance(client_config, ClientConfig) and
+                  client_config.source):
+                client_path = pathlib.Path(client_config.source)
+            else:
+                client_path = ContainerInternalPaths.source
+        client_keypair = (client_keypair or keypairgen()).copy()
+        if not client_keypair.path:
+            client_keypair.update(path=tmp_path)
+        if not client_keypair.privkey_name:
+            client_keypair.update(privkey_name=CLIENT_KEY_NAME)
+        server_keypair = (server_keypair or keypairgen()).copy()
+        if not server_keypair.path:
+            server_keypair.update(path=tmp_path)
+        if not server_keypair.privkey_name:
+            server_keypair.update(privkey_name=SERVER_KEY_NAME)
         filenames = filenames or ['fullchain.pem', 'privkey.pem']
         lineage_path = lineage_factory(lineage_name or 'test.example.com',
                                        filenames)
