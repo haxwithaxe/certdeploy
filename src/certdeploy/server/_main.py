@@ -29,10 +29,14 @@ def _run(config, daemon, renew, push, lineage, domains):
             sys.exit(1)
         server = Server(config)
         if domains and lineage:
+            # This is used in tests to indicate the server is queueing a
+            #   lineage.
             log.debug('Adding lineage to queue.')
             domains = domains.split()
             server.sync(lineage, domains)
         if push:
+            # This is used in tests to indicate a push is being run without the
+            #   daemon.
             log.debug('Running manual push without a running daemon')
             server.serve_forever(one_shot=True)
 
