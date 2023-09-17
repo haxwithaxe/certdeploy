@@ -14,15 +14,23 @@ if [[ -z $TAG ]]; then
 fi
 
 echo Tagging ${SRC_IMAGE_PREFIX}-server as $TAG
-docker image tag ${SRC_IMAGE_PREFIX}-server:latest ${DEST_IMAGE_PREFIX}-server:latest
+if [[ "$TAG" != *"-"* ]]; then
+	docker image tag ${SRC_IMAGE_PREFIX}-server:latest ${DEST_IMAGE_PREFIX}-server:latest
+fi
 docker image tag ${SRC_IMAGE_PREFIX}-server:latest ${DEST_IMAGE_PREFIX}-server:$TAG
 echo Pushing ${DEST_IMAGE_PREFIX}-server latest and $TAG
-docker image push ${DEST_IMAGE_PREFIX}-server:latest
+if [[ "$TAG" != *"-"* ]]; then
+	docker image push ${DEST_IMAGE_PREFIX}-server:latest
+fi
 docker image push ${DEST_IMAGE_PREFIX}-server:$TAG
 
 echo Tagging ${SRC_IMAGE_PREFIX}-client as $TAG
-docker image tag ${SRC_IMAGE_PREFIX}-client:latest ${DEST_IMAGE_PREFIX}-client:latest
+if [[ "$TAG" != *"-"* ]]; then
+	docker image tag ${SRC_IMAGE_PREFIX}-client:latest ${DEST_IMAGE_PREFIX}-client:latest
+fi
 docker image tag ${SRC_IMAGE_PREFIX}-client:latest ${DEST_IMAGE_PREFIX}-client:$TAG
 echo Pushing ${DEST_IMAGE_PREFIX}-client latest and $TAG
-docker image push ${DEST_IMAGE_PREFIX}-client:latest
+if [[ "$TAG" != *"-"* ]]; then
+	docker image push ${DEST_IMAGE_PREFIX}-client:latest
+fi
 docker image push ${DEST_IMAGE_PREFIX}-client:$TAG
