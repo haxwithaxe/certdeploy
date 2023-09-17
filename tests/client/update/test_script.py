@@ -1,16 +1,19 @@
 """Tests to verify the behavior of the `Script` update type config."""
 
+from typing import Callable
+
 import pytest
 from fixtures import utils
 
+from certdeploy.client.config import ClientConfig
 from certdeploy.client.config.service import Script
 from certdeploy.client.errors import ScriptError
 from certdeploy.client.update import update_script
 
 
 def test_updates_with_script(
-        tmp_client_config: callable,
-        tmp_script_for_service: utils.Script
+    tmp_client_config: Callable[[...], ClientConfig],
+    tmp_script_for_service: utils.Script
 ):
     """Verify the client can run a script."""
     client_config = tmp_client_config(fail_fast=True)
@@ -24,8 +27,8 @@ def test_updates_with_script(
 
 
 def test_fails_fast_with_script(
-        tmp_client_config: callable,
-        tmp_script: callable
+    tmp_client_config: Callable[[...], ClientConfig],
+    tmp_script: Callable[[str, str, ...], utils.Script]
 ):
     """Verify the client can run a script."""
     client_config = tmp_client_config(fail_fast=True)

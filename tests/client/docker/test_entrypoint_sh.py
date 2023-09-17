@@ -6,13 +6,18 @@ Note:
     image with `tox -e dockerbuild`.
 """
 
+from typing import Callable
+
 import pytest
+from fixtures.docker_container import ClientContainer
 from fixtures.logging import ClientRefLogMessages as RefMsgs
 
 
 @pytest.mark.certdeploy_docker
 @pytest.mark.docker
-def test_starts_daemon_by_default(client_docker_container: callable):
+def test_starts_daemon_by_default(
+    client_docker_container: Callable[[...], ClientContainer]
+):
     """Verify that the daemon starts by default."""
     # Setup the client container
     client = client_docker_container(
@@ -26,7 +31,9 @@ def test_starts_daemon_by_default(client_docker_container: callable):
 
 @pytest.mark.certdeploy_docker
 @pytest.mark.docker
-def test_passes_args_to_client(client_docker_container: callable):
+def test_passes_args_to_client(
+    client_docker_container: Callable[[...], ClientContainer]
+):
     """Verify that args are passed to the client."""
     # Setup the client container
     client = client_docker_container(

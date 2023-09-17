@@ -1,5 +1,11 @@
 """Tests for the `push_mode` configs set to `serial`."""
 
+import pathlib
+from typing import Callable
+
+from fixtures.mock_fail_client import MockClientTCPServer
+
+from certdeploy.server.config import ServerConfig
 from certdeploy.server.config.server import PushMode
 from certdeploy.server.server import Server
 
@@ -7,10 +13,10 @@ MAX_SECONDS_OFF = 1
 
 
 def test_push_mode_serial_pushes_one_at_a_time(
-        client_conn_config_factory: callable,
-        lineage_factory: callable,
-        mock_fail_client: callable,
-        tmp_server_config: callable
+    client_conn_config_factory: Callable[[...], dict],
+    lineage_factory: Callable[[str, str, ...], pathlib.Path],
+    mock_fail_client: Callable[[...], MockClientTCPServer],
+    tmp_server_config: Callable[[...], ServerConfig]
 ):
     """Verify that `serial` `push_mode` pushes to clients one at a time."""
     ## Define some variables to avoid magic values

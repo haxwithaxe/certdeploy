@@ -1,14 +1,19 @@
 """Tests to verify the behavior of the docker service update type."""
 
+from typing import Callable
+
 import pytest
 from fixtures.errors import ClientErrors
+from fixtures.utils import ConfigContext
 
 from certdeploy.client.config import ClientConfig
 from certdeploy.errors import ConfigError
 
 
-def test_accepts_valid_name(tmp_client_config_file: callable,
-                            tmp_path_factory: pytest.TempPathFactory):
+def test_accepts_valid_name(
+    tmp_client_config_file: Callable[[...], ConfigContext],
+    tmp_path_factory: pytest.TempPathFactory
+):
     """Verify the valid values for the `systemd` are accepted."""
     names = [
         'a-z0-9:_,.\\-@a-z0-9:_,.\\-.service',
@@ -36,8 +41,10 @@ def test_accepts_valid_name(tmp_client_config_file: callable,
         assert config.services[0].name == name
 
 
-def test_fails_invalid_name_values(tmp_client_config_file: callable,
-                                   tmp_path_factory: pytest.TempPathFactory):
+def test_fails_invalid_name_values(
+    tmp_client_config_file: Callable[[...], ConfigContext],
+    tmp_path_factory: pytest.TempPathFactory
+):
     """Verify ConfigError is thrown for `name` values that are invalid.
 
     This is an exhaustive set of invalid names but these are important when it
@@ -71,7 +78,9 @@ def test_fails_invalid_name_values(tmp_client_config_file: callable,
         ) in str(err)
 
 
-def test_fails_null_name_values(tmp_client_config_file: callable):
+def test_fails_null_name_values(
+    tmp_client_config_file: Callable[[...], ConfigContext]
+):
     """Verify ConfigError is thrown for `name` values that are null."""
     context = tmp_client_config_file(
         update_services=[
@@ -87,7 +96,9 @@ def test_fails_null_name_values(tmp_client_config_file: callable):
     ) in str(err)
 
 
-def test_fails_missing_name_values(tmp_client_config_file: callable):
+def test_fails_missing_name_values(
+    tmp_client_config_file: Callable[[...], ConfigContext]
+):
     """Verify ConfigError is thrown for `name` values that are missing."""
     context = tmp_client_config_file(
         update_services=[

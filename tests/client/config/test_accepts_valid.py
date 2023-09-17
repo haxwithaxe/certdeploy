@@ -3,6 +3,7 @@
 from typing import Callable
 
 from fixtures.client_config import ConfigContext
+from fixtures.keys import KeyPair
 
 from certdeploy.client.config import ClientConfig
 from certdeploy.client.config.client import SFTPDConfig
@@ -30,8 +31,10 @@ def test_config_base_kitchen_sink(
     assert config.update_delay_seconds == 10
 
 
-def test_config_sftpd_kitchen_sink(tmp_client_config_file: callable,
-                                   keypairgen: callable):
+def test_config_sftpd_kitchen_sink(
+        tmp_client_config_file: Callable[[], ConfigContext],
+        keypairgen: Callable[[], KeyPair]
+):
     """Quickly verify the SFTPD kitchen sink is validated.
 
     Verify all the things that need to be validated in

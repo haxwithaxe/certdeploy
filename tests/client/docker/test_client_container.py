@@ -2,10 +2,16 @@
 
 import pathlib
 import time
+from typing import Callable
 
 import pytest
 from fixtures.client_config import client_sftpd_config
-from fixtures.docker_container import ContainerStatus
+from fixtures.docker_container import (
+    ClientContainer,
+    ContainerStatus,
+    ContainerWrapper
+)
+from fixtures.mock_server import MockPushContext
 
 
 @pytest.mark.certdeploy_docker
@@ -13,9 +19,9 @@ from fixtures.docker_container import ContainerStatus
 @pytest.mark.system
 @pytest.mark.slow
 def test_updates_other_container(
-    canned_docker_container: callable,
-    client_docker_container: callable,
-    mock_server_push: callable,
+    canned_docker_container: Callable[[...], ContainerWrapper],
+    client_docker_container: Callable[[...], ClientContainer],
+    mock_server_push: Callable[[...], MockPushContext],
     tmp_path: pathlib.Path
 ):
     """Verify that the client container can restart another container.

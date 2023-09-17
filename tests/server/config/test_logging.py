@@ -35,7 +35,6 @@ def test_logs_at_given_level_to_given_file(
     log_file: pathlib.Path,
     mock_fail_client: Callable[[...], MockClientTCPServer],
     tmp_server_config: Callable[[...], ServerConfig],
-    wait_for_condition: Callable[[callable, int], None]
 ):
     """Verify the `log_filename` config changes where the server logs.
 
@@ -60,9 +59,6 @@ def test_logs_at_given_level_to_given_file(
     server.sync(str(lineage_path), [_TEST_LINEAGE_NAME])
     ## Run test
     server.serve_forever(one_shot=True)
-    wait_for_condition(
-        lambda: RefMsgs.PUSH_HAS_STARTED.log in log_file.read_bytes()
-    )
     ## Verify results
     assert RefMsgs.PUSH_HAS_STARTED.log in log_file.read_bytes()
 
@@ -73,7 +69,6 @@ def test_sftp_client_logs_at_given_level_to_given_file(
     log_file: pathlib.Path,
     mock_fail_client: Callable[[...], MockClientTCPServer],
     tmp_server_config: Callable[[...], ServerConfig],
-    wait_for_condition: Callable[[callable, int], None]
 ):
     """Verify the `sftp_log_filename` changes where the SFTP client logs.
 
@@ -98,8 +93,5 @@ def test_sftp_client_logs_at_given_level_to_given_file(
     server.sync(str(lineage_path), [_TEST_LINEAGE_NAME])
     ## Run test
     server.serve_forever(one_shot=True)
-    wait_for_condition(
-        lambda: ParamikoRefMsgs.TRANSPORT_EMPTY.log in log_file.read_bytes()
-    )
     ## Verify results
     assert ParamikoRefMsgs.TRANSPORT_EMPTY.log in log_file.read_bytes()

@@ -3,18 +3,21 @@
 import os
 import pathlib
 import shutil
+from typing import Callable
 
-import py
 import pytest
 from fixtures.errors import ClientErrors
+from fixtures.utils import ConfigContext
 
 from certdeploy.client.config import ClientConfig
 from certdeploy.client.config.service import Script
 from certdeploy.errors import ConfigError
 
 
-def test_accepts_absolute_name_values(tmp_client_config_file: callable,
-                                      tmp_path: pathlib.Path):
+def test_accepts_absolute_name_values(
+    tmp_client_config_file: Callable[[...], ConfigContext],
+    tmp_path: pathlib.Path
+):
     """Verify the `script` update service type `name` is parsed.
 
     Valid `name` values for the `script` update service type that are absolute
@@ -34,8 +37,10 @@ def test_accepts_absolute_name_values(tmp_client_config_file: callable,
     assert test_service.script_path == ref_service.script_path
 
 
-def test_accepts_relative_name_values(tmp_client_config_file: callable,
-                                      tmp_path: pathlib.Path):
+def test_accepts_relative_name_values(
+    tmp_client_config_file: Callable[[...], ConfigContext],
+    tmp_path: pathlib.Path
+):
     """Verify the `script` update service type `name` is parsed.
 
     Valid `name` values for the `script` update service type that are relative
@@ -61,7 +66,9 @@ def test_accepts_relative_name_values(tmp_client_config_file: callable,
     assert test_service.script_path == str(script.absolute())
 
 
-def test_accepts_valid_name_values(tmp_client_config_file: callable):
+def test_accepts_valid_name_values(
+    tmp_client_config_file: Callable[[...], ConfigContext]
+):
     """Verify the `script` update service type `name` is parsed.
 
     Valid `name` values for the `script` update service type that are in `$PATH`
@@ -81,8 +88,9 @@ def test_accepts_valid_name_values(tmp_client_config_file: callable):
     assert test_service.script_path == true_exec_path
 
 
-def test_fails_invalid_name_values(tmp_client_config_file: callable,
-                                   tmpdir: py.path.local):
+def test_fails_invalid_name_values(
+    tmp_client_config_file: Callable[[...], ConfigContext]
+):
     """Verify the `script` update service type `name` is parsed.
 
     Verify `ConfigError` is thrown for `name` values that are a relative path
@@ -91,7 +99,7 @@ def test_fails_invalid_name_values(tmp_client_config_file: callable,
     script_name = '__certdeploy_test_script_that_does_not_exist'
     ## Verify the script is not in the current directory
     assert not os.path.exists(script_name), \
-        f'There is cruft "{script_name}" in the tmpdir "{tmpdir}".'
+        f'There is cruft "{script_name}" in the temp directory "{os.curdir}".'
     ## Verify the script is not in the PATH
     assert not shutil.which(script_name), \
         f'{script_name} is in PATH so this test is ambiguous.'
@@ -108,8 +116,9 @@ def test_fails_invalid_name_values(tmp_client_config_file: callable,
     ) in str(err)
 
 
-def test_fails_missing_name_values(tmp_client_config_file: callable,
-                                   tmpdir: py.path.local):
+def test_fails_missing_name_values(
+    tmp_client_config_file: Callable[[...], ConfigContext]
+):
     """Verify the `script` update service type `name` is parsed.
 
     Verify `ConfigError` is thrown for `name` values that are `None`.

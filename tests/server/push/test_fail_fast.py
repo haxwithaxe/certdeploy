@@ -1,17 +1,22 @@
 """Tests for the `fail_fast` config in push operations."""
 
+import pathlib
+from typing import Callable
+
 import paramiko
 import pytest
 from fixtures.errors import ServerErrors
+from fixtures.mock_fail_client import MockClientTCPServer
 
+from certdeploy.server.config import ServerConfig
 from certdeploy.server.server import PushMode, Server
 
 
 def test_fail_fast_on_serial_push(
-        mock_fail_client: callable,
-        tmp_server_config: callable,
-        client_conn_config_factory: callable,
-        lineage_factory: callable
+    client_conn_config_factory: Callable[[...], dict],
+    lineage_factory: Callable[[str, str, ...], pathlib.Path],
+    mock_fail_client: Callable[[...], MockClientTCPServer],
+    tmp_server_config: Callable[[...], ServerConfig]
 ):
     """Verify that the `fail_fast` config causes early exit."""
     ## Define some variables to avoid magic values
@@ -61,10 +66,10 @@ def test_fail_fast_on_serial_push(
 
 
 def test_fail_fast_on_parallel_push(
-        mock_fail_client: callable,
-        tmp_server_config: callable,
-        client_conn_config_factory: callable,
-        lineage_factory: callable
+    client_conn_config_factory: Callable[[...], dict],
+    lineage_factory: Callable[[str, str, ...], pathlib.Path],
+    mock_fail_client: Callable[[...], MockClientTCPServer],
+    tmp_server_config: Callable[[...], ServerConfig]
 ):
     """Verify that the `fail_fast` config causes earlyish exit.
 

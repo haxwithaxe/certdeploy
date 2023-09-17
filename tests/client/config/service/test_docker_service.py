@@ -1,13 +1,18 @@
 """Verify the `DockerService` update service type is parsed correctly."""
 
+from typing import Callable
+
 import pytest
+from fixtures.utils import ConfigContext
 
 from certdeploy.client.config import ClientConfig
 from certdeploy.client.config.service import DockerService
 
 
 @pytest.mark.skip(reason='broken by https://github.com/moby/moby/issues/46341')
-def test_accepts_and_transforms_valid_name(tmp_client_config_file: callable):
+def test_accepts_and_transforms_valid_name(
+    tmp_client_config_file: Callable[[...], ConfigContext]
+):
     """Verify the `docker_service` update service type `name` is parsed.
 
     Valid values for the `docker_service` update service type are accepted and
@@ -26,7 +31,9 @@ def test_accepts_and_transforms_valid_name(tmp_client_config_file: callable):
     assert service.filters['name'] == f'^{service_name}$'
 
 
-def test_accepts_valid_filters(tmp_client_config_file: callable):
+def test_accepts_valid_filters(
+    tmp_client_config_file: Callable[[...], ConfigContext]
+):
     """Verify the `docker_service` update service type `name` is parsed.
 
     Valid values for the `docker_service` update service type are accepted and

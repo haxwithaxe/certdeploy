@@ -1,13 +1,17 @@
 """Tests for the `fail_fast` config in push operations."""
 
+from typing import Callable
+
 import pytest
+from fixtures.utils import Script
 
 from certdeploy.errors import CertDeployError
+from certdeploy.server.config import ServerConfig
 from certdeploy.server.renew import renew_certs
 
 
-def test_runs_renew_command(mock_certbot: callable,
-                            tmp_server_config: callable):
+def test_runs_renew_command(mock_certbot: Callable[[], Script],
+                            tmp_server_config: Callable[[...], ServerConfig]):
     """Verify that the renew_exec is called with the right args."""
     mock_certbot = mock_certbot()
     ## Setup server config
@@ -20,8 +24,10 @@ def test_runs_renew_command(mock_certbot: callable,
     assert mock_certbot.flag_file.exists()
 
 
-def test_fail_fast_fails_renew_command(mock_certbot: callable,
-                                       tmp_server_config: callable):
+def test_fail_fast_fails_renew_command(
+    mock_certbot: Callable[[], Script],
+    tmp_server_config: Callable[[...], ServerConfig]
+):
     """Verify that the `renew_certs()` function fails fast."""
     mock_certbot = mock_certbot()
     ## Setup server config

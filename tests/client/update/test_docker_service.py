@@ -1,11 +1,13 @@
 """Tests for `certdeploy.client.update.update_docker_service`."""
 
 import time
+from typing import Callable
 
 import pytest
 from fixtures.docker_service import ServiceWrapper
 from fixtures.errors import ClientErrors
 
+from certdeploy.client.config import ClientConfig
 from certdeploy.client.config.service import DockerService
 from certdeploy.client.errors import DockerServiceNotFound
 from certdeploy.client.update import update_docker_service
@@ -14,8 +16,8 @@ from certdeploy.client.update import update_docker_service
 @pytest.mark.docker
 @pytest.mark.swarm
 def test_updates_docker_service_by_name(
-        canned_docker_service: ServiceWrapper,
-        tmp_client_config: callable
+    canned_docker_service: ServiceWrapper,
+    tmp_client_config: Callable[[...], ClientConfig]
 ):
     """Verify the client can update a docker service.
 
@@ -39,8 +41,8 @@ def test_updates_docker_service_by_name(
 @pytest.mark.docker
 @pytest.mark.swarm
 def test_updates_docker_service_by_filter(
-        canned_docker_service: ServiceWrapper,
-        tmp_client_config: callable
+    canned_docker_service: ServiceWrapper,
+    tmp_client_config: Callable[[...], ClientConfig]
 ):
     """Verify that the client can update a service based on filters."""
     client_config = tmp_client_config(
@@ -61,8 +63,8 @@ def test_updates_docker_service_by_filter(
 @pytest.mark.docker
 @pytest.mark.swarm
 def test_updates_docker_service_by_filter_with_regex(
-        canned_docker_service: ServiceWrapper,
-        tmp_client_config: callable
+    canned_docker_service: ServiceWrapper,
+    tmp_client_config: Callable[[...], ClientConfig]
 ):
     """Verify that the client can update a service based on filters.
 
@@ -87,8 +89,8 @@ def test_updates_docker_service_by_filter_with_regex(
 @pytest.mark.docker
 @pytest.mark.swarm
 def test_fail_fast_docker_service(
-        canned_docker_service: ServiceWrapper,
-        tmp_client_config: callable
+    canned_docker_service: ServiceWrapper,
+    tmp_client_config: Callable[[...], ClientConfig]
 ):
     """Verify that the client fails fast."""
     bad_label = '''does't exist'''

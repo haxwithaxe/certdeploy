@@ -71,8 +71,12 @@ class _RefLogMessage:
 class PlainText(_RefLogMessage):
     """An unformatted message."""
 
-    _log_format: str = '%(message)'
     _logger_name: str = 'Plain text'
+
+    @property
+    def log(self) -> bytes:
+        """The formatted log message."""
+        return self._message.encode()
 
 
 class ClientRefLogMessage(_RefLogMessage):

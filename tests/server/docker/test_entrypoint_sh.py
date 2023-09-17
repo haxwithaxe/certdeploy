@@ -6,17 +6,17 @@ Note:
     image with `tox -e dockerbuild`.
 """
 
-import pathlib
+from typing import Callable
 
 import pytest
+from fixtures.docker_container import ServerContainer
 from fixtures.logging import ServerRefLogMessages as RefMsgs
 
 
 @pytest.mark.certdeploy_docker
 @pytest.mark.docker
 def test_certbot_passthrough(
-    server_docker_container: callable,
-    tmp_path: pathlib.Path
+    server_docker_container: Callable[[...], ServerContainer],
 ):
     """Verify that the container passes through arguments to certbot."""
     # Setup the server container
@@ -37,8 +37,7 @@ def test_certbot_passthrough(
 @pytest.mark.certdeploy_docker
 @pytest.mark.docker
 def test_renew_when_env(
-    server_docker_container: callable,
-    tmp_path: pathlib.Path
+    server_docker_container: Callable[[...], ServerContainer],
 ):
     """Verify that the container runs certdeploy-server --renew.
 
@@ -62,8 +61,7 @@ def test_renew_when_env(
 @pytest.mark.certdeploy_docker
 @pytest.mark.docker
 def test_runs_daemon_by_default(
-    server_docker_container: callable,
-    tmp_path: pathlib.Path
+    server_docker_container: Callable[[...], ServerContainer],
 ):
     """Verify that the container runs certdeploy-server --daemon.
 
@@ -86,8 +84,7 @@ def test_runs_daemon_by_default(
 @pytest.mark.certdeploy_docker
 @pytest.mark.docker
 def test_runs_cli_with_args(
-    server_docker_container: callable,
-    tmp_path: pathlib.Path
+    server_docker_container: Callable[[...], ServerContainer],
 ):
     """Verify that the container runs the certdeploy-server command.
 
