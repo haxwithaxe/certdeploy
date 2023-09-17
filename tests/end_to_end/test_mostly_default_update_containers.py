@@ -31,7 +31,7 @@ def test_pushes_to_clients(
     canned_docker_container: Callable[[...], ContainerWrapper],
     client_docker_container: Callable[[...], ClientContainer],
     lineage_factory: Callable[[str, list[str]], pathlib.Path],
-    keypairgen: Callable[[], KeyPair],
+    keypairgen: Callable[[...], KeyPair],
     server_docker_container: Callable[[...], ServerContainer],
     tmp_path: pathlib.Path
 ):
@@ -50,44 +50,36 @@ def test_pushes_to_clients(
     lineage_container_path = ContainerInternalPaths.lineages.joinpath(
         lineage_name
     )
-    canned_containers = [
-        canned_docker_container(started=True, suffix='_0'),
-        canned_docker_container(started=True, suffix='_1')
-    ]
+    canned_containers = []
+    clients = []
+    client_configs = []
     start_times: dict[str, datetime] = {}
-    for canned in canned_containers:
+    for index in range(2):
+        client_tmp_path = tmp_path.joinpath(f'client_{index}')
+        client_tmp_path.mkdir()
+        canned = canned_docker_container(started=True, suffix=f'_{index}')
+        canned_containers.append(canned)
+        # Record the start time for each container
         start_times[canned.name] = canned.started_at
-    ## Setup some clients
-    clients = [
-        client_docker_container(
-            'pushes_to_clients_target1',
+        # Setup a client container
+        client = client_docker_container(
+            f'pushes_to_clients_target{index}',
             client_keypair=client_keypair.copy(),
             server_keypair=server_keypair.copy(),
-            tmp_path=client1_tmp_path,
+            tmp_path=client_tmp_path,
             with_docker=True,
             config=dict(
                 fail_fast=True,
                 update_delay='1s',  # Set to 1s to speed up the test
                 update_services=[dict(type='docker_container',
-                                      name=canned_containers[0].name)],
-            )
-        ),
-        client_docker_container(
-            'pushes_to_clients_target2',
-            client_keypair=client_keypair.copy(),
-            server_keypair=server_keypair.copy(),
-            tmp_path=client2_tmp_path,
-            with_docker=True,
-            config=dict(
-                fail_fast=True,
-                update_delay='1s',
-                update_services=[dict(type='docker_container',
-                                      name=canned_containers[1].name)],
+                                      name=canned.name)],
+                # SFTPD needs to listen on the external address of the
+                #   container. localhost is used as the default elsewhere in
+                #   the test fixtures.
+                sftpd=dict(listen_address='0.0.0.0')
             )
         )
-    ]
-    client_configs = []
-    for client in clients:
+        clients.append(client)
         client.start()
         # Populate the client connection configs for the server
         client_configs.append(
@@ -117,7 +109,7 @@ def test_pushes_to_clients(
             'RENEWED_DOMAINS': lineage_name
         }
     )
-    # Sleep to ensure at least a 1 second gap between the canned containers
+    # Sleep to guarantee at least a 1 second gap between the canned containers
     #   starting and the server pushing
     time.sleep(1)
     # Start and don't bother waiting for startup
@@ -125,6 +117,8 @@ def test_pushes_to_clients(
     # Wait for the container to be done.
     server.wait_for_status(ContainerStatus.EXITED, ContainerStatus.DEAD,
                            timeout=120)
+    assert server.attrs['State']['ExitCode'] == 0, \
+        f'Server exited nonzero. Test is invalid.\n{server.logs().decode()}'
     ## Verify the results
     # For each client check for the PEM files that should have been pushed
     for client in clients:
