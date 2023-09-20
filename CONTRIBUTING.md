@@ -343,6 +343,10 @@ on [PyPI], the following steps can be used to release a new version for
    500KB), unwanted clutter may have been accidentally included.
 6. Run `tox -e publish -- --repository pypi` and check that everything was
    uploaded to [PyPI] correctly.
+7. Run `tox -e dockerpublish` to publish new docker images.
+8. Verify Readthedocs is updated.
+9. Verify pypi is updated.
+10. Verify Docker Hub is updated.
 
 [^contrib1]: Even though, these resources focus on open source projects and
     communities, the general ideas behind collaborating with other developers
