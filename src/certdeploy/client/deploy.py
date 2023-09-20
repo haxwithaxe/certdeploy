@@ -38,12 +38,13 @@ def validate_keys(*path: os.PathLike):
             raise InvalidKey(full_path)
 
 
-def needs_update(source_filename, dest_filename) -> bool:
+def needs_update(source_filename: os.PathLike, dest_filename: os.PathLike
+                 ) -> bool:
     """Verify that `dest_filename` needs to be updated.
 
     Arguments:
-        source: The incoming cert file.
-        dest: The previously deployed cert file.
+        source_filename: The incoming cert file.
+        dest_filename: The previously deployed cert file.
 
     Returns:
         bool: `True` if `dest_filename` does not exist or if `dest_filename`
@@ -55,6 +56,8 @@ def needs_update(source_filename, dest_filename) -> bool:
         with open(dest_filename, 'rb') as dest_file:
             dest_text = dest_file.read()
         if source_text == dest_text:
+            log.debug('%s and %s have the same contents', source_filename,
+                      dest_filename)
             return False
         return True
     return True
@@ -82,9 +85,12 @@ def deploy(config: ClientConfig) -> bool:
         for source_filename in glob.glob(
             os.path.join(config.source, lineage, '*.pem')
         ):
+            log.debug('Found source file "%s"', source_filename)
             dest_filename = os.path.join(dest_dir,
                                          os.path.basename(source_filename))
             if not needs_update(source_filename, dest_filename):
+                log.debug('Not moving "%s" to "%s"', source_filename,
+                          dest_filename)
                 continue
             update = True
             shutil.move(source_filename, dest_filename)
