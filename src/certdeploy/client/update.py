@@ -14,12 +14,11 @@ from .errors import (
     DockerServiceNotFound,
     ScriptError,
     SystemdError,
-    UpdateError
+    UpdateError,
 )
 
 
-def update_docker_container(spec: DockerContainer,
-                            client_config: ClientConfig):
+def update_docker_container(spec: DockerContainer, client_config: ClientConfig):
     """Update a docker container.
 
     Arguments:
@@ -44,14 +43,20 @@ def update_docker_container(spec: DockerContainer,
         try:
             container.restart(timeout=spec.timeout)
         except docker.errors.APIError as err:
-            error = DockerContainerError(spec, err,
-                                         str(container.attrs.get('Names')))
+            error = DockerContainerError(
+                spec,
+                err,
+                str(container.attrs.get('Names')),
+            )
             if client_config.fail_fast:
                 raise error from err
             log.error(error, exc_info=err)
         else:
-            log.info('Docker container updated: names=%s, filters=%s',
-                     container.attrs.get('Names'), spec.filters)
+            log.info(
+                'Docker container updated: names=%s, filters=%s',
+                container.attrs.get('Names'),
+                spec.filters,
+            )
 
 
 def update_docker_service(spec: DockerService, client_config: ClientConfig):
@@ -94,8 +99,7 @@ def update_docker_service(spec: DockerService, client_config: ClientConfig):
         else:
             for warn in warnings.get('Warnings') or []:
                 log.warning('Got warning from the Docker API: %s', warn)
-            log.info('Docker service updated: name=%s',
-                     service.name)
+            log.info('Docker service updated: name=%s', service.name)
 
 
 def update_script(script: Script, client_config: ClientConfig):
@@ -111,10 +115,11 @@ def update_script(script: Script, client_config: ClientConfig):
     """
     log.debug('Updating %s', script)
     try:
-        # pylint: disable=consider-using-with
-        proc = subprocess.Popen([script.script_path], stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT)
-        # pylint: enable=consider-using-with
+        proc = subprocess.Popen(
+            [script.script_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
         proc.wait(timeout=script.timeout)
     except (OSError, subprocess.TimeoutExpired) as err:
         # Regular errors from the script shouldn't halt the whole
@@ -126,8 +131,12 @@ def update_script(script: Script, client_config: ClientConfig):
         log.error(error, exc_info=err)
         return
     stdout = proc.stdout.read().decode()
-    log.debug('Script %s returned=%s, combined stdout/stderr: \n%s',
-              script.script_path, proc.returncode, stdout)
+    log.debug(
+        'Script %s returned=%s, combined stdout/stderr: \n%s',
+        script.script_path,
+        proc.returncode,
+        stdout,
+    )
     if proc.returncode != 0:
         # Borrowing the exception's formatting
         err = ScriptError(script, proc=proc, stdout=stdout)
@@ -135,8 +144,7 @@ def update_script(script: Script, client_config: ClientConfig):
             raise err
         log.error(err)
     else:
-        log.info('Script %s returned=%s',
-                 script.script_path, proc.returncode)
+        log.info('Script %s returned=%s', script.script_path, proc.returncode)
 
 
 def update_systemd_unit(unit: SystemdUnit, client_config: ClientConfig):
@@ -154,11 +162,12 @@ def update_systemd_unit(unit: SystemdUnit, client_config: ClientConfig):
     log.debug('Updating %s', unit)
     cmd = [client_config.systemd_exec, unit.action, unit.name]
     try:
-        # pylint: disable=consider-using-with
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT)
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
         proc.wait(timeout=unit.timeout)
-        # pylint: enable=consider-using-with
     except (OSError, subprocess.TimeoutExpired) as err:
         # Regular errors from the systemctl call shouldn't halt the whole
         #   set of updates unless fail_fast is True.
@@ -169,8 +178,12 @@ def update_systemd_unit(unit: SystemdUnit, client_config: ClientConfig):
         log.error(error, exc_info=err)
         return
     stdout = proc.stdout.read().decode()
-    log.debug('Systemctl command %s returned=%s. Got combined '
-              'stdout/stderr: \n%s', proc.returncode, cmd, stdout)
+    log.debug(
+        'Systemctl command %s returned=%s. Got combined ' 'stdout/stderr: \n%s',
+        proc.returncode,
+        cmd,
+        stdout,
+    )
     if proc.returncode != 0:
         # Borrowing the exception's formatting.
         err = SystemdError(unit, stdout=stdout)
@@ -185,7 +198,7 @@ _UPDATER_MAP = {
     DockerContainer: update_docker_container,
     DockerService: update_docker_service,
     Script: update_script,
-    SystemdUnit: update_systemd_unit
+    SystemdUnit: update_systemd_unit,
 }
 
 

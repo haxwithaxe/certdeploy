@@ -15,7 +15,7 @@ PRIVKEY_RE = re.compile(
     r'(\n|\r|\r\n)([0-9a-zA-Z\+\/=]{64}(\n|\r|\r\n))*'
     r'([0-9a-zA-Z\+\/=]{1,63}(\n|\r|\r\n))?'
     r'-----END PRIVATE KEY-----\n*',
-    re.M
+    re.M,
 )
 # Match a valid fullchain.pem or chain.pem
 FULLCHAIN_RE = re.compile(
@@ -23,7 +23,7 @@ FULLCHAIN_RE = re.compile(
     r'(\n|\r|\r\n)([0-9a-zA-Z\+\/=]{64}(\n|\r|\r\n))*'
     r'([0-9a-zA-Z\+\/=]{1,63}(\n|\r|\r\n))?'
     r'-----END CERTIFICATE-----\s*)+',
-    re.M
+    re.M,
 )
 KEY_RE_SET = (PRIVKEY_RE, FULLCHAIN_RE)
 
@@ -38,8 +38,10 @@ def validate_keys(*path: os.PathLike):
             raise InvalidKey(full_path)
 
 
-def needs_update(source_filename: os.PathLike, dest_filename: os.PathLike
-                 ) -> bool:
+def needs_update(
+    source_filename: os.PathLike,
+    dest_filename: os.PathLike,
+) -> bool:
     """Verify that `dest_filename` needs to be updated.
 
     Arguments:
@@ -56,8 +58,11 @@ def needs_update(source_filename: os.PathLike, dest_filename: os.PathLike
         with open(dest_filename, 'rb') as dest_file:
             dest_text = dest_file.read()
         if source_text == dest_text:
-            log.debug('%s and %s have the same contents', source_filename,
-                      dest_filename)
+            log.debug(
+                '%s and %s have the same contents',
+                source_filename,
+                dest_filename,
+            )
             return False
         return True
     return True
@@ -82,15 +87,19 @@ def deploy(config: ClientConfig) -> bool:
         # Move the lineages to the destination
         dest_dir = os.path.join(config.destination, lineage)
         os.makedirs(dest_dir, exist_ok=True)
-        for source_filename in glob.glob(
-            os.path.join(config.source, lineage, '*.pem')
-        ):
+        pems_glob = os.path.join(config.source, lineage, '*.pem')
+        for source_filename in glob.glob(pems_glob):
             log.debug('Found source file "%s"', source_filename)
-            dest_filename = os.path.join(dest_dir,
-                                         os.path.basename(source_filename))
+            dest_filename = os.path.join(
+                dest_dir,
+                os.path.basename(source_filename),
+            )
             if not needs_update(source_filename, dest_filename):
-                log.debug('Not moving "%s" to "%s"', source_filename,
-                          dest_filename)
+                log.debug(
+                    'Not moving "%s" to "%s"',
+                    source_filename,
+                    dest_filename,
+                )
                 continue
             update = True
             shutil.move(source_filename, dest_filename)

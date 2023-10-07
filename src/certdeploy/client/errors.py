@@ -19,8 +19,12 @@ class UpdateError(CertDeployError):
             it needs to be different than `service.name`.
     """
 
-    def __init__(self, service: Any, message: Union[Exception, str] = None,  # noqa: D107,E501
-                 service_name: str = None):
+    def __init__(
+        self,
+        service: Any,
+        message: Union[Exception, str] = None,  # noqa: D107,E501
+        service_name: str = None,
+    ):
         if service.name or service_name:
             service_name = f' {service.name or service_name}'
         else:
@@ -47,8 +51,10 @@ class DockerNotFound(UpdateError):
     _type: str = None
 
     def __init__(self, service: Any, service_name: str = None):  # noqa: D107
-        message = (f'Could not find any docker {self._type} matching the '
-                   f'following filter: {service.filters}')
+        message = (
+            f'Could not find any docker {self._type} matching the '
+            f'following filter: {service.filters}'
+        )
         super().__init__(service, message, service_name)
 
 
@@ -77,15 +83,23 @@ class DockerError(UpdateError):
 
     _type = None
 
-    def __init__(self, service: Any, message: Union[Exception, str] = None,  # noqa: D107,E501
-                 service_name: str = None):
+    def __init__(
+        self,
+        service: Any,
+        message: Union[Exception, str] = None,  # noqa: D107,E501
+        service_name: str = None,
+    ):
         # Reverse order from UpdateError because the docker service/container
         #   name may need to override the `service.name` if the error is for a
         #   filter match.
         service_name = service_name or service.name
-        super().__init__(service, f'Error updating docker {self._type} '
-                         f'{service_name} from filters={service.filters}: '
-                         f'{message}', service_name)
+        super().__init__(
+            service,
+            f'Error updating docker {self._type} '
+            f'{service_name} from filters={service.filters}: '
+            f'{message}',
+            service_name,
+        )
 
 
 class DockerContainerError(DockerError):
@@ -111,11 +125,15 @@ class SystemdError(UpdateError):
         stdout: The combined stdout/stderr from the systemctl command.
     """
 
-    def __init__(self, service: Any, message: Union[Exception, str] = None,  # noqa: D107,E501
-                 stdout: str = None):
+    def __init__(
+        self,
+        service: Any,
+        message: Union[Exception, str] = None,  # noqa: D107,E501
+        stdout: str = None,
+    ):
         if not message:
             message = (f'Failed to {service.action} systemd unit '
-                       f'{service.name}')
+                       f'{service.name}')  # fmt: skip
         elif isinstance(message, Exception):
             message = f'{type(message).__name__}: {message}'
         if stdout:
@@ -135,12 +153,19 @@ class ScriptError(UpdateError):
         stdout: The combined stdout/stderr from the script execution.
     """
 
-    def __init__(self, service: Any, message: Union[Exception, str] = None,  # noqa: D107,E501
-                 proc: Popen = None, stdout: str = None):
+    def __init__(
+        self,
+        service: Any,
+        message: Union[Exception, str] = None,  # noqa: D107,E501
+        proc: Popen = None,
+        stdout: str = None,
+    ):
         if not message:
             if proc:
-                message = (f'Failed to run the update script {service.name} '
-                           f'returned={proc.returncode}')
+                message = (
+                    f'Failed to run the update script {service.name} '
+                    f'returned={proc.returncode}'
+                )
                 if not stdout:
                     stdout_bytes = proc.stdout.read()
                     if stdout_bytes:

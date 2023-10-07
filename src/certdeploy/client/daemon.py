@@ -60,8 +60,10 @@ class SSHServer(paramiko.ServerInterface):
 
     def check_auth_publickey(self, username, key):
         """Verify username and public key combination."""
-        if (username == self.valid_username and
-                key.asbytes() == self.valid_public_key.key_blob):
+        if (
+            username == self.valid_username
+            and key.asbytes() == self.valid_public_key.key_blob
+        ):
             return paramiko.AUTH_SUCCESSFUL
         return paramiko.AUTH_FAILED
 
@@ -80,9 +82,9 @@ class SFTPHandle(paramiko.SFTPHandle):
     def stat(self):
         """Return stat data or error info for the `self.readfile`."""
         try:
-            return paramiko.SFTPAttributes.from_stat(os.fstat(
-                self.readfile.fileno()
-            ))
+            return paramiko.SFTPAttributes.from_stat(
+                os.fstat(self.readfile.fileno()),
+            )
         except OSError as err:
             return paramiko.SFTPServer.convert_errno(err.errno)
 
@@ -150,14 +152,14 @@ class StubSFTPServer(paramiko.SFTPServerInterface):
         except OSError as err:
             return paramiko.SFTPServer.convert_errno(err.errno)
 
-    def open(self, path, flags, attr):  # pylint: disable=too-many-branches
+    def open(self, path, flags, attr):
         """Open `path` for reading or writing."""
         log.debug('open: path=%s, flags=%s, attr=%s', path, flags, attr)
         path = self._realpath(path)
         if not path:
             return paramiko.SFTP_PERMISSION_DENIED
         try:
-            binary_flag = getattr(os, 'O_BINARY',  0)
+            binary_flag = getattr(os, 'O_BINARY', 0)
             flags |= binary_flag
             mode = getattr(attr, 'st_mode', None)
             if mode is not None:
@@ -166,11 +168,20 @@ class StubSFTPServer(paramiko.SFTPServerInterface):
                 # os.open() defaults to 0777 which is
                 # an odd default mode for files
                 file_desc_0 = os.open(path, flags, DEFAULT_FILE_MODE)
-                log.debug('open: open %s with flags=%s and mode=%s '
-                          '(default mode)', path, flags, DEFAULT_FILE_MODE)
+                log.debug(
+                    'open: open %s with flags=%s and mode=%s ' '(default mode)',
+                    path,
+                    flags,
+                    DEFAULT_FILE_MODE,
+                )
         except OSError as err:
-            log.debug('open: failed to open %s with flags=%s and mode=%s '
-                      '(default mode)', path, flags, DEFAULT_FILE_MODE)
+            log.debug(
+                'open: failed to open %s with flags=%s and mode=%s '
+                '(default mode)',  # fmt: skip
+                path,
+                flags,
+                DEFAULT_FILE_MODE,
+            )
             return paramiko.SFTPServer.convert_errno(err.errno)
         if flags & os.O_CREAT and attr is not None:
             attr._flags &= ~attr.FLAG_PERMISSIONS
@@ -195,11 +206,9 @@ class StubSFTPServer(paramiko.SFTPServerInterface):
             log.debug('open: failed to fdopen %s with mode=%s', path, mode)
             return paramiko.SFTPServer.convert_errno(err.errno)
         file_obj = SFTPHandle(flags)
-        # pylint: disable=attribute-defined-outside-init
         file_obj.filename = path
         file_obj.readfile = file_desc
         file_obj.writefile = file_desc
-        # pylint: enable=attribute-defined-outside-init
         return file_obj
 
     def mkdir(self, path, attr):
@@ -242,8 +251,11 @@ class _Update(threading.Thread):
         """
         delta = datetime.timedelta(seconds=self._config.update_delay_seconds)
         now = datetime.datetime.now()
-        log.debug('Reset execution time from %s to %s', self._update_time,
-                  (now+delta))
+        log.debug(
+            'Reset execution time from %s to %s',
+            self._update_time,
+            (now + delta),
+        )
         self._update_time = now + delta
 
     def _is_update_time(self) -> bool:
@@ -281,7 +293,7 @@ class _Update(threading.Thread):
             raise self._exception
 
 
-class DeployServer:  # pylint: disable=too-few-public-methods
+class DeployServer:
     """SFTP server to accept certs from the CertDeploy server.
 
     Arguments:
@@ -334,15 +346,21 @@ class DeployServer:  # pylint: disable=too-few-public-methods
                 enabled.
             CertDeployError: When unable to listen on the socket.
         """
-        log.debug('Opening socket on port %s at address %s',
-                  self._sftpd_config.listen_port,
-                  self._sftpd_config.listen_address)
+        log.debug(
+            'Opening socket on port %s at address %s',
+            self._sftpd_config.listen_port,
+            self._sftpd_config.listen_address,
+        )
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
         server_socket.settimeout(SOCKET_TIMEOUT)
         try:
-            server_socket.bind((self._sftpd_config.listen_address,
-                                self._sftpd_config.listen_port))
+            server_socket.bind(
+                (
+                    self._sftpd_config.listen_address,
+                    self._sftpd_config.listen_port,
+                )
+            )
             server_socket.listen(self._sftpd_config.socket_backlog)
         except OSError as err:
             # Provide a more informative error message
@@ -353,9 +371,11 @@ class DeployServer:  # pylint: disable=too-few-public-methods
             ) from err
         # This is used to determine if the client has started running in some
         #   of the tests. Be sure to adjust the tests if you change this.
-        log.info('Listening for incoming connections at %s:%s',
-                 self._sftpd_config.listen_address or '0.0.0.0',
-                 self._sftpd_config.listen_port)
+        log.info(
+            'Listening for incoming connections at %s:%s',
+            self._sftpd_config.listen_address or '0.0.0.0',
+            self._sftpd_config.listen_port,
+        )
         while not self._stop_running:
             # socket timeout acts like sleep for this loop
             try:
@@ -372,7 +392,7 @@ class DeployServer:  # pylint: disable=too-few-public-methods
             transport.set_subsystem_handler(
                 'sftp',
                 paramiko.SFTPServer,
-                StubSFTPServer
+                StubSFTPServer,
             )
             # Catching this exception to make pytest not complain about
             #   unhandled exceptions in threads.

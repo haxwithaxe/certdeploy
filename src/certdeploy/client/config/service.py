@@ -123,7 +123,7 @@ class Service:
         return service_class(config)
 
 
-class DockerService(Service):  # pylint: disable=too-few-public-methods
+class DockerService(Service):
     """Docker service update config.
 
     Notes:
@@ -155,7 +155,7 @@ class DockerService(Service):  # pylint: disable=too-few-public-methods
         return name.strip()
 
 
-class DockerContainer(DockerService):  # pylint: disable=too-few-public-methods
+class DockerContainer(DockerService):
     """Docker container update config."""
 
     _type = 'container'
@@ -171,7 +171,7 @@ class DockerContainer(DockerService):  # pylint: disable=too-few-public-methods
             self.filters = {'name': f'^{self.name}$'}
 
 
-class Script(Service):  # pylint: disable=too-few-public-methods
+class Script(Service):
     """Script based update config.
 
     Note:
@@ -202,7 +202,7 @@ class Script(Service):  # pylint: disable=too-few-public-methods
         return name
 
 
-class SystemdUnit(Service):  # pylint: disable=too-few-public-methods
+class SystemdUnit(Service):
     """Systemd unit update config.
 
     Note: `action` and `name` are validated. `action` has to be either

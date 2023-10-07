@@ -1,4 +1,3 @@
-
 import sys
 
 import typer
@@ -37,34 +36,32 @@ def _typer_main(
     config: str = typer.Option(
         DEFAULT_CLIENT_CONFIG,
         envvar='CERTDEPLOY_CLIENT_CONFIG',
-        help='The path to the CertDeploy client config.'
+        help='The path to the CertDeploy client config.',
     ),
     daemon: bool = typer.Option(
-        False,
-        envvar='CERTDEPLOY_CLIENT_DAEMON',
-        help='Run the daemon.'
+        False, envvar='CERTDEPLOY_CLIENT_DAEMON', help='Run the daemon.'
     ),
     log_level: LogLevel = typer.Option(
         None,
         envvar='CERTDEPLOY_CLIENT_LOG_LEVEL',
-        help='The CertDeploy log level. Defaults to \'ERROR\'.'
+        help='The CertDeploy log level. Defaults to \'ERROR\'.',
     ),
     log_filename: str = typer.Option(
         None,
-        envvar='CERTDEPLOY_CLIENT_LOG_FILENAME'
+        envvar='CERTDEPLOY_CLIENT_LOG_FILENAME',
     ),
     sftp_log_level: LogLevel = typer.Option(
         None,
         envvar='CERTDEPOLY_CLIENT_SFTP_LOG_LEVEL',
         help='The log level for the embedded SFTP server. Defaults to '
-             '\'ERROR\'.'
+        '\'ERROR\'.',  # fmt: skip
     ),
     sftp_log_filename: str = typer.Option(
         None,
         envvar='CERTDEPOLY_CLIENT_SFTP_LOG_FILENAME',
         help='The path to the log file for the embedded SFTP server (paramiko).'
-             ' Defaults to the paramiko default.'
-    )
+        ' Defaults to the paramiko default.',
+    ),
 ):
     # Just in case there is a config error set the log level right away.
     log.setLevel(log_level or LogLevel.ERROR)
@@ -74,7 +71,7 @@ def _typer_main(
             override_log_filename=log_filename,
             override_log_level=log_level,
             override_sftp_log_filename=sftp_log_filename,
-            override_sftp_log_level=sftp_log_level
+            override_sftp_log_level=sftp_log_level,
         )
     except FileNotFoundError as err:
         log.error('Config file "%s" not found: %s', config, err, exc_info=err)
@@ -85,7 +82,7 @@ def _typer_main(
     log.setLevel(log_level or conf.log_level)
     try:
         _run(conf, daemon)
-    except Exception as err:  # pylint: disable=broad-except
+    except Exception as err:
         log.error(err, exc_info=err)
         sys.exit(1)
 
