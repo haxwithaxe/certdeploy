@@ -11,20 +11,27 @@ from ... import (
     DEFAULT_SERVER_QUEUE_DIR,
     PARAMIKO_LOGGER_NAME,
     LogLevel,
-    set_log_properties
+    set_log_properties,
 )
 from ...errors import (
     ConfigError,
     ConfigInvalid,
     ConfigInvalidChoice,
     ConfigInvalidNumber,
-    ConfigInvalidPath
+    ConfigInvalidPath,
 )
 from ._validation import is_int, is_optional_float
 
 _UNITS = ('minute', 'hour', 'day', 'week')
-_WEEKDAYS = ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday',
-             'sunday')
+_WEEKDAYS = (
+    'monday',
+    'tuesday',
+    'wednesday',
+    'thursday',
+    'friday',
+    'saturday',
+    'sunday',
+)
 
 
 def _normalize_unit(unit: str, interval: int) -> str:
@@ -45,9 +52,11 @@ def _normalize_unit(unit: str, interval: int) -> str:
     #   conversion is being done here to keep the docs and config simpler.
     norm_unit = unit.lower().strip()
     if norm_unit not in _WEEKDAYS + _UNITS:
-        raise ConfigError('`renew_unit` needs to be a day of the week '
-                          'or an interval unit (minute, hour, day, week) not: '
-                          f'{unit}')
+        raise ConfigError(
+            '`renew_unit` needs to be a day of the week '
+            'or an interval unit (minute, hour, day, week) not: '
+            f'{unit}'
+        )
     if interval != 1:
         return f'{norm_unit}s'
     return norm_unit
@@ -183,27 +192,32 @@ class Server:
         set_log_properties(
             logger_name=CERTDEPLOY_SERVER_LOGGER_NAME,
             log_filename=self.log_filename,
-            log_level=self.log_level
+            log_level=self.log_level,
         )
         set_log_properties(
             logger_name=PARAMIKO_LOGGER_NAME,
             log_filename=self.sftp_log_filename,
-            log_level=self.sftp_log_level
+            log_level=self.sftp_log_level,
         )
         # Check that the private key exists
         if not os.path.isfile(self.privkey_filename):
-            raise ConfigInvalidPath('privkey_filename', self.privkey_filename,
-                                    is_type='file')
+            raise ConfigInvalidPath(
+                'privkey_filename', self.privkey_filename, is_type='file'
+            )
         # Check that the queue directory is an existing directory
         if not os.path.isdir(self.queue_dir):
-            raise ConfigInvalidPath('queue_dir', self.queue_dir,
-                                    is_type='directory')
+            raise ConfigInvalidPath(
+                'queue_dir',
+                self.queue_dir,
+                is_type='directory',
+            )
         # Check if the queue directory is writable.
         try:
             open(os.path.join(self.queue_dir, 'test'), 'w').close()
         except OSError as err:
-            raise ConfigInvalidPath('queue_dir', self.queue_dir, writable=True,
-                                    is_type='directory') from err
+            raise ConfigInvalidPath(
+                'queue_dir', self.queue_dir, writable=True, is_type='directory'
+            ) from err
         else:
             os.remove(os.path.join(self.queue_dir, 'test'))
         # Check if the push mode is a push mode
@@ -211,33 +225,48 @@ class Server:
             self.push_mode = PushMode(self.push_mode)
         except ValueError as err:
             raise ConfigInvalidChoice(
-                'push_mode',
-                self.push_mode,
-                choices=PushMode.choices()
+                'push_mode', self.push_mode, choices=PushMode.choices()
             ) from err
         # Check that the push_interval is an integer >= 0
         if not is_int(self.push_interval, 0):
-            raise ConfigInvalidNumber('push_interval', self.push_interval,
-                                      is_type=int, ge=0)
+            raise ConfigInvalidNumber(
+                'push_interval', self.push_interval, is_type=int, ge=0
+            )
         # Check that the push_retries is an integer >= 0
         if not is_int(self.push_retries, 0):
-            raise ConfigInvalidNumber('push_retries', self.push_retries,
-                                      is_type=int, ge=0)
+            raise ConfigInvalidNumber(
+                'push_retries', self.push_retries, is_type=int, ge=0
+            )
         # Check that the push_retry_interval is an integer >= 0
         if not is_int(self.push_retry_interval, 0):
-            raise ConfigInvalidNumber('push_retry_interval',
-                                      self.push_retry_interval, is_type=int,
-                                      ge=0)
+            raise ConfigInvalidNumber(
+                'push_retry_interval',
+                self.push_retry_interval,
+                is_type=int,
+                ge=0,
+            )
         # Check that the join_timeout is a float or int >= 0 if it is set.
         if not is_optional_float(self.join_timeout, 0):
-            raise ConfigInvalidNumber('join_timeout', self.join_timeout,
-                                      is_type='float or integer', ge=0)
+            raise ConfigInvalidNumber(
+                'join_timeout',
+                self.join_timeout,
+                is_type='float or integer',
+                ge=0,
+            )
         # Check that the renew_every is an integer > 0
         if not is_int(self.renew_every, 1):
-            raise ConfigInvalidNumber('renew_every', self.renew_every,
-                                      is_type=int, optional=True, gt=0)
+            raise ConfigInvalidNumber(
+                'renew_every',
+                self.renew_every,
+                is_type=int,
+                optional=True,
+                gt=0,
+            )
         # Normalize the renew_unit and check that it's valid
         self.renew_unit = _normalize_unit(self.renew_unit, self.renew_every)
         if self.renew_unit in _WEEKDAYS and self.renew_every != 1:
-            raise ConfigInvalid('renew_unit', self.renew_unit, must=' not be a'
-                                ' weekday if `renew_every` is set and not 1.')
+            raise ConfigInvalid(
+                'renew_unit',
+                self.renew_unit,
+                must=' not be a' ' weekday if `renew_every` is set and not 1.',
+            )

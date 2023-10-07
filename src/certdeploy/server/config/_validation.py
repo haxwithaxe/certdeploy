@@ -1,9 +1,9 @@
-
 from typing import Any, Optional
 
 
-def is_int(value: Any, min_value: Optional[int] = None,
-           max_value: Optional[int] = None) -> bool:
+def is_int(
+    value: Any, min_value: Optional[int] = None, max_value: Optional[int] = None
+) -> bool:
     """Verify `value` is an integer between `min_value` and `max_value`.
 
     The range is exclusive.
@@ -26,8 +26,9 @@ def is_int(value: Any, min_value: Optional[int] = None,
     return True
 
 
-def is_optional_int(value: Any, min_value: Optional[int] = None,
-                    max_value: Optional[int] = None) -> bool:
+def is_optional_int(
+    value: Any, min_value: Optional[int] = None, max_value: Optional[int] = None
+) -> bool:
     """Verify `value` is `None` or an integer between `min_value` and
     `max_value`.
 
@@ -47,8 +48,11 @@ def is_optional_int(value: Any, min_value: Optional[int] = None,
     return is_int(value, min_value, max_value)
 
 
-def is_float(value: Any, min_value: Optional[float] = None,
-             max_value: Optional[float] = None) -> bool:
+def is_float(
+    value: Any,
+    min_value: Optional[float] = None,
+    max_value: Optional[float] = None,
+) -> bool:
     """Verify `value` is a float or integer between `min_value` and `max_value`.
 
     The range is exclusive.
@@ -71,8 +75,11 @@ def is_float(value: Any, min_value: Optional[float] = None,
     return True
 
 
-def is_optional_float(value: Any, min_value: Optional[float] = None,
-                      max_value: Optional[float] = None) -> bool:
+def is_optional_float(
+    value: Any,
+    min_value: Optional[float] = None,
+    max_value: Optional[float] = None,
+) -> bool:
     """Verify `value` is `None` or a float or integer between `min_value` and
     `max_value`.
 

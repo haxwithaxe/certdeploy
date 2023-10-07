@@ -1,3 +1,4 @@
+"""The CertDeploy server config."""
 
 import os
 from typing import Optional
@@ -17,7 +18,7 @@ class ServerConfig(Server):
     arguments.
     """
 
-    def __init__(self, *args, **kwargs):  # noqa: D107
+    def __init__(self, *args, **kwargs):
         try:
             super().__init__(*args, **kwargs)
         except TypeError as err:
@@ -31,8 +32,9 @@ class ServerConfig(Server):
                     self.clients.append(ClientConnection(**client_config))
                 except TypeError as err:
                     if 'got an unexpected keyword argument' in str(err):
-                        raise ConfigError('Invalid client config option:'
-                                          f' {err}') from err
+                        raise ConfigError(
+                            'Invalid client config option:' f' {err}'
+                        ) from err
                     raise
         else:
             raise ConfigError('No client configs given.')
@@ -44,7 +46,7 @@ class ServerConfig(Server):
         override_log_filename: Optional[os.PathLike] = None,
         override_log_level: Optional[LogLevel] = None,
         override_sftp_log_filename: Optional[os.PathLike] = None,
-        override_sftp_log_level: Optional[LogLevel] = None
+        override_sftp_log_level: Optional[LogLevel] = None,
     ) -> 'ServerConfig':
         """Load the `ServerConfig` from a file.
 

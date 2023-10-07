@@ -21,7 +21,7 @@ PUBKEY_RE = re.compile(
 
 
 @dataclass
-class ClientConnection:  # pylint: disable=too-many-instance-attributes
+class ClientConnection:
     """CertDeploy client connection config."""
 
     address: str
@@ -91,7 +91,9 @@ class ClientConnection:  # pylint: disable=too-many-instance-attributes
         if not match:
             raise ConfigInvalid('pubkey', self.pubkey)
         self.pubkey_blob = Ed25519Key(
-            data=base64.decodebytes(match.group(1).encode())
+            data=base64.decodebytes(
+                match.group(1).encode(),
+            )
         )
         # Generate client connection hash
         self.hash = sha1(
@@ -99,13 +101,14 @@ class ClientConnection:  # pylint: disable=too-many-instance-attributes
         ).hexdigest()
         # Validate push_retry_interval
         if not is_optional_int(self.push_retry_interval, 0):
-            raise ConfigInvalidNumber('push_retry_interval',
-                                      self.push_retry_interval,
-                                      'integer', ge=0)
+            raise ConfigInvalidNumber(
+                'push_retry_interval', self.push_retry_interval, 'integer', ge=0
+            )
         # Validate push_retries
         if not is_optional_int(self.push_retries, 0):
-            raise ConfigInvalidNumber('push_retries', self.push_retries,
-                                      'integer', ge=0)
+            raise ConfigInvalidNumber(
+                'push_retries', self.push_retries, 'integer', ge=0
+            )
 
     def __str__(self) -> str:
         """Return the client as it would be given to the SFTP client."""
