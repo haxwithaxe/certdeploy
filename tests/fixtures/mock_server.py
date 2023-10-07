@@ -34,7 +34,7 @@ def _push_to_client(
     client_keypair: KeyPair,
     server_keypair: KeyPair,
     lineage_path: pathlib.Path,
-    filenames: list[pathlib.Path]
+    filenames: list[pathlib.Path],
 ):
     """Push arbitrarily named certs to a client.
 
@@ -56,20 +56,25 @@ def _push_to_client(
         hostkey_name = f'[{client_address}]:{client_port}'
     client_pubkey_blob = Ed25519Key(
         data=base64.decodebytes(
-            client_keypair.pubkey_text.split()[1].encode('utf-8')
+            client_keypair.pubkey_text.split()[1].encode('utf-8'),
         )
     )
     ssh.get_host_keys().add(hostkey_name, 'ssh-ed25519', client_pubkey_blob)
     # Set the safest policy by default
     ssh.set_missing_host_key_policy(paramiko.client.RejectPolicy)
-    ssh.connect(hostname=client_address, port=client_port,
-                username='certdeploy',
-                key_filename=str(server_keypair.privkey_file()))
+    ssh.connect(
+        hostname=client_address,
+        port=client_port,
+        username='certdeploy',
+        key_filename=str(server_keypair.privkey_file()),
+    )
     sftp = ssh.open_sftp()
     _sftp_mkdir(sftp, str(cert_dir))
     for filename in filenames:
-        sftp.put(str(lineage_path.joinpath(filename)),
-                 str(cert_dir.joinpath(filename)))
+        sftp.put(
+            str(lineage_path.joinpath(filename)),
+            str(cert_dir.joinpath(filename)),
+        )
     sftp.close()
     ssh.close()
 
@@ -78,9 +83,11 @@ def _push_to_client(
 def mock_server_push(
     keypairgen: Callable[[], KeyPair],
     lineage_factory: Callable[[str, list[str]], pathlib.Path],
-    tmp_path: pathlib.Path
-) -> Callable[[dict, pathlib.Path, str, KeyPair, KeyPair, str,
-               list[pathlib.Path]], MockPushContext]:
+    tmp_path: pathlib.Path,
+) -> Callable[
+    [dict, pathlib.Path, str, KeyPair, KeyPair, str, list[pathlib.Path]],
+    MockPushContext,
+]:
     """Return a mock CertDeploy server push context factory."""
 
     def _mock_server_push(
@@ -91,7 +98,7 @@ def mock_server_push(
         server_keypair: KeyPair = None,
         lineage_name: str = None,
         filenames: list[pathlib.Path] = None,
-        client_context: ConfigContext = None
+        client_context: ConfigContext = None,
     ) -> MockPushContext:
         """Prepare to push arbitrarily named certs to a client.
 
@@ -132,7 +139,7 @@ def mock_server_push(
             if isinstance(client_config, dict) and client_config.get('source'):
                 client_path = pathlib.Path(client_config['source'])
             elif (isinstance(client_config, ClientConfig) and
-                  client_config.source):
+                  client_config.source):  # fmt: skip
                 client_path = pathlib.Path(client_config.source)
             else:
                 client_path = ContainerInternalPaths.source
@@ -147,8 +154,10 @@ def mock_server_push(
         if not server_keypair.privkey_name:
             server_keypair.update(privkey_name=SERVER_KEY_NAME)
         filenames = filenames or ['fullchain.pem', 'privkey.pem']
-        lineage_path = lineage_factory(lineage_name or 'test.example.com',
-                                       filenames)
+        lineage_path = lineage_factory(
+            lineage_name or 'test.example.com',
+            filenames,
+        )
         if isinstance(client_config, dict):
             if not client_address:
                 client_address = client_config['sftpd']['listen_address']
@@ -163,16 +172,22 @@ def mock_server_push(
             client_port = client_config.sftpd_config.listen_port
 
         def _pusher():
-            _push_to_client(client_path, client_address, client_port,
-                            client_keypair, server_keypair, lineage_path,
-                            filenames)
+            _push_to_client(
+                client_path,
+                client_address,
+                client_port,
+                client_keypair,
+                server_keypair,
+                lineage_path,
+                filenames,
+            )
 
         context = MockPushContext(
             push=_pusher,
             client_keypair=client_keypair,
             server_keypair=server_keypair,
             filenames=filenames,
-            client_address=client_address
+            client_address=client_address,
         )
         return context
 

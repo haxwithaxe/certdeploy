@@ -77,7 +77,7 @@ class CleanThread(threading.Thread):
         kill_switch: KillSwitch = None,
         teardown: Callable[[], None] = None,
         reraise: bool = False,
-        caplog: pytest.LogCaptureFixture = None
+        caplog: pytest.LogCaptureFixture = None,
     ):
         threading.Thread.__init__(self, daemon=True)
         self.func = func
@@ -119,8 +119,9 @@ class CleanThread(threading.Thread):
             # Hold on to unexpected exceptions for reraising later
             self.unexpected_exception = err
 
-    def wait_for_condition(self, condition: Callable[['CleanThread'], bool],
-                           timeout: int = 60) -> bool:
+    def wait_for_condition(
+        self, condition: Callable[['CleanThread'], bool], timeout: int = 60
+    ) -> bool:
         """Wait for some `condition` in the thread to be `True`.
 
         When the thread dies the wait is terminated as if the `condition` has
@@ -149,9 +150,12 @@ class CleanThread(threading.Thread):
             time.sleep(0.1)
         raise TimeoutError()
 
-    def wait_for_text_in_log(self, text: str,
-                             log_selector: Callable[['CleanThread'], str],
-                             timeout: int = 60):
+    def wait_for_text_in_log(
+        self,
+        text: str,
+        log_selector: Callable[['CleanThread'], str],
+        timeout: int = 60,
+    ):
         """Wait for some `text` to appear in the output of `log_selector`.
 
         As long as `text` and `log_selector` are usable with an `in` statement
@@ -173,17 +177,17 @@ class CleanThread(threading.Thread):
                 been found in the logs.
         """
 
-        def _log_selector(x):
+        def _log_selector(thread):
             try:
-                return log_selector(x)
+                return log_selector(thread)
             except FileNotFoundError as err:
                 log.warning('wait_for_text_in_log: %s', str(err))
                 return []  # safe __contains__
 
-        return self.wait_for_condition(
-            lambda x: text in _log_selector(x),
-            timeout
-        )
+        def _text_in_log(thread):
+            return text in _log_selector(thread)
+
+        return self.wait_for_condition(lambda x: _text_in_log(x), timeout)
 
     def stop(self, timeout: int = None, reraise: bool = None):
         """Stop the code is `self.func` if `self.kill_switch` is attached.
@@ -261,7 +265,7 @@ def simple_thread(caplog):
         allowed_exceptions: list[Exception] = None,
         kill_switch: threading.Event = None,
         teardown: Callable[[], None] = None,
-        reraise: bool = True
+        reraise: bool = True,
     ):
         """Return a thread that handles errors.
 
@@ -285,7 +289,7 @@ def simple_thread(caplog):
             kill_switch=kill_switch,
             teardown=teardown,
             reraise=reraise,
-            caplog=caplog
+            caplog=caplog,
         )
         threads.append(thread)
         return thread
@@ -337,7 +341,7 @@ def managed_thread(caplog):
         allowed_exceptions: list[Exception] = None,
         kill_switch: threading.Event = None,
         teardown: Callable[[], None] = None,
-        reraise: bool = True
+        reraise: bool = True,
     ):
         """Return a thread that handles errors.
 
@@ -361,7 +365,7 @@ def managed_thread(caplog):
             kill_switch=kill_switch,
             teardown=teardown,
             reraise=reraise,
-            caplog=caplog
+            caplog=caplog,
         )
         threads.append(thread)
         thread.start()

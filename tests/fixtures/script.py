@@ -12,8 +12,9 @@ touch {flag_file_path}
 
 
 @pytest.fixture(scope='function')
-def tmp_script_for_service(tmp_script: Callable[[str, str, ...], Script]
-                           ) -> Script:
+def tmp_script_for_service(
+    tmp_script: Callable[[str, str, ...], Script],
+) -> Script:
     """Return a script to run and a flag file path to check.
 
     Returns:

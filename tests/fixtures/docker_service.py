@@ -15,10 +15,24 @@ class ServiceCrashed(Exception):
     """Indicates a service has crashed."""
 
 
-LIVE_TASK_STATES = ['new', 'pending', 'assigned', 'accepted', 'ready',
-                    'preparing', 'starting', 'running']
-DEAD_TASK_STATES = ['complete', 'failed', 'shutdown', 'rejected', 'orphaned',
-                    'remove']
+LIVE_TASK_STATES = [
+    'new',
+    'pending',
+    'assigned',
+    'accepted',
+    'ready',
+    'preparing',
+    'starting',
+    'running',
+]
+DEAD_TASK_STATES = [
+    'complete',
+    'failed',
+    'shutdown',
+    'rejected',
+    'orphaned',
+    'remove',
+]
 
 
 def _timestamp_to_datetime(timestamp: str) -> datetime:
@@ -59,9 +73,8 @@ class ServiceWrapper:
         """
 
         def _filter(task: dict) -> bool:
-            exit_code = task['Status'].get('ContainerStatus', {}).get(
-                'ExitCode'
-            )
+            status = task['Status'].get('ContainerStatus', {})
+            exit_code = status.get('ExitCode')
             if exit_code is None:
                 return False
             return exit_code != 0 or task['Status']['State'] == 'failed'
@@ -96,9 +109,11 @@ class ServiceWrapper:
     @property
     def live_tasks(self) -> Generator[dict, None, None]:
         """Tasks in some form of live state."""
-        yield from self.filter_tasks(
-            lambda x: x['Status']['State'] in LIVE_TASK_STATES
-        )
+
+        def is_alive(task):
+            return task['Status']['State'] in LIVE_TASK_STATES
+
+        yield from self.filter_tasks(is_alive)
 
     @property
     def updated_at(self) -> datetime:
@@ -128,8 +143,9 @@ class ServiceWrapper:
             self.wait_for_condition(lambda x: x.is_ready, timeout=timeout)
         return self
 
-    def filter_tasks(self, task_filter: Callable[[dict], bool]
-                     ) -> Generator[dict, None, None]:
+    def filter_tasks(
+        self, task_filter: Callable[[dict], bool]
+    ) -> Generator[dict, None, None]:
         """Filter service tasks with `task_filter`.
 
         Arguments:
@@ -164,9 +180,9 @@ class ServiceWrapper:
         except docker.errors.NotFound:
             pass
 
-    def wait_for_condition(self,
-                           condition: Callable[['ServiceWrapper'], bool],
-                           timeout: int = 60):
+    def wait_for_condition(
+        self, condition: Callable[['ServiceWrapper'], bool], timeout: int = 60
+    ):
         """Wait for some `condition` to occur in the service.
 
         Arguments:
@@ -190,7 +206,7 @@ class ServiceWrapper:
                 )
             if self.has_crashed:
                 raise ServiceCrashed(
-                    f'{self.name}:\n{self._service.logs().decode()}'
+                    f'{self.name}:\n{self._service.logs().decode()}',
                 )
             countdown -= 1
             time.sleep(self._wait_timeout_interval)
@@ -222,7 +238,7 @@ def canned_docker_service() -> ServiceWrapper:
         'alpine:latest',
         name='certdeploy_test_service',
         command='''/bin/sh -c 'while true; do sleep 600; done' ''',
-        labels={'certdeploy_test': 'hello'}
+        labels={'certdeploy_test': 'hello'},
     )
     yield canned
     canned.teardown()

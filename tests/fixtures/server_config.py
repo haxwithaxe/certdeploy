@@ -24,7 +24,7 @@ def client_conn_config(client_keypair: KeyPair, **conf: Any) -> dict:
     _conf = dict(
         address='test_client_address',
         domains=['test.example.com'],
-        pubkey=client_keypair.pubkey_text
+        pubkey=client_keypair.pubkey_text,
     )
     if conf:
         _conf.update(conf)
@@ -32,12 +32,14 @@ def client_conn_config(client_keypair: KeyPair, **conf: Any) -> dict:
 
 
 @pytest.fixture(scope='function')
-def client_conn_config_factory(keypairgen: Callable[[], KeyPair]
-                               ) -> Callable[[KeyPair, ...], dict]:
+def client_conn_config_factory(
+    keypairgen: Callable[[], KeyPair]
+) -> Callable[[KeyPair, ...], dict]:
     """Generate dicts to go into the `client_configs` section."""
 
-    def _client_conn_config_factory(client_keypair: KeyPair = None,
-                                    **conf: Any) -> dict:
+    def _client_conn_config_factory(
+        client_keypair: KeyPair = None, **conf: Any
+    ) -> dict:
         """Return a `dict` representing a client connection config.
 
         Arguments:
@@ -54,8 +56,12 @@ def client_conn_config_factory(keypairgen: Callable[[], KeyPair]
     return _client_conn_config_factory
 
 
-def server_config_file(tmp_path: pathlib.Path, client_keypair: KeyPair,
-                       server_keypair: KeyPair, **conf: Any) -> ConfigContext:
+def server_config_file(
+    tmp_path: pathlib.Path,
+    client_keypair: KeyPair,
+    server_keypair: KeyPair,
+    **conf: Any
+) -> ConfigContext:
     """Generate a minimal CertDeploy server config updated with `conf`.
 
     Updates `server_keypair` with `tmp_path` as the path and sets
@@ -83,7 +89,7 @@ def server_config_file(tmp_path: pathlib.Path, client_keypair: KeyPair,
         privkey_filename=str(server_keypair.privkey_file()),
         client_configs=[client_conn_config(client_keypair=client_keypair)],
         # Has to be a real dir writable by the test user
-        queue_dir=str(queue_dir)
+        queue_dir=str(queue_dir),
     )
     config.update(conf)
     yaml.safe_dump(config, config_path.open('w'))
@@ -92,8 +98,7 @@ def server_config_file(tmp_path: pathlib.Path, client_keypair: KeyPair,
 
 @pytest.fixture(scope='function')
 def tmp_server_config_file(
-    tmp_path_factory: pytest.TempPathFactory,
-    keypairgen: Callable[[], KeyPair]
+    tmp_path_factory: pytest.TempPathFactory, keypairgen: Callable[[], KeyPair]
 ) -> Callable[[pathlib.Path, KeyPair, KeyPair, ...], ConfigContext]:
     """Generate a full CertDeploy server config and matching config file.
 
@@ -148,19 +153,22 @@ def tmp_server_config_file(
             push_interval=7,
             push_retries=11,
             push_retry_interval=41,
-            join_timeout=371
+            join_timeout=371,
         )
         config.update(conf)
-        return server_config_file(tmp_path, client_keypair, server_keypair,
-                                  **config)
+        return server_config_file(
+            tmp_path,
+            client_keypair,
+            server_keypair,
+            **config,
+        )
 
     return _tmp_server_config_file
 
 
 @pytest.fixture(scope='function')
 def tmp_server_config(
-    tmp_path_factory: pytest.TempPathFactory,
-    keypairgen: Callable[[], KeyPair]
+    tmp_path_factory: pytest.TempPathFactory, keypairgen: Callable[[], KeyPair]
 ) -> Callable[[pathlib.Path, KeyPair, KeyPair, ...], ServerConfig]:
     """Return a `ServerConfig` factory."""
 
@@ -187,8 +195,12 @@ def tmp_server_config(
         tmp_path = tmp_path or tmp_path_factory.mktemp('server_config')
         client_keypair = client_keypair or keypairgen()
         server_keypair = server_keypair or keypairgen()
-        context = server_config_file(tmp_path, client_keypair,
-                                     server_keypair, **conf)
+        context = server_config_file(
+            tmp_path,
+            client_keypair,
+            server_keypair,
+            **conf,
+        )
         return ServerConfig.load(context.config_path)
 
     return _tmp_server_config

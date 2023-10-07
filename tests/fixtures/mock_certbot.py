@@ -27,13 +27,16 @@ touch {flag_file_path}
 
 
 @pytest.fixture(scope='function')
-def mock_certbot(tmp_script: Callable[[...], Script]
-                 ) -> Callable[[list[str], pathlib.Path, os.PathLike], Script]:
+def mock_certbot(
+    tmp_script: Callable[[...], Script]
+) -> Callable[[list[str], pathlib.Path, os.PathLike], Script]:
     """Return a mock certbot script factory."""
 
-    def _mock_certbot(renew_args: list[str] = None,
-                      tmp_path: pathlib.Path = None,
-                      alt_flag_file_path: os.PathLike = None) -> Script:
+    def _mock_certbot(
+        renew_args: list[str] = None,
+        tmp_path: pathlib.Path = None,
+        alt_flag_file_path: os.PathLike = None,
+    ) -> Script:
         """Return a mock certbot script.
 
         Arguments:

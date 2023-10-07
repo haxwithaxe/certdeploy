@@ -11,9 +11,13 @@ from fixtures.utils import ConfigContext, get_free_port
 from certdeploy.client.config import ClientConfig
 
 
-def client_config_file(tmp_path: pathlib.Path, client_keypair: KeyPair = None,
-                       server_keypair: KeyPair = None, sftpd: dict = None,
-                       **conf: Any) -> ConfigContext:
+def client_config_file(
+    tmp_path: pathlib.Path,
+    client_keypair: KeyPair = None,
+    server_keypair: KeyPair = None,
+    sftpd: dict = None,
+    **conf: Any,
+) -> ConfigContext:
     """Finish configuring the temporary client config.
 
     Arguments:
@@ -37,18 +41,19 @@ def client_config_file(tmp_path: pathlib.Path, client_keypair: KeyPair = None,
     dest.mkdir()
     config_filename = tmp_path.joinpath('client.yml')
     # Non-default values for top level options
-    config = dict(
-        destination=str(dest),
-        source=str(src),
-        sftpd=sftpd or {}
-    )
+    config = dict(destination=str(dest), source=str(src), sftpd=sftpd or {})
     if sftpd is not None and sftpd != {}:
-        conf['sftpd'] = client_sftpd_config(tmp_path, client_keypair,
-                                            server_keypair, **sftpd)
+        conf['sftpd'] = client_sftpd_config(
+            tmp_path, client_keypair, server_keypair, **sftpd
+        )
     config.update(conf)
     yaml.safe_dump(config, config_filename.open('w'))
-    return ConfigContext(config_filename, config, client_keypair,
-                         server_keypair)
+    return ConfigContext(
+        config_filename,
+        config,
+        client_keypair,
+        server_keypair,
+    )
 
 
 def client_sftpd_config(
@@ -57,7 +62,7 @@ def client_sftpd_config(
     server_keypair: KeyPair = None,
     listen_address: str = '127.0.0.1',
     listen_port: int = None,
-    **conf: Any
+    **conf: Any,
 ) -> dict:
     """Finish configuring the temporary client SFTPD config.
 
@@ -97,27 +102,24 @@ def client_sftpd_config(
 
 
 @pytest.fixture(scope='function')
-def tmp_client_sftpd_config(free_port: callable
-                            ) -> Callable[
-                                [pathlib.Path, KeyPair, KeyPair, int, ...],
-                                dict
-                            ]:
+def tmp_client_sftpd_config(
+    free_port: callable,
+) -> Callable[[pathlib.Path, KeyPair, KeyPair, int, ...], dict]:
     """Return a `sftpd` config section factory."""
     return client_sftpd_config
 
 
 @pytest.fixture(scope='function')
-def tmp_client_config_file(tmp_path_factory: pytest.TempPathFactory,
-                           keypairgen: callable
-                           ) -> Callable[[pathlib.Path, KeyPair, KeyPair, ...],
-                                         ConfigContext]:
+def tmp_client_config_file(
+    tmp_path_factory: pytest.TempPathFactory, keypairgen: callable
+) -> Callable[[pathlib.Path, KeyPair, KeyPair, ...], ConfigContext]:
     """Return a temporary client config constructor."""
 
     def _tmp_client_config_file(
         tmp_path: pathlib.Path = None,
         client_keypair: KeyPair = None,
         server_keypair: KeyPair = None,
-        **conf: Any
+        **conf: Any,
     ) -> ConfigContext:
         """Finish configuring the temporary client config.
 
@@ -145,29 +147,30 @@ def tmp_client_config_file(tmp_path_factory: pytest.TempPathFactory,
             systemd_timeout=42,
             docker_url='test docker_url value',  # Use the local socket
             update_services=[],
-            update_delay='11s'
+            update_delay='11s',
         )
         config.update(conf)
         return client_config_file(
             tmp_path,
             client_keypair=client_keypair,
             server_keypair=server_keypair,
-            **config
+            **config,
         )
 
     return _tmp_client_config_file
 
 
 @pytest.fixture(scope='function')
-def tmp_client_config(tmp_path_factory: pytest.TempPathFactory,
-                      keypairgen: callable
-                      ) -> Callable[[KeyPair, KeyPair, ...], ClientConfig]:
+def tmp_client_config(
+    tmp_path_factory: pytest.TempPathFactory, keypairgen: callable
+) -> Callable[[KeyPair, KeyPair, ...], ClientConfig]:
     """Return a temporary client config factory."""
 
     def _tmp_client_config(
         tmp_path: pathlib.Path = None,
         client_keypair: KeyPair = None,
-        server_keypair: KeyPair = None, **conf: Any
+        server_keypair: KeyPair = None,
+        **conf: Any,
     ) -> ClientConfig:
         """Finish configuring the temporary client config.
 
@@ -186,8 +189,9 @@ def tmp_client_config(tmp_path_factory: pytest.TempPathFactory,
         tmp_path = tmp_path or tmp_path_factory.mktemp('tmp_client_config')
         client_keypair = client_keypair or keypairgen()
         server_keypair = server_keypair or keypairgen()
-        config_context = client_config_file(tmp_path, client_keypair,
-                                            server_keypair, **conf)
+        config_context = client_config_file(
+            tmp_path, client_keypair, server_keypair, **conf
+        )
         return ClientConfig.load(config_context.config_path)
 
     return _tmp_client_config

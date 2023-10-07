@@ -40,11 +40,18 @@ class KeyPair:
 
     def copy(self) -> 'KeyPair':
         """Create a duplicate key pair that can be modified separately."""
-        return KeyPair(self.privkey_pem, self.privkey_text, self.pubkey_text,
-                       self.privkey_name, self.pubkey_name, self.path)
+        return KeyPair(
+            self.privkey_pem,
+            self.privkey_text,
+            self.pubkey_text,
+            self.privkey_name,
+            self.pubkey_name,
+            self.path,
+        )
 
-    def privkey_file(self, tmp_path: pathlib.Path = None, name: str = None
-                     ) -> pathlib.Path:
+    def privkey_file(
+        self, tmp_path: pathlib.Path = None, name: str = None
+    ) -> pathlib.Path:
         """Write the private key to a file.
 
         Arguments:
@@ -63,8 +70,9 @@ class KeyPair:
         filename.write_text(self.privkey_pem)
         return filename
 
-    def pubkey_file(self, tmp_path: pathlib.Path = None, name: str = None
-                    ) -> pathlib.Path:
+    def pubkey_file(
+        self, tmp_path: pathlib.Path = None, name: str = None
+    ) -> pathlib.Path:
         """Write the public key to a file.
 
         Arguments:
@@ -84,8 +92,12 @@ class KeyPair:
         filename.write_text(self.pubkey_text)
         return filename
 
-    def update(self, path: pathlib.Path = None, privkey_name: str = None,
-               pubkey_name: str = None):
+    def update(
+        self,
+        path: pathlib.Path = None,
+        privkey_name: str = None,
+        pubkey_name: str = None,
+    ):
         """Update the values of variables used to create key files.
 
         Any arguments omitted or set to a falsey value are ignored. If
@@ -114,8 +126,11 @@ class KeyPair:
         self.update(self.path, self.privkey_name, self.pubkey_name)
 
 
-def _keypairgen(tmp_path: pathlib.Path = None, privkey_name: str = None,
-                pubkey_name: str = None) -> KeyPair:
+def _keypairgen(
+    tmp_path: pathlib.Path = None,
+    privkey_name: str = None,
+    pubkey_name: str = None,
+) -> KeyPair:
     """Generate a private and public key pair.
 
     Any arguments omitted or set to a falsey value are ignored. If
@@ -135,7 +150,7 @@ def _keypairgen(tmp_path: pathlib.Path = None, privkey_name: str = None,
     privkey_pem = keypair.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.OpenSSH,
-        encryption_algorithm=serialization.NoEncryption()
+        encryption_algorithm=serialization.NoEncryption(),
     )
     privkey_io = io.StringIO(privkey_pem.decode())
     privkey = paramiko.ed25519key.Ed25519Key.from_private_key(privkey_io)
@@ -143,7 +158,7 @@ def _keypairgen(tmp_path: pathlib.Path = None, privkey_name: str = None,
     pubkey = keypair.public_key()
     openssh_pub = pubkey.public_bytes(
         encoding=serialization.Encoding.OpenSSH,
-        format=serialization.PublicFormat.OpenSSH
+        format=serialization.PublicFormat.OpenSSH,
     )
     return KeyPair(
         privkey_pem=privkey_pem.decode(),
@@ -151,7 +166,7 @@ def _keypairgen(tmp_path: pathlib.Path = None, privkey_name: str = None,
         pubkey_text=openssh_pub.decode(),
         privkey_name=privkey_name,
         pubkey_name=pubkey_name,
-        path=tmp_path
+        path=tmp_path,
     )
 
 

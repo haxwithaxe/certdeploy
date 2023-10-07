@@ -57,12 +57,14 @@ fi
 
 
 @pytest.fixture(scope='function')
-def tmp_systemd_service(tmp_script: Callable[[str, str, str, str], Script]
-                        ) -> Callable[[str, bool], tuple[str, Script]]:
+def tmp_systemd_service(
+    tmp_script: Callable[[str, str, str, str], Script]
+) -> Callable[[str, bool], tuple[str, Script]]:
     """Return a factory for temporary systemctl expecting a unit name."""
 
-    def _tmp_systemd_service(unit_name: str = 'certdeploy-test.service',
-                             fail: bool = False) -> tuple[str, Script]:
+    def _tmp_systemd_service(
+        unit_name: str = 'certdeploy-test.service', fail: bool = False
+    ) -> tuple[str, Script]:
         """Return a unit name and mock systemctl.
 
         Arguments:
@@ -78,15 +80,17 @@ def tmp_systemd_service(tmp_script: Callable[[str, str, str, str], Script]
         fail_str = ''
         if fail:
             # The guaranteed fail mode command
-            fail_str = (f'echo {SystemdFlags.FAILED} > '
-                        '{flag_file_path}; exit 3')
+            fail_str = (
+                f'echo {SystemdFlags.FAILED} > '
+                '{flag_file_path}; exit 3'  # fmt: skip
+            )
         # Create a mock systemctl that will detect if the right args are
         #   passed.
         mock_systemctl = tmp_script(
             'mock-systemctl',
             MOCK_SYSTEMCTL_TEMPLATE,
             unit_name=unit_name,
-            fail=fail_str
+            fail=fail_str,
         )
         # The tests expects the file to exist so a neutral payload is written to
         #   it.

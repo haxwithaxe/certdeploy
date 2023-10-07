@@ -121,9 +121,11 @@ class KillSwitch(threading.Event):
 
     def teardown(self, looper: Any) -> callable:
         """Return a function that sets the `looper` back to defaults."""
+
         def _teardown():
             self.clear()
             looper._stop_running = False
+
         return _teardown
 
     def __bool__(self):
@@ -150,14 +152,18 @@ class Script:
 
 
 @pytest.fixture()
-def tmp_script(tmp_path_factory: pytest.TempPathFactory
-               ) -> Callable[[str, str, pathlib.Path, pathlib.Path, ...],
-                             Script]:
+def tmp_script(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> Callable[[str, str, pathlib.Path, pathlib.Path, ...], Script]:
     """Return a temporary executable script factory."""
 
-    def _tmp_script(name: str, template: str, tmp_path: pathlib.Path = None,
-                    alt_flag_file: pathlib.Path = None, **format_kwargs: Any
-                    ) -> Script:
+    def _tmp_script(
+        name: str,
+        template: str,
+        tmp_path: pathlib.Path = None,
+        alt_flag_file: pathlib.Path = None,
+        **format_kwargs: Any
+    ) -> Script:
         """Return a temporary executable script.
 
         Arguments:
@@ -188,17 +194,22 @@ def tmp_script(tmp_path_factory: pytest.TempPathFactory
         script_path = tmp_path.joinpath(name)
         if 'fail' in format_kwargs:
             format_kwargs['fail'] = format_kwargs['fail'].format(
-                flag_file_path=format_flag_file_path,
-                **format_kwargs
+                flag_file_path=format_flag_file_path, **format_kwargs
             )
-        script_path.write_text(template.format(
-            flag_file_path=format_flag_file_path,
-            **format_kwargs
-        ))
+        script_path.write_text(
+            template.format(
+                flag_file_path=format_flag_file_path,
+                **format_kwargs,
+            )
+        )
         script_path.chmod(
-            stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH |  # a+r
-            stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH |  # a+x
-            stat.S_IWUSR  # Allow the teardown to remove the script
+            stat.S_IRUSR
+            | stat.S_IRGRP
+            | stat.S_IROTH
+            | stat.S_IXUSR  # a+r
+            | stat.S_IXGRP
+            | stat.S_IXOTH
+            | stat.S_IWUSR  # a+x  # Allow the teardown to remove the script
         )
         return Script(script_path, flag_file_path, format_flag_file_path)
 
@@ -206,8 +217,9 @@ def tmp_script(tmp_path_factory: pytest.TempPathFactory
 
 
 @pytest.fixture(scope='function')
-def lineage_factory(tmp_path_factory: pytest.TempPathFactory
-                    ) -> Callable[[str, list[str]], pathlib.Path]:
+def lineage_factory(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> Callable[[str, list[str]], pathlib.Path]:
     """Return a temporary lineage factory."""
 
     def _gen_lineage(lineage: str, filenames: list[str] = None) -> pathlib.Path:
@@ -233,8 +245,9 @@ def lineage_factory(tmp_path_factory: pytest.TempPathFactory
     return _gen_lineage
 
 
-def get_free_port(min_port: int = 1025, max_port: int = 65535,
-                  address: str = '127.0.0.1') -> int:
+def get_free_port(
+    min_port: int = 1025, max_port: int = 65535, address: str = '127.0.0.1'
+) -> int:
     """Return the first free port between `min_port` and `max_port`.
 
     The range between `min_port` and `max_port` is inclusive.

@@ -1,13 +1,16 @@
+"""Fixtures and utilities for testing error conditions."""
 
 from typing import Any, Callable
 
 import pytest
 
 INVALID_CONFIG_FMT: str = 'Invalid value "{value}" for {config_desc}`{key}`.'
-INVALID_CONFIG_MUST_FMT: str = ('Invalid value "{value}" for {config_desc}'
-                                '`{key}`. `{key}` must {must}.')
-MISSING_SCRIPT_SERVICE_FILE_FMT = ('Script file "{path}" for service {name} '
-                                   'not found.')
+INVALID_CONFIG_MUST_FMT: str = (
+    'Invalid value "{value}" for {config_desc}' '`{key}`. `{key}` must {must}.'
+)
+MISSING_SCRIPT_SERVICE_FILE_FMT = (
+    'Script file "{path}" for service {name} ' 'not found.'
+)
 MISSING_DOCKER_SERVICE_FMT = (
     '''DockerServiceNotFound(\'DockerService failed to update: Could not '''
     '''find any docker service matching the following filter: '''
@@ -23,8 +26,11 @@ class Errors:
     SSH_BANNER_ERROR: str = 'Error reading SSH protocol banner'
 
     @staticmethod
-    def format_invalid_value(key: str, value: Any, config_desc: str = ''
-                             ) -> str:
+    def format_invalid_value(
+        key: str,
+        value: Any,
+        config_desc: str = '',
+    ) -> str:
         """Format an invalid value message.
 
         Arguments:
@@ -39,12 +45,16 @@ class Errors:
         # Add a space to the description if it's set.
         if config_desc:
             config_desc = f'{config_desc} '
-        return INVALID_CONFIG_FMT.format(key=key, value=value,
-                                         config_desc=config_desc)
+        return INVALID_CONFIG_FMT.format(
+            key=key,
+            value=value,
+            config_desc=config_desc,
+        )
 
     @staticmethod
-    def format_invalid_value_must(key: str, value: Any, must: str,
-                                  config_desc: str = '') -> str:
+    def format_invalid_value_must(
+        key: str, value: Any, must: str, config_desc: str = ''
+    ) -> str:
         """Format an invalid value message with a must clause.
 
         Arguments:
@@ -60,8 +70,9 @@ class Errors:
         # Add a space to the description if it's set.
         if config_desc:
             config_desc = f'{config_desc} '
-        return INVALID_CONFIG_MUST_FMT.format(key=key, value=value, must=must,
-                                              config_desc=config_desc)
+        return INVALID_CONFIG_MUST_FMT.format(
+            key=key, value=value, must=must, config_desc=config_desc
+        )
 
 
 class ClientErrors(Errors):
@@ -71,10 +82,12 @@ class ClientErrors(Errors):
 
     @staticmethod
     def format_missing_script_service(name: str, path: str):
+        """Return a formatted missing script error message."""
         return MISSING_SCRIPT_SERVICE_FILE_FMT.format(name=name, path=path)
 
     @staticmethod
     def format_missing_docker_service(label: str):
+        """Return a formatted missing docker service error message."""
         label = label.replace("'", """\\\'""")
         return MISSING_DOCKER_SERVICE_FMT.format(label=label)
 

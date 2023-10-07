@@ -99,8 +99,12 @@ class ContainerWrapper:
         cleaned = re.sub(r'\.[0-9]+Z', '', started_at)
         return datetime.strptime(cleaned, '%Y-%m-%dT%H:%M:%S')
 
-    def create(self, image: str, name: str = None, **kwargs: Any
-               ) -> 'ContainerWrapper':
+    def create(
+        self,
+        image: str,
+        name: str = None,
+        **kwargs: Any,
+    ) -> 'ContainerWrapper':
         """Create a new container.
 
         Arguments:
@@ -142,9 +146,12 @@ class ContainerWrapper:
         if self._container:
             self._container.remove(force=True)
 
-    def wait_for_condition(self,
-                           condition: Callable[['ContainerWrapper'], bool],
-                           timeout: int = 60, condition_name: str = None):
+    def wait_for_condition(
+        self,
+        condition: Callable[['ContainerWrapper'], bool],
+        timeout: int = 60,
+        condition_name: str = None,
+    ):
         """Wait for some `condition` to occur in the container.
 
         Arguments:
@@ -184,8 +191,11 @@ class ContainerWrapper:
             timeout: The number of seconds to wait before giving up on the
                 match. Defaults to 60.
         """
-        self.wait_for_condition((lambda x: match_bytes in x.logs()), timeout,
-                                f'"{match_bytes.decode()}" in container log')
+        self.wait_for_condition(
+            (lambda x: match_bytes in x.logs()),
+            timeout,
+            f'"{match_bytes.decode()}" in container log',
+        )
 
     def wait_for_status(self, *status: ContainerStatus, timeout: int = 60):
         """Wait for the container to be in the specified state.
@@ -195,8 +205,11 @@ class ContainerWrapper:
             timeout: The number of seconds to wait before giving up on the
                 status. Defaults to 60.
         """
-        self.wait_for_condition((lambda x: x.status in status), timeout,
-                                f'container status is in {status}')
+        self.wait_for_condition(
+            (lambda x: x.status in status),
+            timeout,
+            f'container status is in {status}',
+        )
 
     def _teardown_old(self, container_id: str):
         """Tear down any existing containers with the same name.
@@ -212,8 +225,11 @@ class ContainerWrapper:
 
     def _log_on_fatal_error(self):
         """Dump the container logs as an error log."""
-        log.error('logs for %s:\n%s', self._container.name,
-                  self._container.logs().decode())
+        log.error(
+            'logs for %s:\n%s',
+            self._container.name,
+            self._container.logs().decode(),
+        )
 
     def __getattr__(self, attr: Any) -> Any:
         """Passthrough any attribute requests.
@@ -282,9 +298,11 @@ class CertDeployContainerWrapper(ContainerWrapper):
         # Checking here to allow the log level to be something different if this
         #   isn't called.
         if log_level_gt(self.config['log_level'], self.has_started_log_level):
-            raise ValueError('The configured log level for the server needs to '
-                             f'be at most `{self.has_started_log_level}` not: '
-                             f'{self.config["log_level"]}')
+            raise ValueError(
+                'The configured log level for the server needs to '
+                f'be at most `{self.has_started_log_level}` not: '
+                f'{self.config["log_level"]}'
+            )
         return self.has_started_flag in self._container.logs()
 
     def create(
@@ -297,7 +315,7 @@ class CertDeployContainerWrapper(ContainerWrapper):
         do_not_interfere: bool = False,
         with_docker: bool = False,
         volumes: list[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> 'CertDeployContainerWrapper':
         """Create a container and return an unstarted container.
 
@@ -343,7 +361,7 @@ class CertDeployContainerWrapper(ContainerWrapper):
             image=self.image,
             name=name,
             volumes=self._assemble_volumes(volumes, with_docker),
-            **kwargs
+            **kwargs,
         )
         return self
 
@@ -377,14 +395,14 @@ class CertDeployContainerWrapper(ContainerWrapper):
         """Prepare server and client key pairs."""
         # Populate the key pairs with the info from this object, but don't
         #   overwrite the path or privkey name of the keys.
-        if (not self.client_keypair.path or
-                not self.client_keypair.privkey_name):
-            self.client_keypair.update(self.etc_path, CLIENT_KEY_NAME,
-                                       f'{CLIENT_KEY_NAME}.pub')
-        if (not self.server_keypair.path or
-                not self.server_keypair.privkey_name):
-            self.server_keypair.update(self.etc_path, SERVER_KEY_NAME,
-                                       f'{SERVER_KEY_NAME}.pub')
+        if not self.client_keypair.path or not self.client_keypair.privkey_name:
+            self.client_keypair.update(
+                self.etc_path, CLIENT_KEY_NAME, f'{CLIENT_KEY_NAME}.pub'
+            )
+        if not self.server_keypair.path or not self.server_keypair.privkey_name:
+            self.server_keypair.update(
+                self.etc_path, SERVER_KEY_NAME, f'{SERVER_KEY_NAME}.pub'
+            )
         # Write keys to disk
         self.client_keypair.pubkey_file()
         self.client_keypair.privkey_file()
@@ -405,13 +423,16 @@ class CertDeployContainerWrapper(ContainerWrapper):
         self._container.reload()
 
         def _condition(container):
-            return (container.status == ContainerStatus.RUNNING and
-                    container.has_started)
+            is_running = container.status == ContainerStatus.RUNNING
+            return is_running and container.has_started
 
         self.wait_for_condition(_condition, timeout)
 
-    def _assemble_volumes(self, volumes: list[str], with_docker: bool
-                          ) -> list[str]:
+    def _assemble_volumes(
+        self,
+        volumes: list[str],
+        with_docker: bool,
+    ) -> list[str]:
         """Combine the volumes given in `volumes` with required volumes.
 
         Arguments:
@@ -427,15 +448,15 @@ class CertDeployContainerWrapper(ContainerWrapper):
         ]
         if 'destination' in self.config:
             real_volumes.append(
-                f'''{self.output_path}:{self.config['destination']}'''
+                f'''{self.output_path}:{self.config['destination']}''',
             )
         if 'source' in self.config:
             real_volumes.append(
-                f'''{self.input_path}:{self.config['source']}'''
+                f'''{self.input_path}:{self.config['source']}''',
             )
         if 'queue_dir' in self.config:
             real_volumes.append(
-                f'''{self.output_path}:{self.config['queue_dir']}'''
+                f'''{self.output_path}:{self.config['queue_dir']}''',
             )
         if with_docker:
             real_volumes.append('/var/run/docker.sock:/var/run/docker.sock')
@@ -446,8 +467,9 @@ class CertDeployContainerWrapper(ContainerWrapper):
         self,
         config: dict,
         do_not_interfere: bool,
-        configurator: Callable[[pathlib.Path, KeyPair, KeyPair, ...],
-                               ConfigContext],
+        configurator: Callable[
+            [pathlib.Path, KeyPair, KeyPair, ...], ConfigContext
+        ],  # noqa: E501
     ):
         """Do the final config preparation.
 
@@ -468,7 +490,7 @@ class CertDeployContainerWrapper(ContainerWrapper):
             self.etc_path,
             client_keypair=self.client_keypair,
             server_keypair=self.server_keypair,
-            **config
+            **config,
         )
         self.config = context.config
 
@@ -488,8 +510,7 @@ class ClientContainer(CertDeployContainerWrapper):
     @property
     def has_updated(self) -> bool:
         """`True` if the client has finished updating services."""
-        if (CliRefMsgs.HAS_UPDATED.log in
-                self._container.logs()):
+        if CliRefMsgs.HAS_UPDATED.log in self._container.logs():
             return True
         return False
 
@@ -523,8 +544,7 @@ class ClientContainer(CertDeployContainerWrapper):
                 create_kwargs['ports'] = {}
             create_kwargs['ports'].update({port: port})
 
-    def prepare_config(self, config: dict,
-                       do_not_interfere: bool):
+    def prepare_config(self, config: dict, do_not_interfere: bool):
         """Prepare the config dict to pass to the client config fixture.
 
         Populates `self.config`.
@@ -549,12 +569,14 @@ class ClientContainer(CertDeployContainerWrapper):
             sftpd = {}
             if 'sftpd' in config:
                 sftpd = config.pop('sftpd')
-            sftpd['privkey_filename'] = str(self.container_paths.etc.joinpath(
-                self.client_keypair.privkey_name
-            ))
+            sftpd['privkey_filename'] = str(
+                self.container_paths.etc.joinpath(
+                    self.client_keypair.privkey_name,
+                )
+            )
             sftpd['server_pubkey_filename'] = str(
                 self.container_paths.etc.joinpath(
-                    self.server_keypair.pubkey_name
+                    self.server_keypair.pubkey_name,
                 )
             )
             config['sftpd'] = sftpd
@@ -574,7 +596,7 @@ class ClientContainer(CertDeployContainerWrapper):
         self.wait_for_condition(
             lambda x: CliRefMsgs.HAS_UPDATED.log in x._container.logs(),
             timeout,
-            'client has updated services'
+            'client has updated services',
         )
 
 
@@ -598,8 +620,18 @@ class ServerContainer(CertDeployContainerWrapper):
         self,
         *args,
         lineage_parent_path: pathlib.Path = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> 'ServerContainer':
+        """Create a new container.
+
+        Arguments:
+            args: See `CertDeployContainerWrapper.create` for details.
+            lineage_parent_path: The path that has the lineage directories
+                within it. Defaults to `None`.
+
+        Keyword Arguments:
+            kwargs: See `CertDeployContainerWrapper.create` for details.
+        """
         if lineage_parent_path:
             if 'volumes' not in kwargs:
                 kwargs['volumes'] = []
@@ -626,9 +658,11 @@ class ServerContainer(CertDeployContainerWrapper):
             # Force queue_dir value
             config['queue_dir'] = str(self.container_paths.queue)
             # Force privkey_filename value
-            config['privkey_filename'] = str(self.container_paths.etc.joinpath(
-                self.server_keypair.privkey_file().name
-            ))
+            config['privkey_filename'] = str(
+                self.container_paths.etc.joinpath(
+                    self.server_keypair.privkey_file().name
+                )
+            )
             # Force the pubkey values for all client connections
             for client_conn in config.get('client_configs', []):
                 client_conn['pubkey'] = self.client_keypair.pubkey_text
@@ -636,8 +670,10 @@ class ServerContainer(CertDeployContainerWrapper):
         self._prepare_config(config, do_not_interfere, server_config_file)
 
 
-def _get_canned_docker_container(started: bool, suffix: str = None
-                                 ) -> ContainerWrapper:
+def _get_canned_docker_container(
+    started: bool,
+    suffix: str = None,
+) -> ContainerWrapper:
     """Return a canned container.
 
     The container is a very minimal container that does nothing. It's suitable
@@ -652,7 +688,7 @@ def _get_canned_docker_container(started: bool, suffix: str = None
         'alpine:latest',
         name=f'certdeploy_test_container{suffix or ""}',
         entrypoint=['/bin/sh', '-c', 'while true; do sleep 600; done'],
-        labels={'certdeploy_test': 'hello'}
+        labels={'certdeploy_test': 'hello'},
     )
     if started:
         canned.start()
@@ -668,8 +704,9 @@ def canned_docker_container() -> Callable[[bool], ContainerWrapper]:
     """
     containers = []
 
-    def _canned_docker_container(started: bool = True, suffix: str = None
-                                 ) -> ContainerWrapper:
+    def _canned_docker_container(
+        started: bool = True, suffix: str = None
+    ) -> ContainerWrapper:
         """Return a canned `ContainerWrapper`.
 
         Arguments:
@@ -693,10 +730,10 @@ def canned_docker_container() -> Callable[[bool], ContainerWrapper]:
 def client_docker_container(
     tmp_path: pathlib.Path,
     keypairgen: Callable[[], KeyPair],
-    request: _pytest.fixtures.SubRequest
+    request: _pytest.fixtures.SubRequest,
 ) -> Callable[
     [str, dict[str, Any], list[str], bool, bool, KeyPair, KeyPair, bool, ...],
-    ClientContainer
+    ClientContainer,
 ]:
     """Return a CertDeploy client docker container factory."""
     clients = []
@@ -710,7 +747,7 @@ def client_docker_container(
         client_keypair: KeyPair = None,
         server_keypair: KeyPair = None,
         do_not_interfere: bool = False,
-        **kwargs
+        **kwargs,
     ) -> ClientContainer:
         """Return an unstarted CertDeploy client docker container.
 
@@ -754,9 +791,9 @@ def client_docker_container(
         if no_build:
             rootdir = pathlib.Path(request.config.rootdir)
             volumes.append(
-                    f'''{rootdir.joinpath('src').joinpath('certdeploy')}:'''
-                    f'/usr/local/lib/python{CLIENT_CONTAINER_PYTHON_VERSION}'
-                    '/site-packages/certdeploy'
+                f'''{rootdir.joinpath('src').joinpath('certdeploy')}:'''
+                f'/usr/local/lib/python{CLIENT_CONTAINER_PYTHON_VERSION}'
+                '/site-packages/certdeploy'
             )
         client = ClientContainer(docker.from_env())
         clients.append(client)
@@ -768,7 +805,7 @@ def client_docker_container(
             tmp_path=base_path,
             volumes=volumes,
             with_docker=with_docker,
-            **kwargs
+            **kwargs,
         )
         return client
 
@@ -782,10 +819,10 @@ def server_docker_container(
     tmp_path: pathlib.Path,
     keypairgen: Callable[[], KeyPair],
     lineage_factory: Callable[[str, list[str]], pathlib.Path],
-    request: _pytest.fixtures.SubRequest
+    request: _pytest.fixtures.SubRequest,
 ) -> Callable[
     [str, dict[str, Any], list[str], bool, bool, KeyPair, KeyPair, bool, ...],
-    ServerContainer
+    ServerContainer,
 ]:
     """Return a CertDeploy server docker container factory."""
     servers = []
@@ -801,7 +838,7 @@ def server_docker_container(
         client_keypair: KeyPair = None,
         server_keypair: KeyPair = None,
         do_not_interfere: bool = False,
-        **kwargs
+        **kwargs,
     ) -> ServerContainer:
         """Return an unstarted CertDeploy server docker container.
 
@@ -847,9 +884,9 @@ def server_docker_container(
         if no_build:
             rootdir = pathlib.Path(request.config.rootdir)
             volumes.append(
-                    f'''{rootdir.joinpath('src').joinpath('certdeploy')}:'''
-                    f'/usr/local/lib/python{CLIENT_CONTAINER_PYTHON_VERSION}'
-                    '/site-packages/certdeploy'
+                f'''{rootdir.joinpath('src').joinpath('certdeploy')}:'''
+                f'/usr/local/lib/python{CLIENT_CONTAINER_PYTHON_VERSION}'
+                '/site-packages/certdeploy'
             )
         server = ServerContainer(docker.from_env())
         servers.append(server)
@@ -863,7 +900,7 @@ def server_docker_container(
             tmp_path=base_path,
             volumes=volumes,
             with_docker=with_docker,
-            **kwargs
+            **kwargs,
         )
         return server
 

@@ -83,21 +83,24 @@ class MockClientTCPServer(threading.Thread):
         a time.
         """
         handler = _tcp_handler_factory(self._log_request)
-        with socketserver.TCPServer((self.address, self.port),
-                                    handler) as server:
+        server = socketserver.TCPServer((self.address, self.port), handler)
+        with server:
             server.timeout = 1
             while self._keep_serving:
                 server.handle_request()
 
 
 @pytest.fixture(scope='function')
-def mock_fail_client(free_port: Callable[[...], int]
-                     ) -> Callable[[str, int], MockClientTCPServer]:
+def mock_fail_client(
+    free_port: Callable[[...], int]
+) -> Callable[[str, int], MockClientTCPServer]:
     """Return a mock CertDeploy client factory."""
     mock_clients = []
 
-    def _mock_fail_client(address: str, port: int = None
-                          ) -> MockClientTCPServer:
+    def _mock_fail_client(
+        address: str,
+        port: int = None,
+    ) -> MockClientTCPServer:
         """Return a started mock client server.
 
         Arguments:

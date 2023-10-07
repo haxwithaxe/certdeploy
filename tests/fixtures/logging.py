@@ -9,7 +9,7 @@ from certdeploy import (
     CERTDEPLOY_CLIENT_LOGGER_NAME,
     CERTDEPLOY_SERVER_LOGGER_NAME,
     DEFAULT_LOG_FORMAT,
-    PARAMIKO_LOGGER_NAME
+    PARAMIKO_LOGGER_NAME,
 )
 
 
@@ -30,8 +30,13 @@ class _RefLogMessage:
     _log_format = DEFAULT_LOG_FORMAT
     _logger_name = None
 
-    def __init__(self, level: str, message: str, source: str,
-                 logger_name: str = None):
+    def __init__(
+        self,
+        level: str,
+        message: str,
+        source: str,
+        logger_name: str = None,
+    ):
         self._level = level
         self._message = message
         self._source = source
@@ -45,11 +50,12 @@ class _RefLogMessage:
     @property
     def log(self) -> bytes:
         """The formatted log message."""
-        return (self._log_format % dict(
+        values = dict(
             levelname=self._level,
             name=self._logger_name,
-            message=self._message
-        )).encode()
+            message=self._message,
+        )
+        return (self._log_format % values).encode()
 
     @property
     def message(self) -> str:
@@ -95,55 +101,49 @@ class ClientRefLogMessages:
     """Reference client log messages."""
 
     DEPLOY_ONLY: ClientRefLogMessage = ClientRefLogMessage(
-        'DEBUG',
-        'Running one off deploy',
-        'certdeploy.client._main._run'
+        'DEBUG', 'Running one off deploy', 'certdeploy.client._main._run'
     )
     HAS_STARTED: ClientRefLogMessage = ClientRefLogMessage(
         'INFO',
         'Listening for incoming connections at ',
-        'certdeploy.client.daemon.DeployServer.serve_forever'
+        'certdeploy.client.daemon.DeployServer.serve_forever',
     )
     HAS_UPDATED: ClientRefLogMessage = ClientRefLogMessage(
-        'INFO',
-        'Updated services',
-        'certdeploy.client.daemon._Update.run'
+        'INFO', 'Updated services', 'certdeploy.client.daemon._Update.run'
     )
     HELP_TEXT: PlainText = PlainText(
         'Plain text',
         'Usage: certdeploy-client [OPTIONS]',
-        'Command line output'
+        'Command line output',
     )
     HELP_TEXT_ALT: PlainText = PlainText(
         'Plain text',
         'Usage: -typer-main [OPTIONS]',
-        'typer.testing.CliRunner output'
+        'typer.testing.CliRunner output',
     )
     MISSING_CONFIG: ClientRefLogMessage = ClientRefLogMessage(
         'ERROR',
-        'Config file "/etc/certdeploy/client.yml" not found: [Errno 2] No such '
-        'file or directory: \'/etc/certdeploy/client.yml\'',
+        'Config file "/etc/certdeploy/client.yml" not found: [Errno 2] No '
+        'such file or directory: \'/etc/certdeploy/client.yml\'',
         'a repackaged FileNotFound exception in '
-        'certdeploy.client._main._typer_main'
+        'certdeploy.client._main._typer_main',  # fmt: skip
     )
 
 
 class ParamikoRefLogMessages:
     """Reference paramiko log messages."""
 
-    EMPTY: _RefLogMessage = _RefLogMessage('DEBUG', '', 'made up',
-                                           PARAMIKO_LOGGER_NAME)
-    TRANSPORT_EMPTY: _RefLogMessage = _RefLogMessage(
+    EMPTY: _RefLogMessage = _RefLogMessage(
         'DEBUG',
         '',
         'made up',
-        f'{PARAMIKO_LOGGER_NAME}.transport'
+        PARAMIKO_LOGGER_NAME,
+    )
+    TRANSPORT_EMPTY: _RefLogMessage = _RefLogMessage(
+        'DEBUG', '', 'made up', f'{PARAMIKO_LOGGER_NAME}.transport'
     )
     TRANSPORT_SFTP_EMPTY: _RefLogMessage = _RefLogMessage(
-        'DEBUG',
-        '',
-        'made up',
-        f'{PARAMIKO_LOGGER_NAME}.transport.sftp'
+        'DEBUG', '', 'made up', f'{PARAMIKO_LOGGER_NAME}.transport.sftp'
     )
 
 
@@ -151,63 +151,59 @@ class ServerRefLogMessages:
     """Reference server log messages."""
 
     ADD_TO_QUEUE_MESSAGE: ServerRefLogMessage = ServerRefLogMessage(
-        'DEBUG',
-        'Adding lineage to queue.',
-        'certdeploy.server._main._run'
+        'DEBUG', 'Adding lineage to queue.', 'certdeploy.server._main._run'
     )
     CERTBOT_HELP_TEXT: PlainText = PlainText(
         'Plain text',
         'certbot [SUBCOMMAND] [options] [-d DOMAIN] [-d DOMAIN]',
-        'first line of `certbot --help`'
+        'first line of `certbot --help`',
     )
     HAS_STARTED: ServerRefLogMessage = ServerRefLogMessage(
         'DEBUG',
         'Server.serve_forever: one_shot=',
-        'certdeploy.server.server.daemon.Server.serve_forever'
+        'certdeploy.server.server.daemon.Server.serve_forever',
     )
     DAEMON_HAS_STARTED: ServerRefLogMessage = ServerRefLogMessage(
         'DEBUG',
         'Server.serve_forever: one_shot=False',
-        'certdeploy.server.server.daemon.Server.serve_forever'
+        'certdeploy.server.server.daemon.Server.serve_forever',
     )
     PUSH_HAS_STARTED: ServerRefLogMessage = ServerRefLogMessage(
         'DEBUG',
         # The `True` is the expected value of `one_shot` given it's push mode
         'Server.serve_forever: one_shot=True',
-        'certdeploy.server.server.daemon.Server.serve_forever'
+        'certdeploy.server.server.daemon.Server.serve_forever',
     )
     HELP_TEXT: PlainText = PlainText(
         'Plain text',
         'Usage: certdeploy-server [OPTIONS]',
-        'Command line output'
+        'Command line output',
     )
     HELP_TEXT_ALT: PlainText = PlainText(
         'Plain text',
         'Usage: -typer-main [OPTIONS]',
-        'typer.testing.CliRunner output'
+        'typer.testing.CliRunner output',
     )
     MISSING_CONFIG: ServerRefLogMessage = ServerRefLogMessage(
         'ERROR',
         'FileNotFoundError: [Errno 2] No such file or directory: '
         '\'/etc/certdeploy/server.yml\'',
         'a repackaged FileNotFound exception in '
-        'certdeploy.server._main._typer_main'
+        'certdeploy.server._main._typer_main',  # fmt: skip
     )
     # or domains
     MISSING_LINEAGE: ServerRefLogMessage = ServerRefLogMessage(
         'ERROR',
         'Could not find lineage or domains.',
-        'certdeploy.server._main._run'
+        'certdeploy.server._main._run',
     )
     PUSH_ONLY: ServerRefLogMessage = ServerRefLogMessage(
         'DEBUG',
         'Running manual push without a running daemon',
-        'certdeploy.server._main._run'
+        'certdeploy.server._main._run',
     )
     RENEW_ONLY: ServerRefLogMessage = ServerRefLogMessage(
-        'DEBUG',
-        'Running renew',
-        'certdeploy.server._main._run'
+        'DEBUG', 'Running renew', 'certdeploy.server._main._run'
     )
 
 
