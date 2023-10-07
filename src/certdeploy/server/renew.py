@@ -20,13 +20,18 @@ def renew_certs(config: ServerConfig):
     cmd = [config.renew_exec]
     cmd.extend(config.renew_args)
     log.debug('Checking for renewable certificates. Using command: %s', cmd)
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT)
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
     proc.wait(timeout=config.renew_timeout)
     log.info('Checked for renewable certificates.')
-    log.debug(f'Ran `{" ".join(cmd)}` returned {proc.returncode} and '
-              f'produced combined stdout/stderr: '
-              f'{proc.stdout.read().decode()}')
+    log.debug(
+        f'Ran `{" ".join(cmd)}` returned {proc.returncode} and '
+        f'produced combined stdout/stderr: '
+        f'{proc.stdout.read().decode()}'
+    )
     if proc.returncode != 0:
         if config.fail_fast:
             raise CertDeployError(f'Failed to run `{" ".join(cmd)}`')

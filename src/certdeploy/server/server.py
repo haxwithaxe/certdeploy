@@ -104,8 +104,10 @@ class Queue:
                 locks on NFS.
         """
         self._queue: dict = {}
-        self._filename: os.PathLike = os.path.join(server.queue_dir,
-                                                   'queue.json')
+        self._filename: os.PathLike = os.path.join(
+            server.queue_dir,
+            'queue.json',
+        )
         self._lock_filename = f'{self._filename}.lock'
         if mode not in ('r', 'w'):
             raise ValueError('`mode` must be either "r" or "w".')
@@ -191,7 +193,7 @@ class Queue:
                     ) from err
                 if not isinstance(queue, dict):
                     raise CertDeployError(
-                        'The queue file contains invalid data.'
+                        'The queue file contains invalid data.',
                     )
             self._queue = queue
         else:
@@ -239,8 +241,9 @@ class Queue:
 class PushWorker(Thread):
     """A worker thread to push lineages to a single client."""
 
-    def __init__(self, server: 'Server', client: ClientConnection,
-                 config: ServerConfig):
+    def __init__(
+        self, server: 'Server', client: ClientConnection, config: ServerConfig
+    ):
         """Prepare the worker.
 
         Arguments:
@@ -277,42 +280,62 @@ class PushWorker(Thread):
 
     def _sync_client(self):
         """Sync the current lineage to the client over SFTP."""
-        cert_dir = os.path.join(self._client.path,
-                                os.path.basename(self._lineage))
+        cert_dir = os.path.join(
+            self._client.path,
+            os.path.basename(self._lineage),
+        )
         ssh = paramiko.client.SSHClient()
         if self._client.port == 22:
             hostkey_name = self._client.address
         else:
             hostkey_name = f'[{self._client.address}]:{self._client.port}'
-        ssh.get_host_keys().add(hostkey_name, 'ssh-ed25519',
-                                self._client.pubkey_blob)
+        ssh.get_host_keys().add(
+            hostkey_name,
+            'ssh-ed25519',
+            self._client.pubkey_blob,
+        )
         # Set the safest policy by default
         ssh.set_missing_host_key_policy(paramiko.client.RejectPolicy)
-        ssh.connect(hostname=self._client.address, port=self._client.port,
-                    username=self._client.username,
-                    key_filename=self._config.privkey_filename)
+        ssh.connect(
+            hostname=self._client.address,
+            port=self._client.port,
+            username=self._client.username,
+            key_filename=self._config.privkey_filename,
+        )
         sftp = ssh.open_sftp()
         # Make the destination directory
         _sftp_mkdir(sftp, cert_dir)
         # Transfer certificates as needed
         if self._client.needs_chain:
-            log.debug('Copying %s to %s',
-                      os.path.join(self._lineage, 'chain.pem'),
-                      os.path.join(cert_dir, 'chain.pem'))
-            sftp.put(os.path.join(self._lineage, 'chain.pem'),
-                     os.path.join(cert_dir, 'chain.pem'))
+            log.debug(
+                'Copying %s to %s',
+                os.path.join(self._lineage, 'chain.pem'),
+                os.path.join(cert_dir, 'chain.pem'),
+            )
+            sftp.put(
+                os.path.join(self._lineage, 'chain.pem'),
+                os.path.join(cert_dir, 'chain.pem'),
+            )
         if self._client.needs_fullchain:
-            log.debug('Copying %s to %s',
-                      os.path.join(self._lineage, 'fullchain.pem'),
-                      os.path.join(cert_dir, 'fullchain.pem'))
-            sftp.put(os.path.join(self._lineage, 'fullchain.pem'),
-                     os.path.join(cert_dir, 'fullchain.pem'))
+            log.debug(
+                'Copying %s to %s',
+                os.path.join(self._lineage, 'fullchain.pem'),
+                os.path.join(cert_dir, 'fullchain.pem'),
+            )
+            sftp.put(
+                os.path.join(self._lineage, 'fullchain.pem'),
+                os.path.join(cert_dir, 'fullchain.pem'),
+            )
         if self._client.needs_privkey:
-            log.debug('Copying %s to %s',
-                      os.path.join(self._lineage, 'privkey.pem'),
-                      os.path.join(cert_dir, 'privkey.pem'))
-            sftp.put(os.path.join(self._lineage, 'privkey.pem'),
-                     os.path.join(cert_dir, 'privkey.pem'))
+            log.debug(
+                'Copying %s to %s',
+                os.path.join(self._lineage, 'privkey.pem'),
+                os.path.join(cert_dir, 'privkey.pem'),
+            )
+            sftp.put(
+                os.path.join(self._lineage, 'privkey.pem'),
+                os.path.join(cert_dir, 'privkey.pem'),
+            )
         sftp.close()
 
     def _next(self) -> bool:
@@ -332,39 +355,67 @@ class PushWorker(Thread):
         """
         while self._next():
             log.info('Pushing %s to %s', self._lineage, self._client)
-            for self._attempt in range(self._retries+1):
-                log.debug('Attempt #%s of %s retries.', self._attempt,
-                          self._retries)
+            for self._attempt in range(self._retries + 1):
+                log.debug(
+                    'Attempt #%s of %s retries.',
+                    self._attempt,
+                    self._retries,
+                )
                 try:
                     self._sync_client()
-                except (CertDeployError, socket.gaierror, SSHException,
-                        NoValidConnectionsError) as err:
-                    log.error('Error syncing with %s:%s: %s',
-                              self._client.address, self._client.port,
-                              format_error(err), exc_info=err)
+                except (
+                    CertDeployError,
+                    socket.gaierror,
+                    SSHException,
+                    NoValidConnectionsError,
+                ) as err:
+                    log.error(
+                        'Error syncing with %s:%s: %s',
+                        self._client.address,
+                        self._client.port,
+                        format_error(err),
+                        exc_info=err,
+                    )
                     if self._config.fail_fast:
                         self._exception = err
                         break  # Go to the next lineage
                     if self._attempt == self._retries:
-                        log.warning('Attempt #%s of %s failed. Not retrying '
-                                    'sync %s to %s.', self._attempt,
-                                    self._retries, self._lineage, self._client)
+                        log.warning(
+                            'Attempt #%s of %s failed. Not retrying '
+                            'sync %s to %s.',  # fmt: skip
+                            self._attempt,
+                            self._retries,
+                            self._lineage,
+                            self._client,
+                        )
                         break  # Go to the next lineage
-                    log.info('Attempt #%s failed. Retrying sync to %s in '
-                             '%s seconds.', self._attempt, self._client,
-                             self._retry_interval)
+                    log.info(
+                        'Attempt #%s failed. Retrying sync to %s in '
+                        '%s seconds.',  # fmt: skip
+                        self._attempt,
+                        self._client,
+                        self._retry_interval,
+                    )
                     # Wait between attempts
                     time.sleep(self._retry_interval)
                 except Exception as err:
                     self._exception = err
                     if not self._config.fail_fast:
-                        log.error('Error syncing with %s:%s: %s',
-                                  self._client.address, self._client.port,
-                                  format_error(err), exc_info=err)
+                        log.error(
+                            'Error syncing with %s:%s: %s',
+                            self._client.address,
+                            self._client.port,
+                            format_error(err),
+                            exc_info=err,
+                        )
                     return  # End the thread
                 else:
-                    log.info('Pushed %s to %s in %s attempts',
-                             self._lineage, self._client, self._attempt)
+                    log.info(
+                        'Pushed %s to %s in %s attempts',
+                        self._lineage,
+                        self._client,
+                        self._attempt,
+                    )
                     break  # Go to the next lineage
 
     def join(self, timeout: Optional[float] = None):
@@ -383,9 +434,11 @@ class PushWorker(Thread):
 
     def __repr__(self):
         """Return a pragmatic representation of this object."""
-        return (f'<{self.__class__.__name__} address={self._client.address}, '
-                f'port={self._client.port}, username={self._client.username},'
-                f'attempts={self._attempt}, exception={self._exception}>')
+        return (
+            f'<{self.__class__.__name__} address={self._client.address}, '
+            f'port={self._client.port}, username={self._client.username},'
+            f'attempts={self._attempt}, exception={self._exception}>'
+        )
 
 
 class Server:
@@ -420,8 +473,11 @@ class Server:
         while not self._stop_running:
             main_loop_sleep = GO_FAST_SLEEP
             queue = Queue(self._config, 'r').load()
-            log.debug('Queue length is %s, worker count is %s', len(queue),
-                      len(self._workers))
+            log.debug(
+                'Queue length is %s, worker count is %s',
+                len(queue),
+                len(self._workers),
+            )
             if len(queue) < 1 and len(self._workers) < 1:
                 # Slow down when the queue is empty and there are no workers.
                 main_loop_sleep = SLOW_DOWN_SLEEP
@@ -436,10 +492,9 @@ class Server:
                 if client.hash not in self._workers:
                     self._add_worker(client)
                     if self._config.push_mode == PushMode.SERIAL:
-                        log.debug('Waiting for push to %s to finish',
-                                  client)
+                        log.debug('Waiting for push to %s to finish', client)
                         self._workers[client.hash].join(
-                            self._config.join_timeout
+                            self._config.join_timeout,
                         )
                     # Only delay when adding a new worker
                     time.sleep(self._config.push_interval)
@@ -468,9 +523,12 @@ class Server:
             for domain in domains:
                 if domain in client.domains:
                     with Queue(self._config, 'w') as queue:
-                        queue.append(client.hash,  lineage)
-                        log.debug('Queued lineage %s for client %s', lineage,
-                                  client)
+                        queue.append(client.hash, lineage)
+                        log.debug(
+                            'Queued lineage %s for client %s',
+                            lineage,
+                            client,
+                        )
                     break
 
     def _add_worker(self, client: ClientConnection):

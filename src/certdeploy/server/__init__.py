@@ -1,3 +1,4 @@
+# noqa: D104
 
 from .. import CERTDEPLOY_SERVER_LOGGER_NAME, Logger, LogLevel
 
