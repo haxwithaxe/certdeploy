@@ -4,10 +4,14 @@ import enum
 import logging
 import os
 import sys
+
+# fmt: off
 from importlib.metadata import (  # pragma: no cover
     PackageNotFoundError,
     version
 )
+
+# fmt: on
 from typing import Any, Union
 
 try:
@@ -55,7 +59,7 @@ logging.basicConfig(
     format=DEFAULT_LOG_FORMAT,
     datefmt=DEFAULT_LOG_DATE_FORMAT,
     stream=sys.stdout,  # DEFAULT_LOG_FILENAME
-    level=DEFAULT_LOG_LEVEL
+    level=DEFAULT_LOG_LEVEL,
 )
 
 
@@ -117,8 +121,10 @@ class LogLevel(enum.Enum):
         return self.value
 
 
-def format_error(err: Exception, message_format: str = '{name}: {message}'
-                 ) -> str:
+def format_error(
+    err: Exception,
+    message_format: str = '{name}: {message}',
+) -> str:
     """Format errors consistently.
 
     Arguments:
@@ -208,7 +214,7 @@ def set_paramiko_log_properties(
     log_filename: os.PathLike = None,
     log_level: Union[int, str, LogLevel] = None,
     msg_format: str = DEFAULT_LOG_FORMAT,
-    date_format: str = DEFAULT_LOG_DATE_FORMAT
+    date_format: str = DEFAULT_LOG_DATE_FORMAT,
 ):
     """Set the paramiko logger properties.
 
@@ -224,8 +230,13 @@ def set_paramiko_log_properties(
     if log_filename and not os.path.isfile(log_filename):
         with open(log_filename, 'w') as log_file:
             log_file.write('')
-    set_log_properties(PARAMIKO_LOGGER_NAME, log_filename, log_level,
-                       msg_format, date_format)
+    set_log_properties(
+        PARAMIKO_LOGGER_NAME,
+        log_filename,
+        log_level,
+        msg_format,
+        date_format,
+    )
 
 
 def set_log_properties(
@@ -233,7 +244,7 @@ def set_log_properties(
     log_filename: os.PathLike,
     log_level: Union[int, str, LogLevel] = None,
     msg_format: str = DEFAULT_LOG_FORMAT,
-    date_format: str = DEFAULT_LOG_DATE_FORMAT
+    date_format: str = DEFAULT_LOG_DATE_FORMAT,
 ):
     """Set logger properties.
 

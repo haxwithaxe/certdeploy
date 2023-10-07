@@ -38,21 +38,27 @@ class ConfigInvalid(ConfigError):
             ) -> ('Invalid value "None" for `renew_unit`. `renew_unit` '
                   'must not be a weekday if `renew_every` is set and '
                   'not 1.')
-
-
     """
 
-    def __init__(self, key: str, value: Any, must: str = None,  # noqa: D107
-                 config_desc: str = ''):
+    def __init__(
+        self,
+        key: str,
+        value: Any,
+        must: str = None,  # noqa: D107
+        config_desc: str = '',
+    ):
         # Add a space to the description if it is set
         if config_desc:
             config_desc = f'{config_desc} '
         if must:
-            super().__init__(f'Invalid value "{value}" for {config_desc}'
-                             f'`{key}`. `{key}` must {must}.')
+            super().__init__(
+                f'Invalid value "{value}" for {config_desc}'
+                f'`{key}`. `{key}` must {must}.',
+            )
         else:
-            super().__init__(f'Invalid value "{value}" for {config_desc}'
-                             f'`{key}`.')
+            super().__init__(
+                f'Invalid value "{value}" for {config_desc}`{key}`.',
+            )
 
 
 class ConfigInvalidNumber(ConfigInvalid):
@@ -77,9 +83,18 @@ class ConfigInvalidNumber(ConfigInvalid):
             an empty string.
     """
 
-    def __init__(self, key: str, value: Any, is_type: str = 'number',  # noqa: D107,E501
-                 optional: bool = False, gt: str = None, lt: str = None,
-                 ge: str = None, le: str = None, config_desc: str = ''):
+    def __init__(
+        self,
+        key: str,
+        value: Any,
+        is_type: str = 'number',
+        optional: bool = False,
+        gt: str = None,
+        lt: str = None,
+        ge: str = None,
+        le: str = None,
+        config_desc: str = '',
+    ):
         if is_type == int:
             is_type = 'integer'
         elif is_type == float:
@@ -104,8 +119,12 @@ class ConfigInvalidNumber(ConfigInvalid):
         a_or_an = 'a'
         if is_type[0] in ('a', 'e', 'i', 'o', 'u'):
             a_or_an = 'an'
-        super().__init__(key, value, must=f'be {a_or_an} {is_type}{bounds_str}'
-                         f'{if_set}', config_desc=config_desc)
+        super().__init__(
+            key,
+            value,
+            must=f'be {a_or_an} {is_type}{bounds_str}' f'{if_set}',
+            config_desc=config_desc,
+        )
 
 
 class ConfigInvalidChoice(ConfigInvalid):
@@ -135,8 +154,14 @@ class ConfigInvalidChoice(ConfigInvalid):
         ValueError: When the number of choices is invalid.
     """
 
-    def __init__(self, key: str, value: Any, choices: list[Any],  # noqa: D107
-                 quote: bool = True, config_desc: str = ''):
+    def __init__(
+        self,
+        key: str,
+        value: Any,
+        choices: list[Any],
+        quote: bool = True,
+        config_desc: str = '',
+    ):
         if quote:
             choices = [_double_quote(c) for c in choices]
         if len(choices) == 2:
@@ -173,13 +198,23 @@ class ConfigInvalidPath(ConfigInvalid):
             must be True.
     """
 
-    def __init__(self, key: str, value: str, exist: bool = True,  # noqa: D107
-                 writable: bool = False, bad_format: bool = False,
-                 is_type: str = '', config_desc: str = ''):
+    def __init__(
+        self,
+        key: str,
+        value: str,
+        exist: bool = True,
+        writable: bool = False,
+        bad_format: bool = False,
+        is_type: str = '',
+        config_desc: str = '',
+    ):
         if bad_format:
-            super().__init__(key, value,
-                             must='be a file system path',
-                             config_desc=config_desc)
+            super().__init__(
+                key,
+                value,
+                must='be a file system path',
+                config_desc=config_desc,
+            )
             return
         if writable and is_type:
             must = f'exist and be a {is_type} writable by CertDeploy'
@@ -190,6 +225,8 @@ class ConfigInvalidPath(ConfigInvalid):
         elif exist:
             must = 'exist'
         else:
-            raise ValueError('One or more of `bad_format`, `exist`, or '
-                             '`writable` must be True.')
+            raise ValueError(
+                'One or more of `bad_format`, `exist`, or `writable` must be '
+                '`True`.',
+            )
         super().__init__(key, value, must=must, config_desc=config_desc)
