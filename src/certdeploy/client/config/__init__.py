@@ -4,11 +4,14 @@ import os
 import re
 from typing import Any
 
+# fmt: off
 from ... import (
     CERTDEPLOY_CLIENT_LOGGER_NAME,
     set_log_properties,
     set_paramiko_log_properties
 )
+
+# fmt: on
 from ...errors import ConfigError, ConfigInvalid, ConfigInvalidPath
 from .client import Config, SFTPDConfig
 from .service import Service
@@ -18,16 +21,16 @@ _DURATION_FACTORS = {
     'd': 60 * 60 * 24,
     'h': 60 * 60,
     'm': 60,
-    's': 1
-    }
-# pylint: disable=consider-using-f-string
-_DURATION_RE = re.compile(r'\s*(?:\s*(\d+(?:\.\d+)?)([{0}]))\s*'.format(
-    ''.join(_DURATION_FACTORS.keys())
-))
-# pylint: enable=consider-using-f-string
+    's': 1,
+}
+_DURATION_RE = re.compile(
+    r'\s*(?:\s*(\d+(?:\.\d+)?)([{0}]))\s*'.format(
+        ''.join(_DURATION_FACTORS.keys()),
+    )
+)
 
 
-class ClientConfig(Config):  # pylint: disable=too-few-public-methods
+class ClientConfig(Config):
     """CertDeploy client configuration.
 
     See `certdeploy.client.config.client.Config` for details about
@@ -38,7 +41,7 @@ class ClientConfig(Config):  # pylint: disable=too-few-public-methods
     #   errors are more likely to occur while a human is looking and before
     #   the system is cluttered with possible causes.
 
-    def __init__(self, *args: Any, **kwargs: Any):  # noqa: D107
+    def __init__(self, *args: Any, **kwargs: Any):
         try:
             super().__init__(*args, **kwargs)
         except TypeError as err:
@@ -50,25 +53,28 @@ class ClientConfig(Config):  # pylint: disable=too-few-public-methods
         set_log_properties(
             logger_name=CERTDEPLOY_CLIENT_LOGGER_NAME,
             log_filename=self.log_filename,
-            log_level=self.log_level
+            log_level=self.log_level,
         )
         if not os.path.isdir(self.source):
             raise ConfigInvalidPath('source', self.source, is_type='directory')
         if not os.path.isdir(self.destination):
-            raise ConfigInvalidPath('destination', self.destination,
-                                    is_type='directory')
+            raise ConfigInvalidPath(
+                'destination',
+                self.destination,
+                is_type='directory',
+            )
         self.services = [Service.load(s) for s in self.update_services]
         try:
             self.sftpd_config = SFTPDConfig(**self.sftpd)
         except TypeError as err:
             if 'got an unexpected keyword argument' in str(err):
                 raise ConfigError(
-                    f'Invalid SFTPD config option: {err}'
-                    ) from err
+                    f'Invalid SFTPD config option: {err}',
+                ) from err
             raise
         set_paramiko_log_properties(
             log_filename=self.sftpd_config.log_filename,
-            log_level=self.sftpd_config.log_level
+            log_level=self.sftpd_config.log_level,
         )
         seconds = 0
         # `null` in the config is eqivalent to 0s
@@ -79,8 +85,7 @@ class ClientConfig(Config):  # pylint: disable=too-few-public-methods
                 raise ConfigInvalid('update_delay', self.update_delay)
             try:
                 for match in matches:
-                    seconds += (float(match[0]) *
-                                _DURATION_FACTORS[match[1]])
+                    seconds += float(match[0]) * _DURATION_FACTORS[match[1]]
             except TypeError as err:
                 raise ConfigInvalid('update_delay', self.update_delay) from err
         self.update_delay_seconds = int(seconds)

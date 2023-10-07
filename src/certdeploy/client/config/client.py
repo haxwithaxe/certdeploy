@@ -7,12 +7,15 @@ from typing import Optional
 
 import yaml
 
+# fmt: off
 from ... import (
     DEFAULT_CLIENT_SOURCE_DIR,
     DEFAULT_PORT,
     DEFAULT_USERNAME,
     LogLevel
 )
+
+# fmt: on
 
 
 @dataclass
@@ -91,7 +94,7 @@ class Config:
         override_log_filename: Optional[os.PathLike] = None,
         override_log_level: Optional[LogLevel] = None,
         override_sftp_log_filename: Optional[os.PathLike] = None,
-        override_sftp_log_level: Optional[LogLevel] = None
+        override_sftp_log_level: Optional[LogLevel] = None,
     ):
         """Load the config from a file."""
         with open(filename, 'r', encoding='utf-8') as config_file:

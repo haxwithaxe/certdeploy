@@ -14,7 +14,7 @@ _SYSTEMD_UNIT_NAME_RE = re.compile(
     r'[a-z0-9:_,.\\-]+(@[a-z0-9:_,.\\-]+)?\.'
     r'(service|socket|device|mount|automount|swap|target|path|timer|slice|'
     r'scope)',
-    flags=re.I
+    flags=re.I,
 )
 
 
@@ -31,11 +31,11 @@ class Service:
     name: str = None  # Just so it's there when exceptions look for it
     timeout: Union[float, int] = None
 
-    def __init__(self, config: dict):  # noqa: D107
+    def __init__(self, config: dict):
         log.debug(
             'New service %s from config: config=%s',
             self.__class__.__name__,
-            config
+            config,
         )
         # name comes first to let errors reference it
         self.name = self._validate_name(config.get('name'))
@@ -49,16 +49,24 @@ class Service:
 
     def _validate_filters(self, filters):
         if filters is not None and not isinstance(filters, dict):
-            raise ConfigError(f'Invalid value {filters} for `filters` for '
-                              f'service {self.name}. `filters` must be a '
-                              'dictionary or `null`.')
+            raise ConfigError(
+                f'Invalid value {filters} for `filters` for '
+                f'service {self.name}. `filters` must be a '
+                'dictionary or `null`.'
+            )
         return filters or self.filters
 
-    def _validate_timeout(self, timeout: Union[float, int]
-                          ) -> Union[float, int]:
+    def _validate_timeout(
+        self,
+        timeout: Union[float, int],
+    ) -> Union[float, int]:
         if timeout is not None and not isinstance(timeout, (float, int)):
-            raise ConfigInvalidNumber('timeout', timeout, optional=True,
-                                      config_desc=f'service {self.name}')
+            raise ConfigInvalidNumber(
+                'timeout',
+                timeout,
+                optional=True,
+                config_desc=f'service {self.name}',
+            )
         # If timeout is an int or float (it's int float or None given the above)
         #   use it otherwise use the default (self.timeout). This is needed for
         #   DockerContainer. Otherwise this could just return timeout.
@@ -75,14 +83,20 @@ class Service:
         """
         if not isinstance(other, self.__class__):
             return False
-        return (self.action == other.action and self.filters == other.filters
-                and self.name == other.name and self.timeout == other.timeout)
+        return (
+            self.action == other.action
+            and self.filters == other.filters
+            and self.name == other.name
+            and self.timeout == other.timeout
+        )
 
     def __repr__(self) -> str:
         """Return a pragmatic representation of this instance."""
-        return (f'<{self.__class__.__name__}: action={self.action}, '
-                f'filters={self.filters}, name={self.name}, '
-                f'timeout={self.timeout}>')
+        return (
+            f'<{self.__class__.__name__}: action={self.action}, '
+            f'filters={self.filters}, name={self.name}, '
+            f'timeout={self.timeout}>'
+        )
 
     @staticmethod
     def load(config: dict) -> 'Service':
@@ -100,11 +114,12 @@ class Service:
                 'docker_container': DockerContainer,
                 'docker_service': DockerService,
                 'script': Script,
-                'systemd': SystemdUnit
+                'systemd': SystemdUnit,
             }[config.get('type')]
         except KeyError as err:
-            raise ConfigError(f'{config.get("type")} is not a valid service '
-                              'type.') from err
+            raise ConfigError(
+                f'{config.get("type")} is not a valid service ' 'type.'
+            ) from err
         return service_class(config)
 
 
@@ -123,15 +138,20 @@ class DockerService(Service):  # pylint: disable=too-few-public-methods
     def __init__(self, config: dict):  # noqa: D107
         super().__init__(config)
         if not self.name and not self.filters:
-            raise ConfigError('Either `filters` or `name` must be given in '
-                              f'`docker_{self._type}` configs. Got: {config}.')
+            raise ConfigError(
+                'Either `filters` or `name` must be given in '
+                f'`docker_{self._type}` configs. Got: {config}.'
+            )
 
     def _validate_name(self, name: str) -> str:
         if name is None:
             return name
         if not name or not _DOCKER_NAME_RE.match(name.strip()):
-            raise ConfigInvalid('name', name,
-                                config_desc=f'docker {self._type} config')
+            raise ConfigInvalid(
+                'name',
+                name,
+                config_desc=f'docker {self._type} config',
+            )
         return name.strip()
 
 
@@ -171,8 +191,10 @@ class Script(Service):  # pylint: disable=too-few-public-methods
         else:
             self.script_path = os.path.abspath(self.name)
         if not os.path.exists(self.script_path):
-            raise ConfigError(f'Script file "{self.script_path}" for service '
-                              f'{self.name} not found.')
+            raise ConfigError(
+                f'Script file "{self.script_path}" for service '
+                f'{self.name} not found.'
+            )
 
     def _validate_name(self, name: str) -> str:
         if not name:
@@ -200,11 +222,15 @@ class SystemdUnit(Service):  # pylint: disable=too-few-public-methods
             return self.action
         if action.lower().strip() in _SYSTEMCTL_ACTIONS:
             return action.lower().strip()
-        raise ConfigInvalid('action', action,
-                            config_desc=f'service {self.name}')
+        raise ConfigInvalid(
+            'action',
+            action,
+            config_desc=f'service {self.name}',
+        )
 
     def _validate_name(self, name: str) -> str:
         if not name or not _SYSTEMD_UNIT_NAME_RE.match(name.strip()):
-            raise ConfigInvalid('name', name,
-                                config_desc='systemd update service config')
+            raise ConfigInvalid(
+                'name', name, config_desc='systemd update service config'
+            )
         return name.strip()
