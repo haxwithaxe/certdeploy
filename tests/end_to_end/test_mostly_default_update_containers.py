@@ -17,7 +17,7 @@ from fixtures.docker_container import (
     ContainerInternalPaths,
     ContainerStatus,
     ContainerWrapper,
-    ServerContainer
+    ServerContainer,
 )
 from fixtures.keys import KeyPair
 from fixtures.server_config import client_conn_config
@@ -33,7 +33,7 @@ def test_pushes_to_clients(
     lineage_factory: Callable[[str, list[str]], pathlib.Path],
     keypairgen: Callable[[...], KeyPair],
     server_docker_container: Callable[[...], ServerContainer],
-    tmp_path: pathlib.Path
+    tmp_path: pathlib.Path,
 ):
     """Verify that the server pushes and the client updates."""
     client_keypair = keypairgen()
@@ -48,7 +48,7 @@ def test_pushes_to_clients(
     lineage_files.sort()  # Presorting for comparisons
     lineage_name = 'test.example.com'
     lineage_container_path = ContainerInternalPaths.lineages.joinpath(
-        lineage_name
+        lineage_name,
     )
     canned_containers = []
     clients = []
@@ -71,13 +71,17 @@ def test_pushes_to_clients(
             config=dict(
                 fail_fast=True,
                 update_delay='1s',  # Set to 1s to speed up the test
-                update_services=[dict(type='docker_container',
-                                      name=canned.name)],
+                update_services=[
+                    dict(
+                        type='docker_container',
+                        name=canned.name,
+                    )
+                ],
                 # SFTPD needs to listen on the external address of the
                 #   container. localhost is used as the default elsewhere in
                 #   the test fixtures.
-                sftpd=dict(listen_address='0.0.0.0')
-            )
+                sftpd=dict(listen_address='0.0.0.0'),
+            ),
         )
         clients.append(client)
         client.start()
@@ -88,7 +92,7 @@ def test_pushes_to_clients(
                 address=client.ipv4_address,
                 domains=[lineage_name],
                 port=client.config['sftpd']['listen_port'],
-                path=client.config['source']
+                path=client.config['source'],
             )
         )
     ## Setup the server container
@@ -99,15 +103,12 @@ def test_pushes_to_clients(
         lineage_name=lineage_name,
         lineage_filenames=lineage_files,
         tmp_path=server_tmp_path,
-        config=dict(
-            fail_fast=True,
-            client_configs=client_configs
-        ),
+        config=dict(fail_fast=True, client_configs=client_configs),
         environment={
             'CERTDEPOLY_SERVER_PUSH_ONLY': True,
             'RENEWED_LINEAGE': str(lineage_container_path),
-            'RENEWED_DOMAINS': lineage_name
-        }
+            'RENEWED_DOMAINS': lineage_name,
+        },
     )
     # Sleep to guarantee at least a 1 second gap between the canned containers
     #   starting and the server pushing
@@ -115,10 +116,14 @@ def test_pushes_to_clients(
     # Start and don't bother waiting for startup
     server.start(timeout=None)
     # Wait for the container to be done.
-    server.wait_for_status(ContainerStatus.EXITED, ContainerStatus.DEAD,
-                           timeout=120)
-    assert server.attrs['State']['ExitCode'] == 0, \
-        f'Server exited nonzero. Test is invalid.\n{server.logs().decode()}'
+    server.wait_for_status(
+        ContainerStatus.EXITED,
+        ContainerStatus.DEAD,
+        timeout=120,
+    )
+    assert (
+        server.attrs['State']['ExitCode'] == 0
+    ), f'Server exited nonzero. Test is invalid.\n{server.logs().decode()}'
     ## Verify the results
     # For each client check for the PEM files that should have been pushed
     for client in clients:
