@@ -8,7 +8,7 @@ from typing import Any
 from ... import (
     CERTDEPLOY_CLIENT_LOGGER_NAME,
     set_log_properties,
-    set_paramiko_log_properties
+    set_paramiko_log_properties,
 )
 
 # fmt: on

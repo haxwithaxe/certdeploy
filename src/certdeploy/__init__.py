@@ -8,7 +8,7 @@ import sys
 # fmt: off
 from importlib.metadata import (  # pragma: no cover
     PackageNotFoundError,
-    version
+    version,
 )
 
 # fmt: on

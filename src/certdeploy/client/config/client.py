@@ -12,7 +12,7 @@ from ... import (
     DEFAULT_CLIENT_SOURCE_DIR,
     DEFAULT_PORT,
     DEFAULT_USERNAME,
-    LogLevel
+    LogLevel,
 )
 
 # fmt: on
