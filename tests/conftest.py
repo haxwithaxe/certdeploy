@@ -9,17 +9,17 @@ Read more about conftest.py under:
 import pytest  # noqa: F401
 from fixtures.client_config import (  # noqa: F401
     tmp_client_config,
-    tmp_client_config_file
+    tmp_client_config_file,
 )
 from fixtures.docker_container import (  # noqa: F401
     canned_docker_container,
     client_docker_container,
-    server_docker_container
+    server_docker_container,
 )
 from fixtures.docker_service import canned_docker_service  # noqa: F401
 from fixtures.errors import (  # noqa: F401
     format_invalid_value,
-    format_invalid_value_must
+    format_invalid_value_must,
 )
 from fixtures.keys import keypairgen, pubkeygen  # noqa: F401
 from fixtures.logging import log_file  # noqa: F401
@@ -31,7 +31,7 @@ from fixtures.server_config import (  # noqa: F401
     client_conn_config_factory,
     server_config_file,
     tmp_server_config,
-    tmp_server_config_file
+    tmp_server_config_file,
 )
 from fixtures.systemd import tmp_systemd_service  # noqa: F401
 from fixtures.threading import managed_thread, simple_thread  # noqa: F401
@@ -39,5 +39,5 @@ from fixtures.utils import (  # noqa: F401
     free_port,
     lineage_factory,
     tmp_script,
-    wait_for_condition
+    wait_for_condition,
 )
