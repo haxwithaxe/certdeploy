@@ -32,7 +32,7 @@ def test_help_shows_help():
 def test_daemon_runs_daemon(
     managed_thread: Callable[[...], CleanThread],
     tmp_client_config_file: Callable[[...], ConfigContext],
-    tmp_path: pathlib.Path
+    tmp_path: pathlib.Path,
 ):
     """Verify that the daemon runs for the `--daemon` arg.
 
@@ -44,7 +44,7 @@ def test_daemon_runs_daemon(
         update_services=[{'type': 'script', 'name': '/usr/bin/true'}],
         sftpd=dict(listen_address='127.0.0.1'),
         log_level='DEBUG',
-        log_filename=str(client_log)
+        log_filename=str(client_log),
     )
     kill_switch = KillSwitch()
     DeployServer._stop_running = kill_switch
@@ -59,7 +59,7 @@ def test_daemon_runs_daemon(
     # Wait for the magic string to show up in the log
     thread.wait_for_text_in_log(
         RefMsgs.HAS_STARTED.log,
-        lambda _: client_log.read_bytes() if client_log.exists() else []
+        lambda _: client_log.read_bytes() if client_log.exists() else [],
     )
     thread.reraise_unexpected()
     ## Verify the results
@@ -69,7 +69,7 @@ def test_daemon_runs_daemon(
 def test_no_args_runs_deploy(
     log_file: pathlib.Path,
     managed_thread: Callable[[...], CleanThread],
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify that the client deploys when no args are given.
 
@@ -80,12 +80,12 @@ def test_no_args_runs_deploy(
         update_services=[{'type': 'script', 'name': '/usr/bin/true'}],
         sftpd=None,
         log_level='DEBUG',
-        log_filename=str(log_file)
+        log_filename=str(log_file),
     )
     ## Run the test
     results = CliRunner(mix_stderr=True).invoke(
         _app,
-        ['--config', context.config_path]
+        ['--config', context.config_path],
     )
     ## Verify the results
     assert results.exception is None
@@ -95,7 +95,7 @@ def test_no_args_runs_deploy(
 
 def test_overrides_log_level_and_log_filename(
     tmp_client_config_file: Callable[[...], ConfigContext],
-    tmp_path: pathlib.Path
+    tmp_path: pathlib.Path,
 ):
     """Verify that the client log level and log file are overridden.
 
@@ -108,14 +108,19 @@ def test_overrides_log_level_and_log_filename(
         update_services=[{'type': 'script', 'name': '/usr/bin/true'}],
         sftpd=None,
         log_level='CRITICAL',
-        log_filename=str(tmp_path.joinpath('initial.log'))
+        log_filename=str(tmp_path.joinpath('initial.log')),
     )
     ## Run the test
     results = CliRunner(mix_stderr=True).invoke(
         _app,
-        ['--log-level', final_log_level.value,
-         '--log-filename', str(final_log_filename),
-         '--config', context.config_path]
+        [
+            '--log-level',
+            final_log_level.value,
+            '--log-filename',
+            str(final_log_filename),
+            '--config',
+            context.config_path,
+        ],
     )
     ## Verify the results
     assert results.exception is None
@@ -128,7 +133,7 @@ def test_overrides_sftp_log_level_and_sftp_log_filename(
     managed_thread: Callable[[...], CleanThread],
     mock_server_push: Callable[[...], MockPushContext],
     tmp_client_config_file: Callable[[...], ConfigContext],
-    tmp_path: pathlib.Path
+    tmp_path: pathlib.Path,
 ):
     """Verify that the client log level and log file are overridden.
 
@@ -145,8 +150,8 @@ def test_overrides_sftp_log_level_and_sftp_log_filename(
         log_filename=str(client_log),
         sftpd=dict(
             log_level='CRITICAL',
-            log_filename=str(tmp_path.joinpath('initial.log'))
-        )
+            log_filename=str(tmp_path.joinpath('initial.log')),
+        ),
     )
     mock_server = mock_server_push(client_context=context)
     kill_switch = KillSwitch()
@@ -156,21 +161,26 @@ def test_overrides_sftp_log_level_and_sftp_log_filename(
         CliRunner(mix_stderr=True).invoke,
         args=[
             _app,
-            ['--daemon',
-             '--sftp-log-level', final_log_level.value,
-             '--sftp-log-filename', str(final_log_path),
-             '--config', str(context.config_path)]
+            [
+                '--daemon',
+                '--sftp-log-level',
+                final_log_level.value,
+                '--sftp-log-filename',
+                str(final_log_path),
+                '--config',
+                str(context.config_path),
+            ],
         ],
         kill_switch=kill_switch,
-        teardown=kill_switch.teardown(DeployServer)
+        teardown=kill_switch.teardown(DeployServer),
     )
-    thread.wait_for_text_in_log(RefMsgs.HAS_STARTED.log,
-                                lambda x: client_log.read_bytes())
+    thread.wait_for_text_in_log(
+        RefMsgs.HAS_STARTED.log, lambda x: client_log.read_bytes()
+    )
     assert thread.is_alive(), 'The client died too soon.'
     mock_server.push()
     thread.wait_for_text_in_log(
-        ParamikoMsgs.TRANSPORT_EMPTY.log,
-        lambda x: final_log_path.read_bytes()
+        ParamikoMsgs.TRANSPORT_EMPTY.log, lambda x: final_log_path.read_bytes()
     )
     thread.reraise_unexpected()
     ## Verify the result

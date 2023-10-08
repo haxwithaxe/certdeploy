@@ -20,8 +20,7 @@ def test_accepts_valid_name_slice_service(
     context = tmp_client_config_file(
         # In the order Systemd lists them
         update_services=[
-            dict(type='systemd', name=name,
-                 action=action),
+            dict(type='systemd', name=name, action=action),
         ]
     )
     config = ClientConfig.load(context.config_path)
@@ -41,8 +40,7 @@ def test_accepts_valid_name_socket(
     action = 'reload'
     context = tmp_client_config_file(
         update_services=[
-            dict(type='systemd', name=name,
-                 action=action),
+            dict(type='systemd', name=name, action=action),
         ]
     )
     config = ClientConfig.load(context.config_path)
@@ -58,8 +56,7 @@ def test_accepts_valid_name_device(
     action = 'reload'
     context = tmp_client_config_file(
         update_services=[
-            dict(type='systemd', name=name,
-                 action=action),
+            dict(type='systemd', name=name, action=action),
         ]
     )
     config = ClientConfig.load(context.config_path)
@@ -75,8 +72,7 @@ def test_accepts_valid_name_mount(
     action = 'reload'
     context = tmp_client_config_file(
         update_services=[
-            dict(type='systemd', name=name,
-                 action=action),
+            dict(type='systemd', name=name, action=action),
         ]
     )
     config = ClientConfig.load(context.config_path)
@@ -92,8 +88,7 @@ def test_accepts_valid_name_automount(
     action = 'reload'
     context = tmp_client_config_file(
         update_services=[
-            dict(type='systemd', name=name,
-                 action=action),
+            dict(type='systemd', name=name, action=action),
         ]
     )
     config = ClientConfig.load(context.config_path)
@@ -109,8 +104,7 @@ def test_accepts_valid_name_swap(
     action = 'reload'
     context = tmp_client_config_file(
         update_services=[
-            dict(type='systemd', name=name,
-                 action=action),
+            dict(type='systemd', name=name, action=action),
         ]
     )
     config = ClientConfig.load(context.config_path)
@@ -126,8 +120,7 @@ def test_accepts_valid_name_target(
     action = 'reload'
     context = tmp_client_config_file(
         update_services=[
-            dict(type='systemd', name=name,
-                 action=action),
+            dict(type='systemd', name=name, action=action),
         ]
     )
     config = ClientConfig.load(context.config_path)
@@ -143,8 +136,7 @@ def test_accepts_valid_name_path(
     action = 'reload'
     context = tmp_client_config_file(
         update_services=[
-            dict(type='systemd', name=name,
-                 action=action),
+            dict(type='systemd', name=name, action=action),
         ]
     )
     config = ClientConfig.load(context.config_path)
@@ -160,8 +152,7 @@ def test_accepts_valid_name_timer(
     action = 'reload'
     context = tmp_client_config_file(
         update_services=[
-            dict(type='systemd', name=name,
-                 action=action),
+            dict(type='systemd', name=name, action=action),
         ]
     )
     config = ClientConfig.load(context.config_path)
@@ -177,8 +168,7 @@ def test_accepts_valid_name_slice(
     action = 'reload'
     context = tmp_client_config_file(
         update_services=[
-            dict(type='systemd', name=name,
-                 action=action),
+            dict(type='systemd', name=name, action=action),
         ]
     )
     config = ClientConfig.load(context.config_path)
@@ -194,8 +184,7 @@ def test_accepts_valid_name_scope(
     action = 'reload'
     context = tmp_client_config_file(
         update_services=[
-            dict(type='systemd', name=name,
-                 action=action),
+            dict(type='systemd', name=name, action=action),
         ]
     )
     config = ClientConfig.load(context.config_path)

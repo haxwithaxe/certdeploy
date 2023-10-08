@@ -32,7 +32,7 @@ def test_accepts_and_transforms_valid_name(
 
 
 def test_accepts_valid_filters(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify the `docker_service` update service type `name` is parsed.
 

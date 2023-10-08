@@ -16,7 +16,7 @@ from certdeploy.errors import ConfigError
 
 def test_accepts_absolute_name_values(
     tmp_client_config_file: Callable[[...], ConfigContext],
-    tmp_path: pathlib.Path
+    tmp_path: pathlib.Path,
 ):
     """Verify the `script` update service type `name` is parsed.
 
@@ -26,9 +26,7 @@ def test_accepts_absolute_name_values(
     script = tmp_path.joinpath('__this_is_a_test_script.sh')
     script.write_text('')
     context = tmp_client_config_file(
-        update_services=[
-            dict(type='script', name=str(script.absolute()))
-        ]
+        update_services=[dict(type='script', name=str(script.absolute()))]
     )
     config = ClientConfig.load(context.config_path)
     ref_service = Script(dict(name=str(script.absolute())))
@@ -39,7 +37,7 @@ def test_accepts_absolute_name_values(
 
 def test_accepts_relative_name_values(
     tmp_client_config_file: Callable[[...], ConfigContext],
-    tmp_path: pathlib.Path
+    tmp_path: pathlib.Path,
 ):
     """Verify the `script` update service type `name` is parsed.
 
@@ -54,9 +52,7 @@ def test_accepts_relative_name_values(
         script.name
     ), f'{script.name} is in PATH so this test is ambiguous'
     context = tmp_client_config_file(
-        update_services=[
-            dict(type='script', name=script.name)
-        ]
+        update_services=[dict(type='script', name=script.name)]
     )
     config = ClientConfig.load(context.config_path)
     ref_service = Script(dict(name=script.name))
@@ -98,21 +94,20 @@ def test_fails_invalid_name_values(
     """
     script_name = '__certdeploy_test_script_that_does_not_exist'
     ## Verify the script is not in the current directory
-    assert not os.path.exists(script_name), \
-        f'There is cruft "{script_name}" in the temp directory "{os.curdir}".'
+    assert not os.path.exists(
+        script_name
+    ), f'There is cruft "{script_name}" in the temp directory "{os.curdir}".'
     ## Verify the script is not in the PATH
-    assert not shutil.which(script_name), \
-        f'{script_name} is in PATH so this test is ambiguous.'
+    assert not shutil.which(
+        script_name
+    ), f'{script_name} is in PATH so this test is ambiguous.'
     context = tmp_client_config_file(
-        update_services=[
-            dict(type='script', name=script_name)
-        ]
+        update_services=[dict(type='script', name=script_name)]
     )
     with pytest.raises(ConfigError) as err:
         ClientConfig.load(context.config_path)
     assert ClientErrors.format_missing_script_service(
-        script_name,
-        os.path.abspath(script_name)
+        script_name, os.path.abspath(script_name)
     ) in str(err)
 
 
@@ -124,11 +119,13 @@ def test_fails_missing_name_values(
     Verify `ConfigError` is thrown for `name` values that are `None`.
     """
     context = tmp_client_config_file(
-        update_services=[
-            dict(type='script', name=None)
-        ]
+        update_services=[dict(type='script', name=None)],
     )
     with pytest.raises(ConfigError) as err:
         ClientConfig.load(context.config_path)
-    assert ClientErrors.format_invalid_value('name', 'None',
-                                             'script config') in str(err)
+    error_str = ClientErrors.format_invalid_value(
+        'name',
+        'None',
+        'script config',
+    )
+    assert error_str in str(err)

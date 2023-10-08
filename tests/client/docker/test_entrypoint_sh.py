@@ -23,7 +23,7 @@ def test_starts_daemon_by_default(
     client = client_docker_container(
         'entrypoint_sh_default',
         with_docker=True,
-        config=dict(log_level='DEBUG')
+        config=dict(log_level='DEBUG'),
     )
     client.start(timeout=300)
     assert RefMsgs.HAS_STARTED.log in client.logs()
@@ -39,7 +39,7 @@ def test_passes_args_to_client(
     client = client_docker_container(
         'entrypoint_sh_args',
         config=dict(log_level='DEBUG'),
-        entrypoint=['/entrypoint.sh', '--help']
+        entrypoint=['/entrypoint.sh', '--help'],
     )
     client.start(timeout=None)
     client.wait_for_log(RefMsgs.HELP_TEXT.log, timeout=300)

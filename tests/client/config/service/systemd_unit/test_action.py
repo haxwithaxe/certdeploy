@@ -16,8 +16,7 @@ def test_accepts_valid_action_reload(
     action = 'reload'
     config_filename, _ = tmp_client_config_file(
         update_services=[
-            dict(type='systemd', name=name,
-                 action=action),
+            dict(type='systemd', name=name, action=action),
         ]
     )
     config = ClientConfig.load(config_filename)
@@ -33,8 +32,7 @@ def test_accepts_valid_action_restart(
     action = 'restart'
     config_filename, _ = tmp_client_config_file(
         update_services=[
-            dict(type='systemd', name=name,
-                 action=action),
+            dict(type='systemd', name=name, action=action),
         ]
     )
     config = ClientConfig.load(config_filename)
@@ -54,8 +52,7 @@ def test_accepts_valid_action_none(
     action = None
     config_filename, _ = tmp_client_config_file(
         update_services=[
-            dict(type='systemd', name=name,
-                 action=action),
+            dict(type='systemd', name=name, action=action),
         ]
     )
     config = ClientConfig.load(config_filename)
@@ -75,8 +72,7 @@ def test_accepts_valid_action_empty(
     action = ''
     config_filename, _ = tmp_client_config_file(
         update_services=[
-            dict(type='systemd', name=name,
-                 action=action),
+            dict(type='systemd', name=name, action=action),
         ]
     )
     config = ClientConfig.load(config_filename)

@@ -14,7 +14,7 @@ from certdeploy.client.update import update_systemd_unit
 
 def test_restarts_systemd_service(
     tmp_client_config: Callable[[...], ClientConfig],
-    tmp_systemd_service: Callable[[str, bool], tuple[str, Script]]
+    tmp_systemd_service: Callable[[str, bool], tuple[str, Script]],
 ):
     """Verify that the systemctl is called correctly.
 
@@ -22,19 +22,17 @@ def test_restarts_systemd_service(
     """
     unit_name, mock_systemctl = tmp_systemd_service()
     client_config = tmp_client_config(
-        fail_fast=True,
-        systemd_exec=str(mock_systemctl.path)
+        fail_fast=True, systemd_exec=str(mock_systemctl.path)
     )
     update_systemd_unit(
-        SystemdUnit({'name': unit_name, 'action': 'restart'}),
-        client_config
+        SystemdUnit({'name': unit_name, 'action': 'restart'}), client_config
     )
     assert mock_systemctl.flag_text == SystemdFlags.RESTARTED
 
 
 def test_reloads_systemd_service(
     tmp_client_config: Callable[[...], ClientConfig],
-    tmp_systemd_service: Callable[[str, bool], tuple[str, Script]]
+    tmp_systemd_service: Callable[[str, bool], tuple[str, Script]],
 ):
     """Verify that the systemctl is called correctly.
 
@@ -42,19 +40,17 @@ def test_reloads_systemd_service(
     """
     unit_name, mock_systemctl = tmp_systemd_service()
     client_config = tmp_client_config(
-        fail_fast=True,
-        systemd_exec=str(mock_systemctl.path)
+        fail_fast=True, systemd_exec=str(mock_systemctl.path)
     )
     update_systemd_unit(
-        SystemdUnit({'name': unit_name, 'action': 'reload'}),
-        client_config
+        SystemdUnit({'name': unit_name, 'action': 'reload'}), client_config
     )
     assert mock_systemctl.flag_text == SystemdFlags.RELOADED
 
 
 def test_fails_fast_when_systemd_service_fails(
     tmp_client_config: Callable[[...], ClientConfig],
-    tmp_systemd_service: Callable[[str, bool], tuple[str, Script]]
+    tmp_systemd_service: Callable[[str, bool], tuple[str, Script]],
 ):
     """Verify that `update_systemd_unit` fails fast.
 
@@ -63,12 +59,10 @@ def test_fails_fast_when_systemd_service_fails(
     """
     unit_name, mock_systemctl = tmp_systemd_service(fail=True)
     client_config = tmp_client_config(
-        fail_fast=True,
-        systemd_exec=str(mock_systemctl.path)
+        fail_fast=True, systemd_exec=str(mock_systemctl.path)
     )
     with pytest.raises(SystemdError):
         update_systemd_unit(
-            SystemdUnit({'name': unit_name, 'action': 'reload'}),
-            client_config
+            SystemdUnit({'name': unit_name, 'action': 'reload'}), client_config
         )
     assert mock_systemctl.flag_text == SystemdFlags.FAILED

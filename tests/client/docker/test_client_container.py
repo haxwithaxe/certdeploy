@@ -9,7 +9,7 @@ from fixtures.client_config import client_sftpd_config
 from fixtures.docker_container import (
     ClientContainer,
     ContainerStatus,
-    ContainerWrapper
+    ContainerWrapper,
 )
 from fixtures.mock_server import MockPushContext
 
@@ -22,7 +22,7 @@ def test_updates_other_container(
     canned_docker_container: Callable[[...], ContainerWrapper],
     client_docker_container: Callable[[...], ClientContainer],
     mock_server_push: Callable[[...], MockPushContext],
-    tmp_path: pathlib.Path
+    tmp_path: pathlib.Path,
 ):
     """Verify that the client container can restart another container.
 
@@ -42,8 +42,8 @@ def test_updates_other_container(
             update_delay='1s',
             update_services=[dict(type='docker_container', name=canned.name)],
             log_level='DEBUG',
-            sftpd=client_sftpd_config(listen_address='0.0.0.0')
-        )
+            sftpd=client_sftpd_config(listen_address='0.0.0.0'),
+        ),
     )
     # Take the before measurement
     canned_started_at = canned.started_at
@@ -57,7 +57,7 @@ def test_updates_other_container(
         client_address=client.ipv4_address,
         client_config=client.config,
         client_keypair=client.client_keypair,
-        server_keypair=client.server_keypair
+        server_keypair=client.server_keypair,
     )
     server_context.push()
     # Wait for the update workflow to finish

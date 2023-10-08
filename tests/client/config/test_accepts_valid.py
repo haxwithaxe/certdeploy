@@ -10,7 +10,7 @@ from certdeploy.client.config.client import SFTPDConfig
 
 
 def test_config_base_kitchen_sink(
-        tmp_client_config_file: Callable[[], ConfigContext]
+    tmp_client_config_file: Callable[[], ConfigContext],
 ):
     """Quickly verify the kitchen sink is validated.
 
@@ -32,8 +32,8 @@ def test_config_base_kitchen_sink(
 
 
 def test_config_sftpd_kitchen_sink(
-        tmp_client_config_file: Callable[[], ConfigContext],
-        keypairgen: Callable[[], KeyPair]
+    tmp_client_config_file: Callable[[], ConfigContext],
+    keypairgen: Callable[[], KeyPair],
 ):
     """Quickly verify the SFTPD kitchen sink is validated.
 
@@ -56,23 +56,18 @@ def test_config_sftpd_kitchen_sink(
             server_pubkey_filename='/dev/null.pub',
             log_level='DEBUG',
             log_filename='/dev/stdout',
-            socket_backlog=13
-        )
+            socket_backlog=13,
+        ),
     )
     config = ClientConfig.load(context.config_path)
-    assert (config.sftpd_config.listen_port ==
-            context.config['sftpd']['listen_port'])
-    assert (config.sftpd_config.listen_address ==
-            context.config['sftpd']['listen_address'])
-    assert config.sftpd_config.username == context.config['sftpd']['username']
-    assert (config.sftpd_config.privkey_filename ==
-            context.config['sftpd']['privkey_filename'])
-    assert (config.sftpd_config.server_pubkey ==
-            context.config['sftpd']['server_pubkey'])
-    assert (config.sftpd_config.server_pubkey_filename ==
-            context.config['sftpd']['server_pubkey_filename'])
-    assert config.sftpd_config.log_level == context.config['sftpd']['log_level']
-    assert (config.sftpd_config.log_filename ==
-            context.config['sftpd']['log_filename'])
-    assert (config.sftpd_config.socket_backlog ==
-            context.config['sftpd']['socket_backlog'])
+    sftp = config.sftp_config
+    ctx = context.config['sftpd']
+    assert sftp.listen_port == ctx['listen_port']
+    assert sftp.listen_address == ctx['listen_address']
+    assert sftp.username == ctx['username']
+    assert sftp.privkey_filename == ctx['privkey_filename']
+    assert sftp.server_pubkey == ctx['server_pubkey']
+    assert sftp.server_pubkey_filename == ctx['server_pubkey_filename']
+    assert sftp.log_level == ctx['log_level']
+    assert sftp.log_filename == ctx['log_filename']
+    assert sftp.socket_backlog == ctx['socket_backlog']
