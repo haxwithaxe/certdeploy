@@ -12,7 +12,7 @@ from certdeploy.server._main import _app
 
 def test_as_hook(
     log_file: pathlib.Path,
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify that the server runs as a hook.
 
@@ -23,16 +23,16 @@ def test_as_hook(
     """
     # String taken from certdeploy.server._main
     context = tmp_server_config_file(
-        fail_fast=True,
-        log_level='DEBUG',
-        log_filename=str(log_file)
+        fail_fast=True, log_level='DEBUG', log_filename=str(log_file)
     )
     ## Run the test
     results = CliRunner(mix_stderr=True).invoke(
         _app,
         args=['--config', context.config_path],
-        env={'RENEWED_LINEAGE': 'test.example.com',
-             'RENEWED_DOMAINS': 'test.example.com'}
+        env={
+            'RENEWED_LINEAGE': 'test.example.com',
+            'RENEWED_DOMAINS': 'test.example.com',
+        },
     )
     ## Verify the results
     assert results.exception is None

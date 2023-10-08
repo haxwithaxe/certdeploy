@@ -22,11 +22,8 @@ def test_certbot_passthrough(
     # Setup the server container
     server = server_docker_container(
         'certbot_passthrough',
-        config=dict(
-            fail_fast=True,
-            log_level='DEBUG'
-        ),
-        entrypoint=['/entrypoint.sh', '--help']
+        config=dict(fail_fast=True, log_level='DEBUG'),
+        entrypoint=['/entrypoint.sh', '--help'],
     )
     # Start and wait for the target log message to appear
     server.start(timeout=None)
@@ -46,11 +43,8 @@ def test_renew_when_env(
     # Setup the server container
     server = server_docker_container(
         'certdeploy_renew_env',
-        config=dict(
-            fail_fast=True,
-            log_level='DEBUG'
-        ),
-        environment={'CERTDEPLOY_SERVER_RENEW_ONLY': 'true'}
+        config=dict(fail_fast=True, log_level='DEBUG'),
+        environment={'CERTDEPLOY_SERVER_RENEW_ONLY': 'true'},
     )
     # Start and wait for the target log message to appear
     server.start(timeout=None)
@@ -70,10 +64,7 @@ def test_runs_daemon_by_default(
     # Setup the server container
     server = server_docker_container(
         'certdeploy_daemon_default',
-        config=dict(
-            fail_fast=True,
-            log_level='DEBUG'
-        )
+        config=dict(fail_fast=True, log_level='DEBUG'),
     )
     # Start and wait for the container and daemon to be running
     server.start(timeout=None)
@@ -94,11 +85,8 @@ def test_runs_cli_with_args(
     # Setup the server container
     server = server_docker_container(
         'certdeploy_command_w_args',
-        config=dict(
-            fail_fast=True,
-            log_level='DEBUG'
-        ),
-        entrypoint=['/entrypoint.sh', 'certdeploy-server', '--help']
+        config=dict(fail_fast=True, log_level='DEBUG'),
+        entrypoint=['/entrypoint.sh', 'certdeploy-server', '--help'],
     )
     # Start and wait for the target log message to appear
     server.start(timeout=None)

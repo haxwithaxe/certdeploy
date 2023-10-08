@@ -12,7 +12,7 @@ def test_retries_on_server_interval_is_timely(
     client_conn_config_factory: callable,
     lineage_factory: callable,
     mock_fail_client: callable,
-    tmp_server_config: callable
+    tmp_server_config: callable,
 ):
     """Verify that the `push_retry_interval` retries on the given interval."""
     ## Define some variables to avoid magic values
@@ -26,7 +26,7 @@ def test_retries_on_server_interval_is_timely(
     client_config = client_conn_config_factory(
         address=client_server.address,
         port=client_server.port,
-        domains=[lineage_name]
+        domains=[lineage_name],
     )
     ## Setup server
     server_config = tmp_server_config(
@@ -51,16 +51,16 @@ def test_retries_on_server_interval_is_timely(
     # Now that we know the length is enough get the time difference
     time_diff = client_access_log[1] - client_access_log[0]
     # The interval is less than the maximum number of seconds
-    assert time_diff.seconds <= push_retry_interval+MAX_SECONDS_OFF
+    assert time_diff.seconds <= push_retry_interval + MAX_SECONDS_OFF
     # The interval is greater than or equal to the nominal interval
     assert time_diff.seconds >= push_retry_interval
 
 
 def test_retries_on_client_interval_is_timely(
-        client_conn_config_factory: callable,
-        lineage_factory: callable,
-        mock_fail_client: callable,
-        tmp_server_config: callable
+    client_conn_config_factory: callable,
+    lineage_factory: callable,
+    mock_fail_client: callable,
+    tmp_server_config: callable,
 ):
     """Verify that the client `push_retry_interval` overrides the server."""
     ## Define some variables to avoid magic values
@@ -76,7 +76,7 @@ def test_retries_on_client_interval_is_timely(
         address=client_server.address,
         port=client_server.port,
         domains=[lineage_name],
-        push_retry_interval=client_push_retry_interval
+        push_retry_interval=client_push_retry_interval,
     )
     ## Setup server
     server_config = tmp_server_config(
@@ -101,6 +101,6 @@ def test_retries_on_client_interval_is_timely(
     # Now that we know the length is enough get the time difference
     time_diff = client_access_log[1] - client_access_log[0]
     # The interval is less than or equal to the maximum number of seconds
-    assert time_diff.seconds <= client_push_retry_interval+MAX_SECONDS_OFF
+    assert time_diff.seconds <= client_push_retry_interval + MAX_SECONDS_OFF
     # The interval is greater than or equal to the nominal interval
     assert time_diff.seconds >= client_push_retry_interval

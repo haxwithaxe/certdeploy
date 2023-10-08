@@ -9,7 +9,7 @@ def test_tries_on_interval(
     client_conn_config_factory: callable,
     lineage_factory: callable,
     mock_fail_client: callable,
-    tmp_server_config: callable
+    tmp_server_config: callable,
 ):
     """Verify that the `push_interval` tries on an interval."""
     ## Define some variables to avoid magic values
@@ -23,19 +23,19 @@ def test_tries_on_interval(
     client0_config = client_conn_config_factory(
         address=client0_server.address,
         port=client0_server.port,
-        domains=[lineage_name]
+        domains=[lineage_name],
     )
     client1_server = mock_fail_client(client_address)
     client1_config = client_conn_config_factory(
         address=client1_server.address,
         port=client1_server.port,
-        domains=[lineage_name]
+        domains=[lineage_name],
     )
     ## Setup server
     server_config = tmp_server_config(
         client_configs=[client0_config, client1_config],
         push_retries=push_retry_count,
-        push_interval=push_interval
+        push_interval=push_interval,
     )
     ## Setup lineage
     # The filename doesn't matter because it will never get far enough to
@@ -57,6 +57,6 @@ def test_tries_on_interval(
     # Now that we know the length is enough get the time difference
     time_diff = client1_access_log[0] - client0_access_log[0]
     # The interval is less than the maximum number of seconds
-    assert time_diff.seconds <= push_interval+MAX_SECONDS_OFF
+    assert time_diff.seconds <= push_interval + MAX_SECONDS_OFF
     # The interval is greater than or equal to the nominal interval
     assert time_diff.seconds >= push_interval

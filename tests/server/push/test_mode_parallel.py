@@ -16,7 +16,7 @@ def test_push_mode_parallel_pushes_all_at_once(
     client_conn_config_factory: Callable[[...], dict],
     lineage_factory: Callable[[str, str, ...], pathlib.Path],
     mock_fail_client: Callable[[...], MockClientTCPServer],
-    tmp_server_config: Callable[[...], ServerConfig]
+    tmp_server_config: Callable[[...], ServerConfig],
 ):
     """Verify that the `parallel` `push_mode` pushes to clients all at once.
 
@@ -37,7 +37,7 @@ def test_push_mode_parallel_pushes_all_at_once(
         address=client_server0.address,
         port=client_server0.port,
         domains=[lineage_name],
-        push_retries=push_retry_count
+        push_retries=push_retry_count,
     )
     ## Setup client1
     client_server1 = mock_fail_client(client_address)
@@ -45,14 +45,14 @@ def test_push_mode_parallel_pushes_all_at_once(
         address=client_server1.address,
         port=client_server1.port,
         domains=[lineage_name],
-        push_retries=push_retry_count
+        push_retries=push_retry_count,
     )
     ## Setup Server
     server_config = tmp_server_config(
         client_configs=[client_config0, client_config1],
         push_retries=push_retry_count,
         push_interval=push_interval,
-        push_mode=PushMode.PARALLEL.value
+        push_mode=PushMode.PARALLEL.value,
     )
     ## Setup lineage
     # The filename doesn't matter because it will never get far enough to

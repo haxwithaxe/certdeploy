@@ -16,7 +16,7 @@ def test_fail_fast_on_serial_push(
     client_conn_config_factory: Callable[[...], dict],
     lineage_factory: Callable[[str, str, ...], pathlib.Path],
     mock_fail_client: Callable[[...], MockClientTCPServer],
-    tmp_server_config: Callable[[...], ServerConfig]
+    tmp_server_config: Callable[[...], ServerConfig],
 ):
     """Verify that the `fail_fast` config causes early exit."""
     ## Define some variables to avoid magic values
@@ -30,13 +30,13 @@ def test_fail_fast_on_serial_push(
     client0_config = client_conn_config_factory(
         address=client0_server.address,
         port=client0_server.port,
-        domains=[lineage_name]
+        domains=[lineage_name],
     )
     client1_server = mock_fail_client(client_address)
     client1_config = client_conn_config_factory(
         address=client1_server.address,
         port=client1_server.port,
-        domains=[lineage_name]
+        domains=[lineage_name],
     )
     ## Setup server
     server_config = tmp_server_config(
@@ -44,7 +44,7 @@ def test_fail_fast_on_serial_push(
         fail_fast=True,
         push_mode=PushMode.SERIAL.value,
         push_retries=push_retries,
-        log_level='DEBUG'
+        log_level='DEBUG',
     )
     ## Setup the lineage
     # The filename doesn't matter because it will never get far enough to
@@ -69,7 +69,7 @@ def test_fail_fast_on_parallel_push(
     client_conn_config_factory: Callable[[...], dict],
     lineage_factory: Callable[[str, str, ...], pathlib.Path],
     mock_fail_client: Callable[[...], MockClientTCPServer],
-    tmp_server_config: Callable[[...], ServerConfig]
+    tmp_server_config: Callable[[...], ServerConfig],
 ):
     """Verify that the `fail_fast` config causes earlyish exit.
 
@@ -87,20 +87,20 @@ def test_fail_fast_on_parallel_push(
     client0_config = client_conn_config_factory(
         address=client0_server.address,
         port=client0_server.port,
-        domains=[lineage_name]
+        domains=[lineage_name],
     )
     client1_server = mock_fail_client(client_address)
     client1_config = client_conn_config_factory(
         address=client1_server.address,
         port=client1_server.port,
-        domains=[lineage_name]
+        domains=[lineage_name],
     )
     ## Setup server
     server_config = tmp_server_config(
         client_configs=[client0_config, client1_config],
         fail_fast=True,
         push_mode=PushMode.PARALLEL.value,
-        push_retries=push_retries
+        push_retries=push_retries,
     )
     ## Setup the lineage
     # The filename doesn't matter because it will never get far enough to

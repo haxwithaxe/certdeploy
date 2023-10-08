@@ -33,7 +33,7 @@ def test_help_shows_help():
 def test_daemon_runs_daemon(
     log_file: pathlib.Path,
     managed_thread: Callable[[...], CleanThread],
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify that the daemon runs for the `--daemon` arg.
 
@@ -42,9 +42,7 @@ def test_daemon_runs_daemon(
     # String taken from certdeploy.client.daemon.DeployServer.serve_forever
     # The `False` is the expected value of `one_shot` given it's daemon mode
     context = tmp_server_config_file(
-        fail_fast=True,
-        log_level='DEBUG',
-        log_filename=str(log_file)
+        fail_fast=True, log_level='DEBUG', log_filename=str(log_file)
     )
     kill_switch = KillSwitch()
     Server._stop_running = kill_switch
@@ -53,11 +51,12 @@ def test_daemon_runs_daemon(
         CliRunner(mix_stderr=True).invoke,
         args=[_app, ['--daemon', '--config', context.config_path]],
         kill_switch=kill_switch,
-        teardown=kill_switch.teardown(Server)
+        teardown=kill_switch.teardown(Server),
     )
     # Wait for the magic string to show up in the log
-    thread.wait_for_text_in_log(RefMsgs.DAEMON_HAS_STARTED.log,
-                                lambda x: log_file.read_bytes())
+    thread.wait_for_text_in_log(
+        RefMsgs.DAEMON_HAS_STARTED.log, lambda x: log_file.read_bytes()
+    )
     thread.reraise_unexpected()
     ## Verify the results
     assert RefMsgs.DAEMON_HAS_STARTED.log in log_file.read_bytes()
@@ -66,7 +65,7 @@ def test_daemon_runs_daemon(
 @pytest.mark.slow
 def test_renew_runs_renew(
     log_file: pathlib.Path,
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify that renew runs for the `--renew` arg.
 
@@ -76,12 +75,11 @@ def test_renew_runs_renew(
         renew_exec='/usr/bin/true',
         fail_fast=True,
         log_level='DEBUG',
-        log_filename=str(log_file)
+        log_filename=str(log_file),
     )
     ## Run the test
     results = CliRunner(mix_stderr=True).invoke(
-        _app,
-        ['--renew', '--config', context.config_path]
+        _app, ['--renew', '--config', context.config_path]
     )
     ## Verify the results
     assert results.exception is None
@@ -90,21 +88,18 @@ def test_renew_runs_renew(
 
 def test_push_runs_push(
     log_file: pathlib.Path,
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify that the daemon runs for the `--daemon` arg.
 
     This also covers the `--config` option loading the given config file.
     """
     context = tmp_server_config_file(
-        fail_fast=True,
-        log_level='DEBUG',
-        log_filename=str(log_file)
+        fail_fast=True, log_level='DEBUG', log_filename=str(log_file)
     )
     ## Run the test
     results = CliRunner(mix_stderr=True).invoke(
-        _app,
-        ['--push', '--config', context.config_path]
+        _app, ['--push', '--config', context.config_path]
     )
     ## Verify the results
     assert results.exception is None
@@ -113,7 +108,7 @@ def test_push_runs_push(
 
 def test_no_args_with_config_exits(
     log_file: pathlib.Path,
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify the server errors out when no args besides `--config` are given.
 
@@ -121,14 +116,12 @@ def test_no_args_with_config_exits(
     """
     # String taken from certdeploy.server._main
     context = tmp_server_config_file(
-        fail_fast=True,
-        log_level='DEBUG',
-        log_filename=str(log_file)
+        fail_fast=True, log_level='DEBUG', log_filename=str(log_file)
     )
     ## Run the test
     results = CliRunner(mix_stderr=True).invoke(
         _app,
-        ['--config', context.config_path]
+        ['--config', context.config_path],
     )
     ## Verify the results
     assert isinstance(results.exception, SystemExit)
@@ -139,7 +132,7 @@ def test_no_args_with_config_exits(
 @pytest.mark.real
 def test_no_args_exits(
     caplog: pytest.LogCaptureFixture,
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify that the server errors out when no args are given.
 
@@ -148,9 +141,10 @@ def test_no_args_exits(
     This test uses `caplog` because the error doesn't show up in the
     `results.output`. It shows up in stdout or stderr when run manually.
     """
-    assert not os.path.exists(DEFAULT_SERVER_CONFIG), \
-        (f'The default server config ({DEFAULT_SERVER_CONFIG}) exists. This '
-         'tests requires that it not exist.')
+    assert not os.path.exists(DEFAULT_SERVER_CONFIG), (
+        f'The default server config ({DEFAULT_SERVER_CONFIG}) exists. This '
+        'tests requires that it not exist.'
+    )
     ## Run the test
     results = CliRunner(mix_stderr=True).invoke(_app, [])
     ## Verify the results
@@ -161,7 +155,7 @@ def test_no_args_exits(
 
 def test_overrides_log_level_and_log_filename(
     log_file: pathlib.Path,
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify that the client log level and log file are overridden.
 
@@ -169,19 +163,20 @@ def test_overrides_log_level_and_log_filename(
     """
     final_log_level = LogLevel.DEBUG
     context = tmp_server_config_file(
-        fail_fast=True,
-        log_level='CRITICAL',
-        log_filename='/dev/null'
+        fail_fast=True, log_level='CRITICAL', log_filename='/dev/null'
     )
     ## Run the test
     results = CliRunner(mix_stderr=True).invoke(
         _app,
         [
             '--push',
-            '--log-level', final_log_level.value,
-            '--log-filename', str(log_file),
-            '--config', context.config_path
-        ]
+            '--log-level',
+            final_log_level.value,
+            '--log-filename',
+            str(log_file),
+            '--config',
+            context.config_path,
+        ],
     )
     ## Verify the results
     # If an exception occurred the test failed
@@ -194,7 +189,7 @@ def test_overrides_log_level_and_log_filename(
 
 def test_overrides_sftp_log_level_and_sftp_log_filename(
     log_file: pathlib.Path,
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify that the client log level and log file are overridden.
 
@@ -202,19 +197,20 @@ def test_overrides_sftp_log_level_and_sftp_log_filename(
     """
     final_log_level = LogLevel.DEBUG
     context = tmp_server_config_file(
-        fail_fast=True,
-        sftp_log_level='CRITICAL',
-        sftp_log_filename='/dev/null'
+        fail_fast=True, sftp_log_level='CRITICAL', sftp_log_filename='/dev/null'
     )
     ## Run the test
     results = CliRunner(mix_stderr=True).invoke(
         _app,
         [
             '--push',
-            '--sftp-log-level', final_log_level.value,
-            '--sftp-log-filename', str(log_file),
-            '--config', context.config_path
-        ]
+            '--sftp-log-level',
+            final_log_level.value,
+            '--sftp-log-filename',
+            str(log_file),
+            '--config',
+            context.config_path,
+        ],
     )
     ## Verify the results
     assert results.exception is None
@@ -226,7 +222,7 @@ def test_overrides_sftp_log_level_and_sftp_log_filename(
 
 def test_push_lineage_and_domains_queues_and_pushes(
     log_file: pathlib.Path,
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify that the server queues and pushes.
 
@@ -240,20 +236,24 @@ def test_push_lineage_and_domains_queues_and_pushes(
     #   default one in the `tmp_server_config_file` currently is.
     lineage_domain = 'dont.match'
     context = tmp_server_config_file(
-        fail_fast=True,
-        log_level='DEBUG',
-        log_filename=str(log_file)
+        fail_fast=True, log_level='DEBUG', log_filename=str(log_file)
     )
     for client in context.config['client_configs']:
-        assert lineage_domain not in client['domains'], \
-            '`lineage_domain` must not match configured client domains'
+        assert (
+            lineage_domain not in client['domains']
+        ), '`lineage_domain` must not match configured client domains'
     ## Run the test
     results = CliRunner(mix_stderr=True).invoke(
         _app,
-        args=['--push',
-              '--lineage', lineage_domain,
-              '--domains', lineage_domain,
-              '--config', context.config_path]
+        args=[
+            '--push',
+            '--lineage',
+            lineage_domain,
+            '--domains',
+            lineage_domain,
+            '--config',
+            context.config_path,
+        ],
     )
     ## Verify the results
     assert results.exception is None

@@ -24,7 +24,7 @@ def canned_client_conn_config(
         address=client_server.address,
         port=client_server.port,
         domains=[_TEST_LINEAGE_NAME],
-        push_retries=0
+        push_retries=0,
     )
     return client_config
 
@@ -48,7 +48,7 @@ def test_logs_at_given_level_to_given_file(
         log_level='DEBUG',
         log_filename=str(log_file),
         sftp_log_level='CRITICAL',
-        sftp_log_filename='/dev/null'
+        sftp_log_filename='/dev/null',
     )
     ## Setup lineage
     # The filename doesn't matter because it will never get far enough to
@@ -82,7 +82,7 @@ def test_sftp_client_logs_at_given_level_to_given_file(
         log_level='CRITICAL',
         log_filename='/dev/null',
         sftp_log_level='DEBUG',
-        sftp_log_filename=str(log_file)
+        sftp_log_filename=str(log_file),
     )
     ## Setup lineage
     # The filename doesn't matter because it will never get far enough to
