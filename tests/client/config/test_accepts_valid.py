@@ -60,7 +60,7 @@ def test_config_sftpd_kitchen_sink(
         ),
     )
     config = ClientConfig.load(context.config_path)
-    sftp = config.sftp_config
+    sftp = config.sftpd_config
     ctx = context.config['sftpd']
     assert sftp.listen_port == ctx['listen_port']
     assert sftp.listen_address == ctx['listen_address']
