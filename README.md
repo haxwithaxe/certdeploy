@@ -313,6 +313,7 @@ Commandline options override environment variables.
 * `docker_url` (optional) - The URL to the Docker API. Defaults to the local socket location.
 * `log_level` (optional) - The logging level. Options are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, ``CRITICAL``. Defaults to ``ERROR``.  <!--DEFAULT FROM CODE - certdeploy.DEFAULT_LOG_LEVEL -->
 * `log_filename` (optional) - The path to the log file. Defaults to the default global log file (``/dev/stdout``).  <!--DEFAULT FROM CODE - certdeploy.DEFAULT_LOG_FILENAME -->
+* `file_permissions` (optional) - The permissions to set the cert files and lineage directories to in `destination`. By default the permissions are not actively set by the client. The CertDeploy server (SFTP client) sets the permissions with the attributes of the files from the lineage directory when it transfers them and the client moves the files that were transfered without altering the permissions. See
 
 This is an example of a hyper simple cron job or Systemd timer run client config that just moves the certs and doesn't restart any services. It just moves certificates from the default `source` to `destination`.
 
@@ -396,6 +397,22 @@ update_services:
     action: reload
 ```
 
+#### File Permissions
+The permissions to set the cert files and lineage directories to in `destination` directory. It is a dictionary of permissions options. All options are optional. Any combination is valid.
+* `mode` (optional) - The file mode in an octal string or as a base10 integer. A safe value is ``0o600`` (only the owner can read or write the certificates) For example the following are valid and equivalent:
+  * ``'0o600'`` - A string with an octal prefix.
+  * ``'0600'`` - A plain octal string. The sticky bit is not used but if it's given and is ``0`` it's ignored.
+  * ``384`` - As a base10 integer.
+* `directory_mode` (optional) - The mode for the lineage directory. Same criteria as `mode`, just don't forget to set the execute bit for the relevant parts. A safe value is ``0o700`` (only the owner is allowed to read write and enumerate the directory).
+* `owner` (optional) - The owner's UID or username. This defaults to the user the client is run as.
+* `group` (optional) - The group's GID or group name. This defaults to the primary group user the client is run as or the GID set for the process when running the client.
+
+By default the permissions are not actively set by the client. The CertDeploy server (SFTP client) sets the permissions with the attributes of the files from the lineage directory when it transfers them and the client moves the files that were transferred without altering the permissions.
+
+##### Security Considerations
+* Avoid setting the rightmost bit to anything but ``0``. These permissions are for files that shouldn't be accessible to anyone that doesn't absolutely need to read them.
+* Avoid setting the owner or group to ``nobody`` as it's often oversubscribed by other services. If you need to set user or group to something other than ``root`` try to use a UID and GID that aren't used by other processes on the system and add the users that need access to the unique group.
+
 
 #### Daemon Specific Settings
 The `sftpd` section contains the settings for the SFTP server that accepts incoming certs from the CertDeploy server.
@@ -419,7 +436,8 @@ sftpd:
 
 
 #### Full Client Config Example
-This config accepts new certs via SFTP into the default source directory. Moves them to the given destination directory. Then updates services. It restarts the nginx systemd service. It runs two scripts. It restarts a docker container. It force-updates docker swarm services based on two sets of filters. Logs CertDeploy logs at ``DEBUG`` level to ``/dev/stdout`` and SFTP logs to ``/dev/stderr`` at ``CITICAL`` level. The updates aren't guaranteed to be in any given order for now. The plan is to make the order something users set.
+This config accepts new certs via SFTP into the default source directory. Moves them to the given destination directory. Then updates services. It restarts the nginx systemd service. It runs two scripts. It restarts a docker container. It force-updates docker swarm services based on two sets of filters. Logs CertDeploy logs at ``DEBUG`` level to ``/dev/stdout`` and SFTP logs to ``/dev/stderr`` at ``CITICAL`` level. It also sets the mode of the lineage directories to ``0o700`` and certs to ``Oo600`` all owned by root when the certs are deployed to the `destination` directory.
+The updates aren't guaranteed to be in any given order for now. The plan is to make the order something users set.
 
 ```yaml
 ---
@@ -439,6 +457,11 @@ update_services:
         - restart_on_cert_update
 log_filename: /dev/stdout
 log_level: DEBUG
+file_permissions:
+  mode: 0o600
+  directory_mode: 0o700
+  owner: root
+  group: root
 sftpd:
   listen_port: 33774
   privkey_filename: /etc/certdeploy/client_key
