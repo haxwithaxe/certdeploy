@@ -13,7 +13,7 @@ from ... import (
 
 # fmt: on
 from ...errors import ConfigError, ConfigInvalid, ConfigInvalidPath
-from .client import Config, SFTPDConfig
+from .client import Config, Permissions, SFTPDConfig
 from .service import Service
 
 _DURATION_FACTORS = {
@@ -89,3 +89,11 @@ class ClientConfig(Config):
             except TypeError as err:
                 raise ConfigInvalid('update_delay', self.update_delay) from err
         self.update_delay_seconds = int(seconds)
+        try:
+            self.permissions = Permissions(**self.file_permissions)
+        except TypeError as err:
+            if 'got an unexpected keyword argument' in str(err):
+                raise ConfigError(
+                    f'Invalid Permissions config option: {err}',
+                ) from err
+            raise

@@ -17,7 +17,11 @@ def test_config_base_kitchen_sink(
     Verify all the things that need to be validated in
     `certdeploy.client.config.client.Config` pass valid values.
     """
-    context = tmp_client_config_file(update_delay='10s', sftpd={})
+    context = tmp_client_config_file(
+        update_delay='10s',
+        sftpd={},
+        file_permissions={},
+    )
     config = ClientConfig.load(context.config_path)
     assert config.destination == context.config['destination']
     assert config.source == context.config['source']
@@ -29,6 +33,10 @@ def test_config_base_kitchen_sink(
     assert config.update_delay == context.config['update_delay']
     assert config.sftpd_config == SFTPDConfig()
     assert config.update_delay_seconds == 10
+    assert config.permissions.owner is None
+    assert config.permissions.group is None
+    assert config.permissions.mode is None
+    assert config.permissions.directory_mode is None
 
 
 def test_config_sftpd_kitchen_sink(
@@ -71,3 +79,51 @@ def test_config_sftpd_kitchen_sink(
     assert sftp.log_level == ctx['log_level']
     assert sftp.log_filename == ctx['log_filename']
     assert sftp.socket_backlog == ctx['socket_backlog']
+
+
+def test_config_file_permissions_from_strings(
+    tmp_client_config_file: Callable[[], ConfigContext],
+):
+    """Quickly verify the file permissions are validated.
+
+    Verify all the things that need to be validated in
+    `certdeploy.client.config.client.Permissions` pass valid string values.
+    """
+    context = tmp_client_config_file(
+        sftpd={},
+        file_permissions={
+            'owner': 'root',
+            'group': 'root',
+            'mode': '0o600',
+            'directory_mode': '0700',
+        },
+    )
+    config = ClientConfig.load(context.config_path)
+    assert config.permissions.owner == 'root'
+    assert config.permissions.group == 'root'
+    assert config.permissions.mode == 384  # 0o600
+    assert config.permissions.directory_mode == 448  # 0o700
+
+
+def test_config_file_permissions_from_ints(
+    tmp_client_config_file: Callable[[], ConfigContext],
+):
+    """Quickly verify the file permissions are validated.
+
+    Verify all the things that need to be validated in
+    `certdeploy.client.config.client.Permissions` pass valid int values.
+    """
+    context = tmp_client_config_file(
+        sftpd={},
+        file_permissions={
+            'owner': 0,
+            'group': 0,
+            'mode': 384,  # 0o600
+            'directory_mode': 448,  # 0o700
+        },
+    )
+    config = ClientConfig.load(context.config_path)
+    assert config.permissions.owner == 0
+    assert config.permissions.group == 0
+    assert config.permissions.mode == 384
+    assert config.permissions.directory_mode == 448

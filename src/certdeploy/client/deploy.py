@@ -4,6 +4,7 @@ import glob
 import os
 import re
 import shutil
+from typing import Union
 
 from . import log
 from .config import ClientConfig
@@ -68,6 +69,27 @@ def needs_update(
     return True
 
 
+def _set_permissions(
+    path: os.PathLike,
+    mode: int,
+    owner: Union[int, None, str],
+    group: Union[int, None, str],
+):
+    log.debug(
+        'Setting permissions: path=%s, mode=%s, owner=%s, group=%s',
+        path,
+        mode if mode is None else oct(mode),
+        owner,
+        group,
+    )
+    if mode is not None:
+        os.chmod(path, mode)
+    if owner is not None:
+        shutil.chown(path, owner)
+    if group is not None:
+        shutil.chown(path, group=group)
+
+
 def deploy(config: ClientConfig) -> bool:
     """Deploy the certificates.
 
@@ -87,6 +109,12 @@ def deploy(config: ClientConfig) -> bool:
         # Move the lineages to the destination
         dest_dir = os.path.join(config.destination, lineage)
         os.makedirs(dest_dir, exist_ok=True)
+        _set_permissions(
+            dest_dir,
+            config.permissions.directory_mode,
+            config.permissions.owner,
+            config.permissions.group,
+        )
         pems_glob = os.path.join(config.source, lineage, '*.pem')
         for source_filename in glob.glob(pems_glob):
             log.debug('Found source file "%s"', source_filename)
@@ -103,5 +131,11 @@ def deploy(config: ClientConfig) -> bool:
                 continue
             update = True
             shutil.move(source_filename, dest_filename)
+            _set_permissions(
+                dest_filename,
+                config.permissions.mode,
+                config.permissions.owner,
+                config.permissions.group,
+            )
             log.debug('Moved "%s" to "%s"', source_filename, dest_filename)
     return update

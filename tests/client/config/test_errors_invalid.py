@@ -61,3 +61,77 @@ def test_config_invalid_sftpd_config_key(tmp_path: pathlib.Path):
             sftpd={'invalid_key': True},
         )
     assert ClientErrors.INVALID_SFTPD_CONFIG_OPTION in str(err)
+
+
+def test_config_invalid_permissions_user(tmp_path: pathlib.Path):
+    """Verify an invalid `permissions.owner` config produces a `ConfigError`."""
+    bad_owner = 1.2
+    with pytest.raises(ConfigError) as err:
+        ClientConfig(
+            destination=tmp_path,
+            source=tmp_path,
+            file_permissions={'owner': bad_owner},
+        )
+    error_value = ClientErrors.format_invalid_value_must(
+        'permissions.owner',
+        bad_owner,
+        must='be a user name (string) or UID (integer)',
+    )
+    assert error_value in str(err)
+
+
+def test_config_invalid_permissions_group(tmp_path: pathlib.Path):
+    """Verify an invalid `permissions.group` config produces a `ConfigError`."""
+    bad_group = 1.5
+    with pytest.raises(ConfigError) as err:
+        ClientConfig(
+            destination=tmp_path,
+            source=tmp_path,
+            file_permissions={'group': bad_group},
+        )
+    error_value = ClientErrors.format_invalid_value_must(
+        'permissions.group',
+        bad_group,
+        must='be a group name (string) or GID (integer)',
+    )
+    assert error_value in str(err)
+
+
+def test_config_invalid_permissions_mode(tmp_path: pathlib.Path):
+    """Verify an invalid `permissions.mode` config produces a `ConfigError`."""
+    bad_mode = '0x1'
+    with pytest.raises(ConfigError) as err:
+        ClientConfig(
+            destination=tmp_path,
+            source=tmp_path,
+            file_permissions={'mode': bad_mode},
+        )
+    error_value = ClientErrors.format_invalid_number(
+        'permissions.mode',
+        bad_mode,
+        is_type='integer',
+        optional=True,
+        ge=0,
+        le=0o777,
+    )
+    assert error_value in str(err)
+
+
+def test_config_invalid_permissions_directory_mode(tmp_path: pathlib.Path):
+    """Verify invalid `permissions.directory_mode` config produces an error."""
+    bad_mode = '0x3'
+    with pytest.raises(ConfigError) as err:
+        ClientConfig(
+            destination=tmp_path,
+            source=tmp_path,
+            file_permissions={'directory_mode': bad_mode},
+        )
+    error_value = ClientErrors.format_invalid_number(
+        'permissions.directory_mode',
+        bad_mode,
+        is_type='integer',
+        optional=True,
+        ge=0,
+        le=0o777,
+    )
+    assert error_value in str(err)
