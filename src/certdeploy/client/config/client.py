@@ -3,7 +3,7 @@
 import os
 import shutil
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Union
 
 import yaml
 
@@ -14,8 +14,76 @@ from ... import (
     DEFAULT_USERNAME,
     LogLevel,
 )
+from ...errors import ConfigInvalid, ConfigInvalidNumber
 
 # fmt: on
+
+
+def _mode_to_int(mode: Union[int, str]) -> int:
+    if isinstance(mode, bool):
+        return -1
+    if not isinstance(mode, int):
+        try:
+            mode = int(mode, 8)
+        except (TypeError, ValueError):
+            return -1
+    if mode > 0 and mode <= 0o777:
+        return mode
+    return -1
+
+
+@dataclass
+class Permissions:
+    """CertDepoly output permissions."""
+
+    owner: Union[int, str] = None
+    """The username or UID of the owner for the certificates."""
+    group: Union[int, str] = None
+    """The group name or GID of the group for the certificates."""
+    mode: int = None
+    """The mode for the certificate files. This must be a numeric mode eg
+    `0o700`. See `os.chmod` for more info."""
+    directory_mode: int = None
+    """The mode for the lineage directory. This must be a numeric mode (see
+    `mode` for more info)."""
+
+    def __post_init__(self):
+        if not isinstance(self.owner, (int, type(None), str)):
+            raise ConfigInvalid(
+                'permissions.owner',
+                self.owner,
+                must='be a user name (string) or UID (integer)',
+            )
+        if not isinstance(self.group, (int, type(None), str)):
+            raise ConfigInvalid(
+                'permissions.group',
+                self.group,
+                must='be a group name (string) or GID (integer)',
+            )
+        if self.mode is not None:
+            int_mode = _mode_to_int(self.mode)
+            if int_mode < 0 or int_mode > 0o777:
+                raise ConfigInvalidNumber(
+                    'permissions.mode',
+                    self.mode,
+                    is_type='integer',
+                    optional=True,
+                    ge=0,
+                    le=0o777,
+                )
+            self.mode = int_mode
+        if self.directory_mode is not None:
+            int_dir_mode = _mode_to_int(self.directory_mode)
+            if int_dir_mode < 0 or int_dir_mode > 0o777:
+                raise ConfigInvalidNumber(
+                    'permissions.directory_mode',
+                    self.directory_mode,
+                    is_type='integer',
+                    optional=True,
+                    ge=0,
+                    le=0o777,
+                )
+            self.directory_mode = int_dir_mode
 
 
 @dataclass
@@ -80,6 +148,7 @@ class Config:
     """
     fail_fast: bool = False
     """Exit on the first failed action if `True`."""
+    file_permissions: dict = field(default_factory=dict)
     log_level: LogLevel = LogLevel.ERROR.value
     """The log level of the CertDeploy client. Valid values are `DEBUG`,
     `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.

@@ -74,6 +74,50 @@ class Errors:
             key=key, value=value, must=must, config_desc=config_desc
         )
 
+    @classmethod
+    def format_invalid_number(
+        cls,
+        key: str,
+        value: Any,
+        is_type: str = 'number',
+        optional: bool = False,
+        gt: str = None,
+        lt: str = None,
+        ge: str = None,
+        le: str = None,
+        config_desc: str = '',
+    ):
+        if is_type == int:
+            is_type = 'integer'
+        elif is_type == float:
+            is_type = 'float'
+        if not isinstance(is_type, str):
+            is_type = str(is_type)
+        bounds = []
+        bounds_str = ''
+        if gt is not None:
+            bounds.append(f'greater than {gt}')
+        if lt is not None:
+            bounds.append(f'less than {lt}')
+        if ge is not None:
+            bounds.append(f'greater than or equal to {ge}')
+        if le is not None:
+            bounds.append(f'less than or equal to {le}')
+        if bounds:
+            bounds_str = f' {" and ".join(bounds)}'
+        if_set = ''
+        if optional:
+            if_set = ' if set'
+        a_or_an = 'a'
+        if is_type[0] in ('a', 'e', 'i', 'o', 'u'):
+            a_or_an = 'an'
+        return cls.format_invalid_value_must(
+            key,
+            value,
+            must=f'be {a_or_an} {is_type}{bounds_str}{if_set}',
+            config_desc=config_desc,
+        )
+
 
 class ClientErrors(Errors):
     """A collection of client errors and formatters."""

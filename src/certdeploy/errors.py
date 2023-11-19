@@ -122,7 +122,7 @@ class ConfigInvalidNumber(ConfigInvalid):
         super().__init__(
             key,
             value,
-            must=f'be {a_or_an} {is_type}{bounds_str}' f'{if_set}',
+            must=f'be {a_or_an} {is_type}{bounds_str}{if_set}',
             config_desc=config_desc,
         )
 
