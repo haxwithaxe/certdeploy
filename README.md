@@ -313,7 +313,7 @@ Commandline options override environment variables.
 * `docker_url` (optional) - The URL to the Docker API. Defaults to the local socket location.
 * `log_level` (optional) - The logging level. Options are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, ``CRITICAL``. Defaults to ``ERROR``.  <!--DEFAULT FROM CODE - certdeploy.DEFAULT_LOG_LEVEL -->
 * `log_filename` (optional) - The path to the log file. Defaults to the default global log file (``/dev/stdout``).  <!--DEFAULT FROM CODE - certdeploy.DEFAULT_LOG_FILENAME -->
-* `file_permissions` (optional) - The permissions to set the cert files and lineage directories to in `destination`. By default the permissions are not actively set by the client. The CertDeploy server (SFTP client) sets the permissions with the attributes of the files from the lineage directory when it transfers them and the client moves the files that were transfered without altering the permissions. See
+* `file_permissions` (optional) - The permissions to set the cert files and lineage directories to in `destination`. By default the permissions are not actively set by the client. The CertDeploy server (SFTP client) sets the permissions with the attributes of the files from the lineage directory when it transfers them and the client moves the files that were transfered without altering the permissions. See [File Permissions](#file-permissions)
 
 This is an example of a hyper simple cron job or Systemd timer run client config that just moves the certs and doesn't restart any services. It just moves certificates from the default `source` to `destination`.
 
@@ -409,7 +409,7 @@ The permissions to set the cert files and lineage directories to in `destination
 
 By default the permissions are not actively set by the client. The CertDeploy server (SFTP client) sets the permissions with the attributes of the files from the lineage directory when it transfers them and the client moves the files that were transferred without altering the permissions.
 
-##### Security Considerations
+##### File Permissions Security Considerations
 * Avoid setting the rightmost bit to anything but ``0``. These permissions are for files that shouldn't be accessible to anyone that doesn't absolutely need to read them.
 * Avoid setting the owner or group to ``nobody`` as it's often oversubscribed by other services. If you need to set user or group to something other than ``root`` try to use a UID and GID that aren't used by other processes on the system and add the users that need access to the unique group.
 
@@ -472,7 +472,7 @@ sftpd:
 
 
 #### Client Security Considerations
-When run as a script or daemon outside of docker it's expected that the CertDeploy client will run as root or a user that has permission to manage system services and docker. Because it can run arbitrary code (via the `script` service definitions) it is very strongly recommended that the config file and the update scripts are globally read only or readable only by the user that runs the client, and writable only by root or at most only the user that runs the client.
+When run as a script or daemon outside of docker it's expected that the CertDeploy client will run as root or a user that has permission to manage system services and docker. Because it can run arbitrary code (via the `script` service definitions) it is very strongly recommended that the config file and the update scripts are globally read only or readable only by the user that runs the client, and writable only by root or at most only the user that runs the client. See also [File Permissions](#file-permissions-security-considerations).
 
 
 #### Installation
