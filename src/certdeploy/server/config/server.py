@@ -95,6 +95,8 @@ class Server:
     """A list of `dict` defining `certbot.server.client.Client` keyword
     arguments.
     """
+    client_config_directory: os.PathLike = None
+    """A directory containing individual client connection config `dict`s."""
     fail_fast: bool = False
     """Exit on the first failed action. Defaults to `False`."""
     log_level: Union[LogLevel, str] = LogLevel.ERROR

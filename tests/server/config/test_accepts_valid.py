@@ -1,7 +1,9 @@
 """Tests to verify the behavior of the CertDeploy Server config."""
 
+import pathlib
 from typing import Callable
 
+import yaml
 from fixtures.utils import ConfigContext
 
 from certdeploy.server.config import ServerConfig
@@ -213,3 +215,67 @@ def test_loads_valid_client_push_retry_interval_zero(
     config = ServerConfig.load(context.config_path)
     client = config.clients[0]
     assert client.push_retry_interval == 0
+
+
+def test_loads_valid_client_config_directory_empty(
+    pubkeygen: Callable[[], str],
+    tmp_server_config_file: Callable[[...], ConfigContext],
+    tmp_path: pathlib.Path,
+):
+    """Verify that an empty client config directory is accepted.
+
+    An empty directory but a populated `client_configs`.
+    """
+    context = tmp_server_config_file(
+        client_configs=[
+            dict(
+                address='1.2.3.4',
+                domains=['test.example.com'],
+                pubkey=pubkeygen(),
+                push_retry_interval=0,
+            )
+        ],
+        client_config_directory=str(tmp_path),
+    )
+    config = ServerConfig.load(context.config_path)
+    assert len(config.clients) == 1
+
+
+def test_loads_valid_client_config_directory_full_no_client_config(
+    pubkeygen: Callable[[], str],
+    tmp_server_config_file: Callable[[...], ConfigContext],
+    client_conn_config_factory: Callable[[...], dict],
+    tmp_path: pathlib.Path,
+):
+    """Verify that client config directory without `client_configs` works."""
+    with tmp_path.joinpath('alice.yml').open('w') as conf_file:
+        yaml.dump(client_conn_config_factory(), conf_file)
+    context = tmp_server_config_file(
+        client_configs=[],  # Setting it empty so the fixture doesn't autofill
+        client_config_directory=str(tmp_path),
+    )
+    config = ServerConfig.load(context.config_path)
+    assert len(config.clients) == 1
+
+
+def test_loads_valid_client_config_directory_and_client_configs(
+    pubkeygen: Callable[[], str],
+    tmp_server_config_file: Callable[[...], ConfigContext],
+    client_conn_config_factory: Callable[[...], dict],
+    tmp_path: pathlib.Path,
+):
+    """Verify both sources of client configs are accepted together."""
+    with tmp_path.joinpath('alice.yml').open('w') as conf_file:
+        yaml.dump(client_conn_config_factory(), conf_file)
+    context = tmp_server_config_file(
+        client_configs=[
+            dict(
+                address='1.2.3.4',
+                domains=['test.example.com'],
+                pubkey=pubkeygen(),
+            )
+        ],
+        client_config_directory=str(tmp_path),
+    )
+    config = ServerConfig.load(context.config_path)
+    assert len(config.clients) == 2

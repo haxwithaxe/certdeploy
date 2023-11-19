@@ -1,6 +1,7 @@
 """Test that verify the CertDeploy Server config fails given bad values."""
 
 import os
+import pathlib
 from typing import Callable
 
 import pytest
@@ -41,8 +42,21 @@ def test_fails_missing_client_configs(
     tmp_server_config_file: Callable[[...], ConfigContext]
 ):
     """Verify an empty `client_configs` causes an error."""
-    assert not os.path.exists('/nonexistent/privkey')
     context = tmp_server_config_file(client_configs=[])
+    with pytest.raises(ConfigError) as err:
+        ServerConfig.load(context.config_path)
+    assert ServerErrors.NO_CLIENT_CONFIG in str(err)
+
+
+def test_fails_missing_client_configs_and_empty_client_config_directory(
+    tmp_server_config_file: Callable[[...], ConfigContext],
+    tmp_path: pathlib.Path,
+):
+    """Verify a lack of client configs causes an error."""
+    context = tmp_server_config_file(
+        client_configs=[],
+        client_config_directory=str(tmp_path),
+    )
     with pytest.raises(ConfigError) as err:
         ServerConfig.load(context.config_path)
     assert ServerErrors.NO_CLIENT_CONFIG in str(err)
