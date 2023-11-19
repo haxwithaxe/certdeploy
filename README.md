@@ -75,8 +75,9 @@ The hook (`certdeploy-server` when it's run by Certbot) expects the following en
 ### Configuration
 
 #### Server Settings
-* `client_configs` - A list of [client connection settings](#client-connection-settings).
 * `privkey_filename` - The path to the CertDeploy server private key file.
+* `client_configs` (optional) - A list of [client connection settings](#client-connection-settings).
+* `client_config_directory` (optional) - A directory containing files with one set of [client connection settings](#client-connection-settings).
 * `fail_fast` (optional) - Stop on the first failed action. Defaults to ``false``.  <!--DEFAULT FROM CODE - certdeploy.server.config.server.Server.fail_fast -->
 * `log_level` (optional) - The logging level. Options are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, ``CRITICAL``. Defaults to ``ERROR``.  <!--DEFAULT FROM CODE - certdeploy.DEFAULT_LOG_LEVEL -->
 * `log_filename` (optional) - The path to the log file. Defaults to the default global log file (``/dev/stdout``).  <!--DEFAULT FROM CODE - certdeploy.DEFAULT_LOG_FILENAME -->
@@ -171,6 +172,15 @@ The following are daemon specific configs.
         pubkey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEuhX3Q690lnBhpfGHOs0j4CuCxE3E3jekWehvHRmVKt
         domains:
           - example.net
+    ```
+
+* A file in `client_config_directory`.
+
+    ```yaml
+    address: 1.2.3.4
+    pubkey: ssh-ed25519 aaaac3nzac1lzdi1nte5aaaaip+h3nk/9usa7lhnt8fvcpkkknfnve5sgc5tnthf6/ok
+    domains:
+      - example.com
     ```
 
 #### Examples
