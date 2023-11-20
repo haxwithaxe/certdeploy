@@ -55,3 +55,7 @@ Hopefully the last non-patch release alpha.
 
 ### Known bugs
 See [this](https://github.com/moby/moby/issues/46341) upstream bug with docker. This means matching services by filters with any kind of explicit regex has been broken for a while. The docker service update code has been adjusted to directly get containers by name when the `name` option is given rather than using filters to get them. Filtering still works so long as it's used for substring matching and not regex (I know they're the same thing in this case but bugs will be bugs).
+
+## Version 0.4.0 (alpha)
+- Added the ability to load client connection configs from files in a directory. The purpose being to allow for more modular deployments.
+- Added the ability to set the permissions on the lineage directories and certificates installed by the CertDeploy clients.
