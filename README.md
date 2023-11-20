@@ -408,7 +408,7 @@ update_services:
 ```
 
 #### File Permissions
-The permissions to set the cert files and lineage directories to in `destination` directory. It is a dictionary of permissions options. All options are optional. Any combination is valid.
+These are the permissions to set the cert files and lineage directories to in the `destination` directory. All options are optional. Any combination of options is valid.
 * `mode` (optional) - The file mode in an octal string or as a base10 integer. A safe value is ``0o600`` (only the owner can read or write the certificates) For example the following are valid and equivalent:
   * ``'0o600'`` - A string with an octal prefix.
   * ``'0600'`` - A plain octal string. The sticky bit is not used but if it's given and is ``0`` it's ignored.
@@ -419,9 +419,23 @@ The permissions to set the cert files and lineage directories to in `destination
 
 By default the permissions are not actively set by the client. The CertDeploy server (SFTP client) sets the permissions with the attributes of the files from the lineage directory when it transfers them and the client moves the files that were transferred without altering the permissions.
 
+##### Example
+This example sets the permissions of the lineage directory and certs to the defaults assuming the certs originated from the certbot managed letsencrypt directory and the CertDeploy client is running as root.
+
+```yaml
+...
+file_permissions:
+  mode: 0o600
+  directory_mode: 0o700
+  owner: root
+  group: root
+...
+```
+
 ##### File Permissions Security Considerations
+Nothing more than the usual precautions for letsencrypt certs.
 * Avoid setting the rightmost bit to anything but ``0``. These permissions are for files that shouldn't be accessible to anyone that doesn't absolutely need to read them.
-* Avoid setting the owner or group to ``nobody`` as it's often oversubscribed by other services. If you need to set user or group to something other than ``root`` try to use a UID and GID that aren't used by other processes on the system and add the users that need access to the unique group.
+* Avoid setting the owner or group to ``nobody`` (UID ``65534``) as it's often oversubscribed by other services. If you need to set user or group to something other than ``root`` try to use a UID and GID that aren't used by other processes on the system and add the users that need access to the certs to the unique group.
 
 
 #### Daemon Specific Settings
