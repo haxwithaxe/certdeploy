@@ -59,3 +59,6 @@ See [this](https://github.com/moby/moby/issues/46341) upstream bug with docker. 
 ## Version 0.4.0 (alpha)
 - Added the ability to load client connection configs from files in a directory. The purpose being to allow for more modular deployments.
 - Added the ability to set the permissions on the lineage directories and certificates installed by the CertDeploy clients.
+
+## Version 0.4.1 (alpha)
+- Fixed error in Read the Docs config.
