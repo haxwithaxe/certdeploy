@@ -62,3 +62,7 @@ See [this](https://github.com/moby/moby/issues/46341) upstream bug with docker. 
 
 ## Version 0.4.1 (alpha)
 - Fixed error in Read the Docs config.
+
+## Version 0.4.2 (alpha)
+* Added more logging
+* Adjusted server logging to use normal human friendly numbers
