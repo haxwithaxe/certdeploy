@@ -356,10 +356,12 @@ class PushWorker(Thread):
         while self._next():
             log.info('Pushing %s to %s', self._lineage, self._client)
             for self._attempt in range(self._retries + 1):
+                attempt_str = f'{self._attempt + 1}'
+                tries_str = f'{ self._retries + 1 }'
                 log.debug(
-                    'Attempt #%s of %s retries.',
-                    self._attempt,
-                    self._retries,
+                    'Attempt #%s of %s tries.',
+                    attempt_str,
+                    tries_str,
                 )
                 try:
                     self._sync_client()
@@ -383,8 +385,8 @@ class PushWorker(Thread):
                         log.warning(
                             'Attempt #%s of %s failed. Not retrying '
                             'sync %s to %s.',  # fmt: skip
-                            self._attempt,
-                            self._retries,
+                            attempt_str,
+                            tries_str,
                             self._lineage,
                             self._client,
                         )
@@ -392,7 +394,7 @@ class PushWorker(Thread):
                     log.info(
                         'Attempt #%s failed. Retrying sync to %s in '
                         '%s seconds.',  # fmt: skip
-                        self._attempt,
+                        attempt_str,
                         self._client,
                         self._retry_interval,
                     )
@@ -414,7 +416,7 @@ class PushWorker(Thread):
                         'Pushed %s to %s in %s attempts',
                         self._lineage,
                         self._client,
-                        self._attempt,
+                        attempt_str,
                     )
                     break  # Go to the next lineage
 
