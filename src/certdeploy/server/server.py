@@ -419,6 +419,8 @@ class PushWorker(Thread):
                         attempt_str,
                     )
                     break  # Go to the next lineage
+            log.debug('Done pushing %s to %s', self._lineage, self._client)
+        log.info('Done pushing all lineages to %s', self._client)
 
     def join(self, timeout: Optional[float] = None):
         """Join the worker thread and raise an exception.
@@ -492,11 +494,28 @@ class Server:
                 if client.hash not in queue:
                     continue
                 if client.hash not in self._workers:
+                    log.debug(
+                        'Adding worker for %s@%s:%s',
+                        client.username,
+                        client.address,
+                        client.port,
+                    )
                     self._add_worker(client)
                     if self._config.push_mode == PushMode.SERIAL:
-                        log.debug('Waiting for push to %s to finish', client)
+                        log.debug(
+                            'Waiting for push to %s@%s:%s to finish',
+                            client.username,
+                            client.address,
+                            client.port,
+                        )
                         self._workers[client.hash].join(
                             self._config.join_timeout,
+                        )
+                        log.debug(
+                            'Finished pushing to %s@%s:%s',
+                            client.username,
+                            client.address,
+                            client.port,
                         )
                     # Only delay when adding a new worker
                     time.sleep(self._config.push_interval)
@@ -512,6 +531,7 @@ class Server:
                 timeout.check()
             # End just for debugging
             time.sleep(main_loop_sleep)
+        log.debug('Done serving')
 
     def sync(self, lineage: os.PathLike, domains: list[str]):
         """Synchronize clients that need updates based on domains.
