@@ -1,6 +1,6 @@
 # Docker Arch (amd64, arm32v6, ...)
 ARG TARGET_ARCH=amd64
-FROM ${TARGET_ARCH}/python:3.10-alpine
+FROM ${TARGET_ARCH}/python:3.10-alpine3.18
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 RUN mkdir -p /var/run/certdeploy
@@ -15,7 +15,7 @@ RUN mkdir -p /etc/letsencrypt/renewal-hooks/deploy
 WORKDIR /certdeploy
 
 # Install certbot runtime dependencies
-RUN apk add --no-cache --virtual .certbot-deps \
+RUN apk add --no-cache \
         libffi \
         libssl1.1 \
         openssl \
