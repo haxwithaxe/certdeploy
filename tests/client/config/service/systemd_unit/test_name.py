@@ -1,192 +1,98 @@
-"""Tests for the `SystemdService` `name` option."""
+"""Tests to verify the behavior of the systemd service update type."""
 
 from typing import Callable
 
+import pytest
+from fixtures.errors import ClientErrors
 from fixtures.utils import ConfigContext
 
 from certdeploy.client.config import ClientConfig
+from certdeploy.errors import ConfigError
 
 
-def test_accepts_valid_name_slice_service(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+def test_accepts_valid_name(
+    tmp_client_config_file: Callable[[...], ConfigContext],
+    tmp_path_factory: pytest.TempPathFactory,
 ):
-    """Verify a service slice with an unusual name is validated.
+    """Verify the valid values for the `systemd` are accepted."""
+    names = [
+        'a-z0-9:_,.\\-@a-z0-9:_,.\\-.service',
+        'a-z0-9:_,.\\-.service',
+        'a_unit_name.service',
+        'a_unit_name.socket',
+        'a_unit_name.device',
+        'a_unit_name.mount',
+        'a_unit_name.automount',
+        'a_unit_name.swap',
+        'a_unit_name.target',
+        'a_unit_name.path',
+        'a_unit_name.timer',
+        'a_unit_name.slice',
+        'a_unit_name.scope',
+    ]
+    for name in names:
+        context = tmp_client_config_file(
+            tmp_path=tmp_path_factory.mktemp('test_accepts_valid_name'),
+            update_services=[dict(type='systemd', name=name)],
+        )
+        config = ClientConfig.load(context.config_path)
+        assert config.services[0].name == name
 
-    Testing all the unusual characters in the slice name (after the @).
-    Testing the .service suffix
+
+def test_fails_invalid_name_values(
+    tmp_client_config_file: Callable[[...], ConfigContext],
+    tmp_path_factory: pytest.TempPathFactory,
+):
+    """Verify ConfigError is thrown for `name` values that are invalid.
+
+    This is an exhaustive set of invalid names but these are important when it
+    comes to shell injection.
     """
-    name = 're-test@sD0:_\\,c.service'
-    action = 'reload'
+    bad_names = [
+        'with spaces.service',
+        'bad_extension.svc',
+        'bad_character_;.service',
+        'bad_character_/.service',
+        'bad_character_>.service',
+        'bad_character_<.service',
+        'bad_character_&.service',
+        'bad_character_|.service',
+        'bad_character_+.service',
+        'bad_character_*.service',
+    ]
+    for bad_name in bad_names:
+        context = tmp_client_config_file(
+            tmp_path=tmp_path_factory.mktemp('test_fails_invalid_name_values'),
+            update_services=[dict(type='systemd', name=bad_name)],
+        )
+        with pytest.raises(ConfigError) as err:
+            ClientConfig.load(context.config_path)
+        assert ClientErrors.format_invalid_value(
+            'name', bad_name, 'systemd update service config'
+        ) in str(err)
+
+
+def test_fails_null_name_values(
+    tmp_client_config_file: Callable[[...], ConfigContext],
+):
+    """Verify ConfigError is thrown for `name` values that are null."""
     context = tmp_client_config_file(
-        # In the order Systemd lists them
-        update_services=[
-            dict(type='systemd', name=name, action=action),
-        ]
+        update_services=[dict(type='systemd', name=None)],
     )
-    config = ClientConfig.load(context.config_path)
-    assert config.services[0].name == name
-    assert config.services[0].action == action
+    with pytest.raises(ConfigError) as err:
+        ClientConfig.load(context.config_path)
+    assert ClientErrors.format_invalid_value(
+        'name', 'None', 'systemd update service config'
+    ) in str(err)
 
 
-def test_accepts_valid_name_socket(
+def test_fails_missing_name_values(
     tmp_client_config_file: Callable[[...], ConfigContext]
 ):
-    """Verify a service with an unusual name is validated.
-
-    Testing all the unusual characters in the name.
-    Testing the .socket suffix
-    """
-    name = 're-testD0:_\\,c.socket'
-    action = 'reload'
-    context = tmp_client_config_file(
-        update_services=[
-            dict(type='systemd', name=name, action=action),
-        ]
-    )
-    config = ClientConfig.load(context.config_path)
-    assert config.services[0].name == name
-    assert config.services[0].action == action
-
-
-def test_accepts_valid_name_device(
-    tmp_client_config_file: Callable[[...], ConfigContext]
-):
-    """Verify a '.device' unit name is validated."""
-    name = 're-test.device'
-    action = 'reload'
-    context = tmp_client_config_file(
-        update_services=[
-            dict(type='systemd', name=name, action=action),
-        ]
-    )
-    config = ClientConfig.load(context.config_path)
-    assert config.services[0].name == name
-    assert config.services[0].action == action
-
-
-def test_accepts_valid_name_mount(
-    tmp_client_config_file: Callable[[...], ConfigContext]
-):
-    """Verify a '.mount' unit name is validated."""
-    name = 're-test.mount'
-    action = 'reload'
-    context = tmp_client_config_file(
-        update_services=[
-            dict(type='systemd', name=name, action=action),
-        ]
-    )
-    config = ClientConfig.load(context.config_path)
-    assert config.services[0].name == name
-    assert config.services[0].action == action
-
-
-def test_accepts_valid_name_automount(
-    tmp_client_config_file: Callable[[...], ConfigContext]
-):
-    """Verify a '.automount' unit name is validated."""
-    name = 're-test.automount'
-    action = 'reload'
-    context = tmp_client_config_file(
-        update_services=[
-            dict(type='systemd', name=name, action=action),
-        ]
-    )
-    config = ClientConfig.load(context.config_path)
-    assert config.services[0].name == name
-    assert config.services[0].action == action
-
-
-def test_accepts_valid_name_swap(
-    tmp_client_config_file: Callable[[...], ConfigContext]
-):
-    """Verify a '.swap' unit name is validated."""
-    name = 're-test.swap'
-    action = 'reload'
-    context = tmp_client_config_file(
-        update_services=[
-            dict(type='systemd', name=name, action=action),
-        ]
-    )
-    config = ClientConfig.load(context.config_path)
-    assert config.services[0].name == name
-    assert config.services[0].action == action
-
-
-def test_accepts_valid_name_target(
-    tmp_client_config_file: Callable[[...], ConfigContext]
-):
-    """Verify a '.target' unit name is validated."""
-    name = 're-test.target'
-    action = 'reload'
-    context = tmp_client_config_file(
-        update_services=[
-            dict(type='systemd', name=name, action=action),
-        ]
-    )
-    config = ClientConfig.load(context.config_path)
-    assert config.services[0].name == name
-    assert config.services[0].action == action
-
-
-def test_accepts_valid_name_path(
-    tmp_client_config_file: Callable[[...], ConfigContext]
-):
-    """Verify a '.path' unit name is validated."""
-    name = 're-test.path'
-    action = 'reload'
-    context = tmp_client_config_file(
-        update_services=[
-            dict(type='systemd', name=name, action=action),
-        ]
-    )
-    config = ClientConfig.load(context.config_path)
-    assert config.services[0].name == name
-    assert config.services[0].action == action
-
-
-def test_accepts_valid_name_timer(
-    tmp_client_config_file: Callable[[...], ConfigContext]
-):
-    """Verify a '.timer' unit name is validated."""
-    name = 're-test.timer'
-    action = 'reload'
-    context = tmp_client_config_file(
-        update_services=[
-            dict(type='systemd', name=name, action=action),
-        ]
-    )
-    config = ClientConfig.load(context.config_path)
-    assert config.services[0].name == name
-    assert config.services[0].action == action
-
-
-def test_accepts_valid_name_slice(
-    tmp_client_config_file: Callable[[...], ConfigContext]
-):
-    """Verify a '.slice' unit name is validated."""
-    name = 're-test.slice'
-    action = 'reload'
-    context = tmp_client_config_file(
-        update_services=[
-            dict(type='systemd', name=name, action=action),
-        ]
-    )
-    config = ClientConfig.load(context.config_path)
-    assert config.services[0].name == name
-    assert config.services[0].action == action
-
-
-def test_accepts_valid_name_scope(
-    tmp_client_config_file: Callable[[...], ConfigContext]
-):
-    """Verify a '.scope' unit name is validated."""
-    name = 're-test.scope'
-    action = 'reload'
-    context = tmp_client_config_file(
-        update_services=[
-            dict(type='systemd', name=name, action=action),
-        ]
-    )
-    config = ClientConfig.load(context.config_path)
-    assert config.services[0].name == name
-    assert config.services[0].action == action
+    """Verify ConfigError is thrown for `name` values that are missing."""
+    context = tmp_client_config_file(update_services=[dict(type='systemd')])
+    with pytest.raises(ConfigError) as err:
+        ClientConfig.load(context.config_path)
+    assert ClientErrors.format_invalid_value(
+        'name', 'None', 'systemd update service config'
+    ) in str(err)
