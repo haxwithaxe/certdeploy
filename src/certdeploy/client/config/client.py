@@ -123,6 +123,12 @@ class Config:
     """The directory to look for new certs in."""
     sftpd: dict = field(default_factory=dict)
     """A `dict` with arguments for `certdeploy.client.config.SFTPDConfig`."""
+    rc_service_exec: os.PathLike = shutil.which('service')
+    """The path of the init ``service`` executable."""
+    init_timeout: Optional[int] = None  # Wait indefinitely
+    """The timeout for executing the init system's ``service``. Defaults to
+    `None` (wait indefinitely).
+    """
     systemd_exec: os.PathLike = shutil.which('systemctl')
     """The path of the ``systemctl`` executable."""
     systemd_timeout: Optional[int] = None  # Wait indefinitely

@@ -114,6 +114,33 @@ class DockerServiceError(DockerError):
     _type = 'service'
 
 
+class RCServiceError(UpdateError):
+    """Error updating a traditional init  service.
+
+    Arguments:
+        service: The `certdeploy.client.config.service.Service` with the
+            problem.
+        message: Either a message string or an exception. An exception will
+            be formatted.
+        stdout: The combined stdout/stderr from the `service` command.
+    """
+
+    def __init__(
+        self,
+        service: Any,
+        message: Union[Exception, str] = None,  # noqa: D107,E501
+        stdout: str = None,
+    ):
+        if not message:
+            message = (f'Failed to {service.action} rc service '
+                       f'{service.name}')  # fmt: skip
+        elif isinstance(message, Exception):
+            message = f'{type(message).__name__}: {message}'
+        if stdout:
+            message = f'{message}. Got combined stdout/stderr: \n{stdout}'
+        super().__init__(service, message)
+
+
 class SystemdError(UpdateError):
     """Error updating a systemd unit.
 

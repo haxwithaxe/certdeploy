@@ -9,6 +9,7 @@ from ...errors import ConfigError, ConfigInvalid, ConfigInvalidNumber
 from .. import log
 
 _DOCKER_NAME_RE = re.compile(r'[a-z0-9_.-]+', flags=re.I)
+_RC_SERVICE_ACTIONS = ('restart', 'reload')
 _SYSTEMCTL_ACTIONS = ('restart', 'reload')
 _SYSTEMD_UNIT_NAME_RE = re.compile(
     r'[a-z0-9:_,.\\-]+(@[a-z0-9:_,.\\-]+)?\.'
@@ -23,13 +24,20 @@ class Service:
 
     Note: Some simple validation is done in this base class and its subclasses.
         The goal is to catch obvious mistakes like invalid names or values of
-        the wrong type.
+        the wrong type early in the execution of the process.
     """
 
     action: str = None
+    """The action to preform on the service. Defaults to `None`. This must be
+    overriden if a service type uses it."""
     filters: dict = {}
+    """Filters to identify the service. Defaults to an empty `dict`."""
     name: str = None  # Just so it's there when exceptions look for it
+    """The name identifying the service. Defaults to `None` just so it's
+    available for exceptions."""
     timeout: Union[float, int] = None
+    """The timeout for the `action` preformed on the service. Defaults to
+    `None`."""
 
     def __init__(self, config: dict):
         log.debug(
@@ -113,6 +121,7 @@ class Service:
             service_class = {
                 'docker_container': DockerContainer,
                 'docker_service': DockerService,
+                'rc': RCService,
                 'script': Script,
                 'systemd': SystemdUnit,
             }[config.get('type')]
@@ -169,6 +178,44 @@ class DockerContainer(DockerService):
         if self.name and not self.filters:
             # Match the exact name as given
             self.filters = {'name': f'^{self.name}$'}
+
+
+class RCService(Service):
+    """RC Service update config.
+
+    OpenRC/Upstart/SysV style service update config.
+
+    Note: `action` and `name` are validated. `action` has to be either
+        ``reload`` or ``restart``. `name` must be a valid rc service name. It
+        doesn't have to exist on the system to pass validation it just has to
+        look right.
+
+    """
+
+    action: str = 'restart'
+    """The default update method for updating `rc` services. Valid values
+    are ``reload`` or ``restart``.
+    """
+
+    def _validate_action(self, action: str) -> str:
+        if not action:
+            return self.action
+        if action.lower().strip() in _RC_SERVICE_ACTIONS:
+            return action.lower().strip()
+        raise ConfigInvalid(
+            'action',
+            action,
+            config_desc=f'service {self.name}',
+        )
+
+    def _validate_name(self, name: str) -> str:
+        if not name:
+            raise ConfigInvalid(
+                'name',
+                name,
+                config_desc='rc service update config',
+            )
+        return name.strip()
 
 
 class Script(Service):

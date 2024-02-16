@@ -26,6 +26,7 @@ from fixtures.logging import log_file  # noqa: F401
 from fixtures.mock_certbot import mock_certbot  # noqa: F401
 from fixtures.mock_fail_client import mock_fail_client  # noqa: F401
 from fixtures.mock_server import mock_server_push  # noqa: F401
+from fixtures.rc_service import tmp_rc_service  # noqa: F401
 from fixtures.script import tmp_script_for_service  # noqa: F401
 from fixtures.server_config import (  # noqa: F401
     client_conn_config_factory,

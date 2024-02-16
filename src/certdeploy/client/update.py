@@ -6,12 +6,19 @@ import docker
 
 from . import log
 from .config import ClientConfig
-from .config.service import DockerContainer, DockerService, Script, SystemdUnit
+from .config.service import (
+    DockerContainer,
+    DockerService,
+    RCService,
+    Script,
+    SystemdUnit,
+)
 from .errors import (
     DockerContainerError,
     DockerContainerNotFound,
     DockerServiceError,
     DockerServiceNotFound,
+    RCServiceError,
     ScriptError,
     SystemdError,
     UpdateError,
@@ -100,6 +107,53 @@ def update_docker_service(spec: DockerService, client_config: ClientConfig):
             for warn in warnings.get('Warnings') or []:
                 log.warning('Got warning from the Docker API: %s', warn)
             log.info('Docker service updated: name=%s', service.name)
+
+
+def update_rc_service(spec: RCService, client_config: ClientConfig):
+    """Update an init system service.
+
+    Arguments:
+        spec: The update service specifications.
+        client_config: The CertDeploy client config.
+
+    Raises:
+        RCServiceError: When the `service` encounters an `OSError`, doesn't
+            finish in a timely manner (according to `script.timeout`), or exits
+            non-zero.
+    """
+    log.debug('Updating %s', spec)
+    cmd = [client_config.rc_service_exec, spec.name, spec.action]
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        proc.wait(timeout=spec.timeout)
+    except (OSError, subprocess.TimeoutExpired) as err:
+        # Regular errors from the `service` call shouldn't halt the whole
+        #   set of updates unless fail_fast is True.
+        # Borrowing the exception's formatting.
+        error = RCServiceError(spec, err)
+        if client_config.fail_fast:
+            raise error from err
+        log.error(error, exc_info=err)
+        return
+    stdout = proc.stdout.read().decode()
+    log.debug(
+        'RC service command %s returned=%s. Got combined '
+        'stdout/stderr: \n%s',  # nofmt
+        proc.returncode,
+        cmd,
+        stdout,
+    )
+    if proc.returncode != 0:
+        # Borrowing the exception's formatting.
+        err = RCServiceError(spec, stdout=stdout)
+        if client_config.fail_fast:
+            raise err
+        log.error(err)
+    log.info('RC service %s %sed.', spec.name, spec.action)
 
 
 def update_script(script: Script, client_config: ClientConfig):
@@ -197,6 +251,7 @@ def update_systemd_unit(unit: SystemdUnit, client_config: ClientConfig):
 _UPDATER_MAP = {
     DockerContainer: update_docker_container,
     DockerService: update_docker_service,
+    RCService: update_rc_service,
     Script: update_script,
     SystemdUnit: update_systemd_unit,
 }
