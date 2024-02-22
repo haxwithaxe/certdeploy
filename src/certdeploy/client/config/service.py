@@ -66,8 +66,10 @@ class Service:
 
     def _validate_timeout(
         self,
-        timeout: Union[float, int],
+        timeout: Union[bool, float, int],
     ) -> Union[float, int]:
+        if timeout is False:
+            return None
         if timeout is not None and not isinstance(timeout, (float, int)):
             raise ConfigInvalidNumber(
                 'timeout',

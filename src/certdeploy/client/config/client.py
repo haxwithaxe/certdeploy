@@ -123,20 +123,24 @@ class Config:
     """The directory to look for new certs in."""
     sftpd: dict = field(default_factory=dict)
     """A `dict` with arguments for `certdeploy.client.config.SFTPDConfig`."""
+    init_timeout: Optional[Union[float, int]] = None  # Wait indefinitely
+    """The timeout for executing the init system's ``service`` or
+    ``systemctl``. Defaults to `None` (wait indefinitely).
+    """
     rc_service_exec: os.PathLike = shutil.which('service')
     """The path of the init ``service`` executable."""
-    init_timeout: Optional[int] = None  # Wait indefinitely
-    """The timeout for executing the init system's ``service``. Defaults to
-    `None` (wait indefinitely).
-    """
     systemd_exec: os.PathLike = shutil.which('systemctl')
     """The path of the ``systemctl`` executable."""
-    systemd_timeout: Optional[int] = None  # Wait indefinitely
-    """The timeout for executing ``systemctl``. Defaults to `None` (wait
+    docker_url: str = 'unix://var/run/docker.sock'  # Use the local socket
+    """The URI of the docker socket. Defaults to the default unix socket."""
+    docker_timeout: Optional[int] = None  # Wait indefinitely
+    """The timeout for docker API operations. Defaults to `None` (wait
     indefinitely).
     """
-    docker_url: str = 'unix://var/run/docker.sock'  # Use the local socket
-    """The URI of the docker socket."""
+    script_timeout: Optional[Union[float, int]] = None
+    """The timeout for script based service updates. Defaults to `None` (wait
+    indefinitely).
+    """
     update_services: list[dict] = field(default_factory=list)
     """A list of `certdeploy.client.update.Service` keyword argument `dict`."""
     update_delay: str = '1h'
@@ -155,6 +159,10 @@ class Config:
     fail_fast: bool = False
     """Exit on the first failed action if `True`."""
     file_permissions: dict = field(default_factory=dict)
+    """Permissions to set on the installed certificate files and directories.
+    See `certdeploy.client.config.client.Permissions` for the valid dictionary
+    keys. Defaults to an empty `dict`.
+    """
     log_level: LogLevel = LogLevel.ERROR.value
     """The log level of the CertDeploy client. Valid values are `DEBUG`,
     `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.

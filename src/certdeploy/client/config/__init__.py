@@ -14,7 +14,7 @@ from ... import (
 # fmt: on
 from ...errors import ConfigError, ConfigInvalid, ConfigInvalidPath
 from .client import Config, Permissions, SFTPDConfig
-from .service import Service
+from .service import DockerContainer, RCService, Script, Service, SystemdUnit
 
 _DURATION_FACTORS = {
     'w': 60 * 60 * 24 * 7,
@@ -63,6 +63,13 @@ class ClientConfig(Config):
                 self.destination,
                 is_type='directory',
             )
+        if isinstance(self.docker_timeout, (float, int)):
+            DockerContainer.timeout = self.docker_timeout
+        if isinstance(self.init_timeout, (float, int)):
+            RCService.timeout = self.init_timeout
+            SystemdUnit.timeout = self.init_timeout
+        if isinstance(self.script_timeout, (float, int)):
+            Script.timeout = self.script_timeout
         self.services = [Service.load(s) for s in self.update_services]
         try:
             self.sftpd_config = SFTPDConfig(**self.sftpd)
