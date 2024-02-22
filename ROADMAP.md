@@ -1,6 +1,6 @@
 # Plans are just informed wishful thinking.
 
-## Version 0.5.0 (beta?)
+## Version 0.6.0 (beta?)
 - Notifications
    - Methods
       - Script
@@ -12,7 +12,7 @@
       - status - Same as error but with messages on success events like successful push queue completion and sucessful completion of all updates.
       - log - Follow logging at the configured logging level or maybe at the log level appended to this option. We'll see how masochistic haxwithaxe is when he gets to this.
 
-## Version 0.6.0 (beta)
+## Version 0.7.0 (beta)
 - Ordered service updates
 - Individually delayed service updates
    - Time delay after to allow for slow starting background tasks
