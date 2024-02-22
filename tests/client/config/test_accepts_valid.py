@@ -24,19 +24,21 @@ def test_config_base_kitchen_sink(
     )
     config = ClientConfig.load(context.config_path)
     assert config.destination == context.config['destination']
-    assert config.source == context.config['source']
-    assert config.sftpd == context.config['sftpd']
-    assert config.systemd_exec == context.config['systemd_exec']
-    assert config.systemd_timeout == context.config['systemd_timeout']
+    assert config.docker_timeout == context.config['docker_timeout']
     assert config.docker_url == context.config['docker_url']
-    assert config.update_services == context.config['update_services']
-    assert config.update_delay == context.config['update_delay']
-    assert config.sftpd_config == SFTPDConfig()
-    assert config.update_delay_seconds == 10
-    assert config.permissions.owner is None
+    assert config.init_timeout == context.config['init_timeout']
+    assert config.permissions.directory_mode is None
     assert config.permissions.group is None
     assert config.permissions.mode is None
-    assert config.permissions.directory_mode is None
+    assert config.permissions.owner is None
+    assert config.script_timeout == context.config['script_timeout']
+    assert config.sftpd == context.config['sftpd']
+    assert config.sftpd_config == SFTPDConfig()
+    assert config.source == context.config['source']
+    assert config.systemd_exec == context.config['systemd_exec']
+    assert config.update_delay == context.config['update_delay']
+    assert config.update_delay_seconds == 10
+    assert config.update_services == context.config['update_services']
 
 
 def test_config_sftpd_kitchen_sink(

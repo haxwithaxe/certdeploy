@@ -140,14 +140,19 @@ def tmp_client_config_file(
         tmp_path = tmp_path or tmp_path_factory.mktemp('tmp_client_config_file')
         client_keypair = client_keypair or keypairgen()
         server_keypair = server_keypair or keypairgen()
-        # Non-default values for top level options
+        # Non-default values for top level options except log_filename
+        #   The log output to stdout/stderr is useful
         config = dict(
             sftpd={},
             systemd_exec='test systemd_exec value',
-            systemd_timeout=42,
+            rc_service_exec='test rc_service_exec value',
+            docker_timeout=19,
+            init_timeout=42,
+            script_timeout=17,
             docker_url='test docker_url value',  # Use the local socket
             update_services=[],
             update_delay='11s',
+            log_level='DEBUG',
         )
         config.update(conf)
         return client_config_file(
