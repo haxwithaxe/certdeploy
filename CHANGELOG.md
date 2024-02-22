@@ -66,3 +66,6 @@ See [this](https://github.com/moby/moby/issues/46341) upstream bug with docker. 
 ## Version 0.4.2 (alpha)
 * Added more logging
 * Adjusted server logging to use normal human friendly numbers
+
+## Version 0.5.0 (alpha)
+* Fixed default timeout passing bug
