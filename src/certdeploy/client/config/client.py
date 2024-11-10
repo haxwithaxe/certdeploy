@@ -133,10 +133,8 @@ class Config:
     """The path of the ``systemctl`` executable."""
     docker_url: str = 'unix://var/run/docker.sock'  # Use the local socket
     """The URI of the docker socket. Defaults to the default unix socket."""
-    docker_timeout: Optional[int] = None  # Wait indefinitely
-    """The timeout for docker API operations. Defaults to `None` (wait
-    indefinitely).
-    """
+    docker_timeout: Optional[int] = 10
+    """The timeout for docker API operations. Defaults to ``10``."""
     script_timeout: Optional[Union[float, int]] = None
     """The timeout for script based service updates. Defaults to `None` (wait
     indefinitely).

@@ -84,6 +84,92 @@ def test_accepts_valid_name_values(
     assert test_service.script_path == true_exec_path
 
 
+def test_accepts_valid_timeout_int(
+    tmp_client_config_file: Callable[[...], ConfigContext],
+):
+    timeout = 11
+    context = tmp_client_config_file(
+        update_services=[
+            dict(
+                type='script',
+                name='true',
+                timeout=timeout,
+            )
+        ],
+    )
+    config = ClientConfig.load(context.config_path)
+    assert config.services[0].timeout == timeout
+
+
+def test_accepts_valid_timeout_float(
+    tmp_client_config_file: Callable[[...], ConfigContext],
+):
+    timeout = 11.7
+    context = tmp_client_config_file(
+        update_services=[
+            dict(
+                type='script',
+                name='true',
+                timeout=timeout,
+            )
+        ],
+    )
+    config = ClientConfig.load(context.config_path)
+    assert config.services[0].timeout == timeout
+
+
+def test_gets_default_timeout(
+    tmp_client_config_file: Callable[[...], ConfigContext],
+):
+    timeout = 13.37
+    context = tmp_client_config_file(
+        script_timeout=timeout,
+        update_services=[
+            dict(
+                type='script',
+                name='true',
+            )
+        ],
+    )
+    config = ClientConfig.load(context.config_path)
+    assert config.services[0].timeout == timeout
+
+
+def test_overrides_timeout_with_none(
+    tmp_client_config_file: Callable[[...], ConfigContext],
+):
+    context = tmp_client_config_file(
+        script_timeout=23,
+        update_services=[
+            dict(
+                type='script',
+                name='true',
+                timeout=None,
+            )
+        ],
+    )
+    config = ClientConfig.load(context.config_path)
+    assert config.services[0].timeout is None
+
+
+def test_overrides_timeout_with_int(
+    tmp_client_config_file: Callable[[...], ConfigContext],
+):
+    timeout = 37
+    context = tmp_client_config_file(
+        script_timeout=29,
+        update_services=[
+            dict(
+                type='script',
+                name='true',
+                timeout=timeout,
+            )
+        ],
+    )
+    config = ClientConfig.load(context.config_path)
+    assert config.services[0].timeout == timeout
+
+
 def test_fails_invalid_name_values(
     tmp_client_config_file: Callable[[...], ConfigContext]
 ):

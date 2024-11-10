@@ -100,7 +100,7 @@ def test_overrides_default_timeout_with_none(
             dict(
                 type='docker_container',
                 name='timeout-test_container',
-                timeout=False,
+                timeout=None,
             ),
         ],
     )

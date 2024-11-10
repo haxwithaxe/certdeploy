@@ -71,7 +71,7 @@ def test_overrides_timeout_with_none(
             dict(
                 type='rc',
                 name='test-rc-service-name',
-                timeout=False,
+                timeout=None,
             )
         ],
     )

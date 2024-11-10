@@ -318,9 +318,12 @@ Commandline options override environment variables.
 * `update_sevices` - A list of definitions of services to reload/restart/run after deploying the certs. See [Service Definitions](#service-definitions).
 * `source` (optional) - The directory the server uploads the certs to. Defaults to ``/var/cache/certdeploy``.  <!--DEFAULT FROM CODE - certdeploy.DEFAULT_CLIENT_SOURCE_DIR -->
 * `sftpd` (optional) - The SFTP server settings. See [Daemon Specific Settings](#daemon-specific-settings).
-* `systemd_exec` (optional) - The path to the ``systemctl`` executable for restarting/reloading Systemd units.  <!--DEFAULT FROM CODE - certdeploy.client.config.client.Config.systemd_exec -->
-* `systemd_timeout` (optional) - The timeout in seconds for executing systemctl commands. Defaults to ``null`` (wait indefinitely).  <!--DEFAULT FROM CODE - certdeploy.client.config.client.Config.systemd_timeout -->
-* `docker_url` (optional) - The URL to the Docker API. Defaults to the local socket location.
+*  `script_timeout` - The timeout in seconds for executing script type service updaters. Defaults to ``null`` (wait indefinitely). <!--DEFAULT FROM CODE - certdeploy.client.config.client.Config.script_timeout -->
+* `systemd_exec` (optional) - The path to the ``systemctl`` executable for restarting/reloading Systemd units.  Defaults to the ``systemctl`` in `$PATH`. <!--DEFAULT FROM CODE - certdeploy.client.config.client.Config.systemd_exec -->
+* `rc_service_exec` (optional) - The path to the ``service`` executable for restarting/reloading tradional init system services. Defaults to the ``service`` executable in `$PATH`. <!--DEFAULT FROM CODE - certdeploy.client.config.client.Config.rc_service_exec -->
+* `init_timeout` (optional) - The timeout in seconds for executing systemctl commands. Defaults to ``null`` (wait indefinitely).  <!--DEFAULT FROM CODE - certdeploy.client.config.client.Config.init_timeout -->
+* `docker_timeout` (optional) - The timeout in seconds for executing Docker API operations. Defaults to ``null`` (wait indefinitely). <!--DEFAULT FROM CODE - certdeploy.client.config.client.Config.docker_timeout -->
+* `docker_url` (optional) - The URL to the Docker API. Defaults to the local unix socket location.
 * `log_level` (optional) - The logging level. Options are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, ``CRITICAL``. Defaults to ``ERROR``.  <!--DEFAULT FROM CODE - certdeploy.DEFAULT_LOG_LEVEL -->
 * `log_filename` (optional) - The path to the log file. Defaults to the default global log file (``/dev/stdout``).  <!--DEFAULT FROM CODE - certdeploy.DEFAULT_LOG_FILENAME -->
 * `file_permissions` (optional) - The permissions to set the cert files and lineage directories to in `destination`. By default the permissions are not actively set by the client. The CertDeploy server (SFTP client) sets the permissions with the attributes of the files from the lineage directory when it transfers them and the client moves the files that were transfered without altering the permissions. See [File Permissions](#file-permissions)
@@ -335,7 +338,7 @@ In a case like this the certs are delivered via whatever ssh server is running o
 
 
 ##### Service Definitions
-Each definition has a `type` key and one or more other keys. They are run in the order they are written in the config.
+Each definition has a ``type`` key, an (optional) ``timeout`` key, and one or more other keys. They are run in the order they are written in the config.
 * Docker swarm services have a `type` of ``docker_service`` and can have a `name` key with a string value or a `filters` key with a dictionary of filters. See [Docker Services and Containers](#docker-services-and-containers).
 * Docker containers have a `type` of ``docker_container`` and can have a `name` key with a string value or a `filters` key with a dictionary of filters. See [Docker Services and Containers](#docker-services-and-containers).
 * Systemd units  have a `type` of ``docker_service``, a `name` key with the unit name, and optionally an `action` key that can be either ``restart``or ``reload``. The `name` is the full unit names (with the unit type extension eg `nginx.service`). The value of `action` corresponds to the systemctl arguments. See [Systemd Units](#systemd-units).
@@ -345,7 +348,12 @@ Each definition has a `type` key and one or more other keys. They are run in the
 #### Service settings
 
 ##### Docker Services and Containers
-The two config fields for each docker service or container are `name` and `filters`. Either `name` or `filters` can be given.
+The three config fields for each docker service or container are
+* `name` (optional) - The exact name of the container or swarm service.
+* `filters` (optional) - A dictionary of keys and patterns for those keys as would be used with `docker container ls --filter`.
+* `timeout` (optional) - The seconds to wait before giving up on a Docker API operation. This must be an integer or ``null`` (wait indefinitely).
+
+Either `name` or `filters` can be given but not both.
 
 ```yaml
 update_services:
@@ -360,12 +368,15 @@ update_services:
   - type: docker_container
     filters:
       name: web_traefik_1
+  - type: docker_container
+    name: hangs_sometimes
+    timeout: 300
 ```
 
 The first of the example definitions is equivalent to the following:
 
 ```yaml
-update_container:
+update_services:
   - type: docker_container
     filters:
       name: "^ingress_nginx$"
@@ -375,16 +386,43 @@ For docker containers the name is automatically converted into a filter for the 
 
 Due to the [bug](https://github.com/moby/moby/issues/46341) docker services the name is used to get the container directly whether `filters` are set or not.
 
-
 <!--The alert syntax listed by github doesn't work on github and the Myst syntax doesn't work on github so this is the compromise.-->
 ##### *WARNING*
 Due to a [docker bug](https://github.com/moby/moby/issues/46341) filters for docker *services* don't work as expected at release time. Any regex will cause a failure to match. Plain old substring matching works fine so `filters: { label: [ foo ] }` will still match services with 'foo' in the keys any of their labels but `filters: { label: [ ^foo ] }` or `filters: { label: [ foo.* ] }` will not match any services even if there are services that match those criteria.
 
 
+##### Traditional Init System Services
+The three options for each traditional init system (rc) service are:
+* `name` - The name of the service.
+* `action` (optional) - Can be ``restart`` or ``reload`` which correspond to the `service <name> restart` and `service <name> reload` commands. The default `action` is ``restart``.  <!--DEFAULT FROM CODE - certdeploy.client.config.service.RCService.action -->
+* `timeout` (optional) - The number of seconds to wait before giving up on an action. Defaults to the value of `init_timeout`. Values can be one of the following:
+  * An integer (eg ``10`` will wait 10 seconds)
+  * A float. The decimal seconds down to the millisecond (eg ``3.21`` will wait 3 seconds and 210 milliseconds)
+  * ``null`` wait indefinitely.
+
+```yaml
+update_services:
+  - type: rc
+    name: nginx-or-whatever
+  - type: rc
+    name: apache-or-whatever
+    action: reload
+  - type: rc
+    name: hangs-sometimes
+    timeout: 10
+```
+
+
 ##### Scripts
-The only option for scripts is `name` which is the path to the script.
-`name` can be an absolute path, an executable in the system's `$PATH`, or relative path (complicated). The path is evaluated in that order.
-The relative path is relative to the current working directory which is different depending on how the client is being run.
+The options for scripts are:
+* `name` - The name or path of the script to execute. The path is evaluated as each of the following in the order given.
+  * An absolute path
+  * An executable in the system's `$PATH`
+  * A relative path (complicated, avoid this). This is relative to the current working directory which is different depending on how the client is being run.
+* `timeout` (optional) - The number of seconds to wait before giving up on the execution of the script. Defaults to the value of `script_timeout`. Values can be one of the following:
+  * An integer (eg ``10`` will wait 10 seconds)
+  * A float. The decimal seconds down to the millisecond (eg ``3.21`` will wait 3 seconds and 210 milliseconds)
+  * ``null`` wait indefinitely.
 
 ```yaml
 update_services:
@@ -392,11 +430,20 @@ update_services:
     name: script_in_path.sh
   - type: script
     name: /path/to/script.sh
+  - type: script
+    name: /usr/local/bin/hangs-sometimes.sh
+    timeout: 10
 ```
 
 
 ##### Systemd Units
-The two config fields for each Systemd service are `name` and `action`. `action` can be ``restart`` or ``reload`` which correspond to the `systemctl restart ...` and `systemctl reload ...` commands. The default `action` is ``restart``.  <!--DEFAULT FROM CODE - certdeploy.client.config.service.SystemdUnit.action -->
+The three options for each Systemd service are
+* `name` - The name of the service.
+* `action` (optional) - Can be ``restart`` or ``reload`` which correspond to the `systemctl restart <name>` and `systemctl reload <name>` commands. The default `action` is ``restart``.  <!--DEFAULT FROM CODE - certdeploy.client.config.service.SystemdUnit.action -->
+* `timeout` (optional) - The number of seconds to wait before giving up on an action. Defaults to the value of `init_timeout`. Values can be one of the following:
+  * An integer (eg ``10`` will wait 10 seconds).
+  * A float. The decimal seconds down to the millisecond (eg ``3.21`` will wait 3 seconds and 210 milliseconds).
+  * ``null`` wait indefinitely.
 
 ```yaml
 update_services:
@@ -405,6 +452,9 @@ update_services:
   - type: systemd
     name: apache_or_whatever.service
     action: reload
+  - type: systemd
+    name: hangs_sometimes.service
+    timeout: 10
 ```
 
 #### File Permissions

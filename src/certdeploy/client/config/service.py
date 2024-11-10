@@ -35,7 +35,8 @@ class Service:
     name: str = None  # Just so it's there when exceptions look for it
     """The name identifying the service. Defaults to `None` just so it's
     available for exceptions."""
-    timeout: Union[float, int] = None
+    # False to distinguish unset vs set to None
+    timeout: Union[float, int] = False
     """The timeout for the `action` preformed on the service. Defaults to
     `None`."""
 
@@ -49,7 +50,7 @@ class Service:
         self.name = self._validate_name(config.get('name'))
         self.action = self._validate_action(config.get('action'))
         self.filters = self._validate_filters(config.get('filters'))
-        self.timeout = self._validate_timeout(config.get('timeout'))
+        self.timeout = self._validate_timeout(config.get('timeout', False))
         log.debug('New service: %s', self)
 
     def _validate_action(self, action: str) -> str:
@@ -68,8 +69,10 @@ class Service:
         self,
         timeout: Union[bool, float, int],
     ) -> Union[float, int]:
+        log.debug('timeout = %s, self.timeout = %s', timeout, self.timeout)
         if timeout is False:
-            return None
+            # timeout was not given use the default
+            return self.timeout
         if timeout is not None and not isinstance(timeout, (float, int)):
             raise ConfigInvalidNumber(
                 'timeout',
@@ -80,7 +83,7 @@ class Service:
         # If timeout is an int or float (it's int float or None given the above)
         #   use it otherwise use the default (self.timeout). This is needed for
         #   DockerContainer. Otherwise this could just return timeout.
-        return timeout if timeout is not None else self.timeout
+        return timeout
 
     def _validate_name(self, name: str) -> str:
         # Don't return self.name since it always needs to be set or None.
@@ -172,8 +175,6 @@ class DockerContainer(DockerService):
     _type = 'container'
     action = 'restart'
     """The default update method."""
-    timeout = 10
-    """The default time to wait before giving up on preforming `action`."""
 
     def __init__(self, config: dict):  # noqa: D107
         super().__init__(config)

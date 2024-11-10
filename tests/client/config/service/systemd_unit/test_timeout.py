@@ -64,7 +64,7 @@ def test_overrides_default_timeout_with_none(
     config_filename, _ = tmp_client_config_file(
         init_timeout=113,
         update_services=[
-            dict(type='systemd', name=name, timeout=False),
+            dict(type='systemd', name=name, timeout=None),
         ],
     )
     config = ClientConfig.load(config_filename)
