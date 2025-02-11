@@ -83,6 +83,9 @@ The hook (`certdeploy-server` when it's run by Certbot) expects the following en
 * `log_filename` (optional) - The path to the log file. Defaults to the default global log file (``/dev/stdout``).  <!--DEFAULT FROM CODE - certdeploy.DEFAULT_LOG_FILENAME -->
 * `sftp_log_level` (optional) - The SFTP client logging level. Options are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, ``CRITICAL``. Defaults to ``ERROR``.  <!--DEFAULT FROM CODE - certdeploy.DEFAULT_LOG_LEVEL -->
 * `sftp_log_filename` (optional) - The path to the SFTP client log file. Defaults to the default global log file (``/dev/stdout``).  <!--DEFAULT FROM CODE - certdeploy.DEFAULT_LOG_FILENAME -->
+* `sftp_auth_timeout` - Sets the `paramiko.client.SSHClient.connect()` `auth_timeout` argument. See the [paramiko docs](https://docs.paramiko.org/en/latest/api/client.html) docs for details on what exactly this does. Defaults to `None` (paramiko's default value).
+* `sftp_banner_timeout` - Sets the `paramiko.client.SSHClient.connect()` `banner_timeout` argument. See the [paramiko docs](https://docs.paramiko.org/en/latest/api/client.html) docs for details on what exactly this does. Defaults to ``60``. If you get SSH banner errors increasing this might help.
+* `sftp_tcp_timeout` - Sets the `paramiko.client.SSHClient.connect()` `timeout` argument. See the [paramiko docs](https://docs.paramiko.org/en/latest/api/client.html) docs for details on what exactly this does. Defaults to `None` (paramiko's default value).
 
 The following are daemon specific configs.
 * `renew_every` (optional) - The interval count to multiply `renew_unit` by. This must be a positive integer. The default is ``1``.  <!--DEFAULT FROM CODE - certdeploy.server.config.server.Server.renew_every -->
