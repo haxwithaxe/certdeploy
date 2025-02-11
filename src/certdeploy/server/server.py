@@ -301,6 +301,9 @@ class PushWorker(Thread):
             port=self._client.port,
             username=self._client.username,
             key_filename=self._config.privkey_filename,
+            auth_timeout=self._config.sftp_auth_timeout,
+            banner_timeout=self._config.sftp_banner_timeout,
+            timeout=self._config.sftp_tcp_timeout,
         )
         sftp = ssh.open_sftp()
         # Make the destination directory

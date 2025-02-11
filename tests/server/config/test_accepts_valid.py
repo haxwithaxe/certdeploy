@@ -34,6 +34,9 @@ def test_loads_valid_server(
     assert config.queue_dir == context.config['queue_dir']
     assert config.sftp_log_filename == context.config['sftp_log_filename']
     assert config.sftp_log_level == context.config['sftp_log_level']
+    assert config.sftp_auth_timeout is None
+    assert config.sftp_banner_timeout == 60
+    assert config.sftp_tcp_timeout is None
 
 
 def test_loads_valid_server_push_mode_serial(

@@ -111,6 +111,18 @@ class Server:
     """
     sftp_log_filename: Optional[os.PathLike] = None
     """The path of the paramiko log file."""
+    sftp_auth_timeout: float = None  # paramiko.SSHClient.connect default
+    """This sets the SFTP auth step timeout in seconds.
+    `paramiko.SSHClient.connect()` `auth_timeout` argument.
+    """
+    sftp_banner_timeout: float = 60
+    """This sets the SFTP banner timeout in seconds.
+    `paramiko.SSHClient.connect()` `banner_timeout` argument.
+    """
+    sftp_tcp_timeout: float = None  # paramiko.SSHClient.connect default
+    """This sets the TCP timeout for SFTP in seconds.
+    `paramiko.SSHClient.connect()` `tcp_timeout` argument.
+    """
     renew_every: int = 1
     """The interval to try to renew certs on. Valid values are integers greater
     than 0.
