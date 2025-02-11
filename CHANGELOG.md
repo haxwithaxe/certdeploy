@@ -73,3 +73,9 @@ See [this](https://github.com/moby/moby/issues/46341) upstream bug with docker. 
 * Added traditional init system updaters (eg OpenRC or SysVInit)
 * Bumped Docker module version
 * Pushed versions up one in [ROADMAP.md](ROADMAP.md)
+
+## Version 0.5.1 (alpha)
+* Bumped paramiko version
+* Bumped PyYAML version
+* Bumped schedule version
+* Bumped typer version
