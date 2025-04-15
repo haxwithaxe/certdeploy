@@ -12,10 +12,10 @@ from .errors import InvalidKey
 
 # Match a valid privkey.pem
 PRIVKEY_RE = re.compile(
-    r'-----BEGIN PRIVATE KEY-----'
-    r'(\n|\r|\r\n)([0-9a-zA-Z\+\/=]{64}(\n|\r|\r\n))*'
-    r'([0-9a-zA-Z\+\/=]{1,63}(\n|\r|\r\n))?'
-    r'-----END PRIVATE KEY-----\n*',
+    r'\s*-----BEGIN(?: .*)? PRIVATE KEY-----'
+    r'(?:\n|\r|\r\n)(?:[0-9a-zA-Z\+\/=]{64}(?:\n|\r|\r\n))*'
+    r'(?:[0-9a-zA-Z\+\/=]{1,63}(?:\n|\r|\r\n))?'
+    r'-----END(?: .*)? PRIVATE KEY-----\s*',
     re.M,
 )
 # Match a valid fullchain.pem or chain.pem
