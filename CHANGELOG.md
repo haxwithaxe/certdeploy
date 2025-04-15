@@ -79,3 +79,6 @@ See [this](https://github.com/moby/moby/issues/46341) upstream bug with docker. 
 * Bumped PyYAML version
 * Bumped schedule version
 * Bumped typer version
+
+## Version 0.5.2 (alpha)
+* Fixed bug in TLS key validation
