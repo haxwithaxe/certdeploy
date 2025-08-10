@@ -26,7 +26,7 @@ def test_as_hook(
         fail_fast=True, log_level='DEBUG', log_filename=str(log_file)
     )
     ## Run the test
-    results = CliRunner(mix_stderr=True).invoke(
+    results = CliRunner().invoke(
         _app,
         args=['--config', context.config_path],
         env={

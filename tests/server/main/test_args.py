@@ -24,7 +24,7 @@ from certdeploy.server.server import Server
 def test_help_shows_help():
     """Verify that help text is shown for the `--help` arg."""
     ## Run the test
-    result = CliRunner(mix_stderr=True).invoke(_app, ['--help'])
+    result = CliRunner().invoke(_app, ['--help'])
     ## Verify the results
     # The command name is different when it's being called from the runner
     assert RefMsgs.HELP_TEXT_ALT.message in result.output
@@ -48,7 +48,7 @@ def test_daemon_runs_daemon(
     Server._stop_running = kill_switch
     ## Run the test
     thread = managed_thread(
-        CliRunner(mix_stderr=True).invoke,
+        CliRunner().invoke,
         args=[_app, ['--daemon', '--config', context.config_path]],
         kill_switch=kill_switch,
         teardown=kill_switch.teardown(Server),
@@ -78,8 +78,9 @@ def test_renew_runs_renew(
         log_filename=str(log_file),
     )
     ## Run the test
-    results = CliRunner(mix_stderr=True).invoke(
-        _app, ['--renew', '--config', context.config_path]
+    results = CliRunner().invoke(
+        _app,
+        ['--renew', '--config', context.config_path],
     )
     ## Verify the results
     assert results.exception is None
@@ -98,8 +99,9 @@ def test_push_runs_push(
         fail_fast=True, log_level='DEBUG', log_filename=str(log_file)
     )
     ## Run the test
-    results = CliRunner(mix_stderr=True).invoke(
-        _app, ['--push', '--config', context.config_path]
+    results = CliRunner().invoke(
+        _app,
+        ['--push', '--config', context.config_path],
     )
     ## Verify the results
     assert results.exception is None
@@ -119,7 +121,7 @@ def test_no_args_with_config_exits(
         fail_fast=True, log_level='DEBUG', log_filename=str(log_file)
     )
     ## Run the test
-    results = CliRunner(mix_stderr=True).invoke(
+    results = CliRunner().invoke(
         _app,
         ['--config', context.config_path],
     )
@@ -146,7 +148,7 @@ def test_no_args_exits(
         'tests requires that it not exist.'
     )
     ## Run the test
-    results = CliRunner(mix_stderr=True).invoke(_app, [])
+    results = CliRunner().invoke(_app, [])
     ## Verify the results
     assert isinstance(results.exception, SystemExit)
     assert results.exception.code == 1
@@ -166,7 +168,7 @@ def test_overrides_log_level_and_log_filename(
         fail_fast=True, log_level='CRITICAL', log_filename='/dev/null'
     )
     ## Run the test
-    results = CliRunner(mix_stderr=True).invoke(
+    results = CliRunner().invoke(
         _app,
         [
             '--push',
@@ -200,7 +202,7 @@ def test_overrides_sftp_log_level_and_sftp_log_filename(
         fail_fast=True, sftp_log_level='CRITICAL', sftp_log_filename='/dev/null'
     )
     ## Run the test
-    results = CliRunner(mix_stderr=True).invoke(
+    results = CliRunner().invoke(
         _app,
         [
             '--push',
@@ -243,7 +245,7 @@ def test_push_lineage_and_domains_queues_and_pushes(
             lineage_domain not in client['domains']
         ), '`lineage_domain` must not match configured client domains'
     ## Run the test
-    results = CliRunner(mix_stderr=True).invoke(
+    results = CliRunner().invoke(
         _app,
         args=[
             '--push',

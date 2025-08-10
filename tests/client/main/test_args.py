@@ -21,7 +21,7 @@ from certdeploy.client.daemon import DeployServer
 def test_help_shows_help():
     """Verify that help text is shown for the `--help` arg."""
     ## Run the test
-    results = CliRunner(mix_stderr=True).invoke(_app, ['--help'])
+    results = CliRunner().invoke(_app, ['--help'])
     ## Verify the results
     assert results.exception is None
     # The command name is different when it's being called from the runner
@@ -50,7 +50,7 @@ def test_daemon_runs_daemon(
     DeployServer._stop_running = kill_switch
     ## Run the test
     thread = managed_thread(
-        CliRunner(mix_stderr=True).invoke,
+        CliRunner().invoke,
         args=[_app, ['--daemon', '--config', context.config_path]],
         kill_switch=kill_switch,
         teardown=kill_switch.teardown(DeployServer),
@@ -83,7 +83,7 @@ def test_no_args_runs_deploy(
         log_filename=str(log_file),
     )
     ## Run the test
-    results = CliRunner(mix_stderr=True).invoke(
+    results = CliRunner().invoke(
         _app,
         ['--config', context.config_path],
     )
@@ -111,7 +111,7 @@ def test_overrides_log_level_and_log_filename(
         log_filename=str(tmp_path.joinpath('initial.log')),
     )
     ## Run the test
-    results = CliRunner(mix_stderr=True).invoke(
+    results = CliRunner().invoke(
         _app,
         [
             '--log-level',
@@ -158,7 +158,7 @@ def test_overrides_sftp_log_level_and_sftp_log_filename(
     DeployServer._stop_running = kill_switch
     ## Run the test
     thread = managed_thread(
-        CliRunner(mix_stderr=True).invoke,
+        CliRunner().invoke,
         args=[
             _app,
             [
