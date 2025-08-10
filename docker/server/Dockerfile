@@ -17,7 +17,7 @@ WORKDIR /certdeploy
 # Install certbot runtime dependencies
 RUN apk add --no-cache \
         libffi \
-        libssl1.1 \
+        libssl3 \
         openssl \
         ca-certificates \
         binutils
