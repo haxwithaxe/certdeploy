@@ -1,6 +1,6 @@
 # Docker Arch (amd64, arm32v6, ...)
 ARG TARGET_ARCH=amd64
-FROM ${TARGET_ARCH}/python:3.10-alpine
+FROM ${TARGET_ARCH}/python:3.11-alpine3.22
 
 ENV CERTDEPLOY_CLIENT_DAEMON=true
 
