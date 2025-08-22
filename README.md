@@ -202,7 +202,7 @@ client_configs:
 ```
 
 ##### Daemon
-This can be given to `certdeploy-server` along with the `--daemon` option or as part of the [docker image](https://hub.docker.com/r/haxwithaxe/certdeploy-server) to run `certbot renew` every Monday at 9:00AM and deploy new certs for ``example.com`` to ``1.2.3.4``.
+This can be given to `certdeploy-server` along with the `--daemon` option or as part of the [docker image](https://hub.docker.com/r/haxwithaxe/certdeploy-server) (also available on [ghcr.io](https://github.com/haxwithaxe?tab=packages&repo_name=certdeploy)) to run `certbot renew` every Monday at 9:00AM and deploy new certs for ``example.com`` to ``1.2.3.4``.
 
 ```yaml
 ---
@@ -221,7 +221,7 @@ When run as a script (`--renew`) or daemon outside of docker it's expected that 
 
 
 ### Installation
-The recommended way to use the server is to have it running in a docker container. The [server image](https://hub.docker.com/r/haxwithaxe/certdeploy-server) has Certbot baked in and automatically runs `certbot renew` on a schedule.
+The recommended way to use the server is to have it running in a docker container. The [server image](https://hub.docker.com/r/haxwithaxe/certdeploy-server) (also available on [ghcr.io](https://github.com/haxwithaxe?tab=packages&repo_name=certdeploy)) has Certbot baked in and automatically runs `certbot renew` on a schedule.
 
 
 #### Docker
@@ -247,6 +247,12 @@ The recommended way to use the server is to have it running in a docker containe
     docker run -d -v $(pwd)/conf:/etc/certdeploy -v /etc/letsencrypt:/etc/letsencrypt haxwithaxe/certdeploy-server
     ```
 
+    Or
+
+    ```sh
+    docker run -d -v $(pwd)/conf:/etc/certdeploy -v /etc/letsencrypt:/etc/letsencrypt ghcr.io/haxwithaxe/certdeploy-server
+    ```
+
     Where ``./conf`` is a directory with a ``server.yml`` and an ED25519 key pair. If you don't see anything in the logs it's probably working fine. The default log level isn't verbose. You can add ``--env 'CERTDEPLOY_SERVER_LOG_LEVEL=DEBUG'`` to get the firehose of output if you want to be certian it's working.
 
     Or with docker-compose with the following:
@@ -258,6 +264,21 @@ The recommended way to use the server is to have it running in a docker containe
     services:
       certdeploy-server:
         image: haxwithaxe/certdeploy-server
+        volumes:
+          - "./conf:/etc/certdeploy"
+          - "/etc/letsencrypt:/etc/letsencrypt"
+    ```
+
+    Or
+
+
+    ```yaml
+    ---
+    version: "3"
+
+    services:
+      certdeploy-server:
+        image: ghcr.io/haxwithaxe/certdeploy-server
         volumes:
           - "./conf:/etc/certdeploy"
           - "/etc/letsencrypt:/etc/letsencrypt"
