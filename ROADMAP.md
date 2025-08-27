@@ -26,6 +26,6 @@
 
 ## Eventually
 These might get added to versions adhoc
-- Server side post renew hooks [#2](issues/2)
-- Arbitrary file names for certs [#2](issues/2)
-- Lineage translations for systems that mangle lineage directories [#1](issues/1)
+- Server side post renew hooks [#2](https://github.com/haxwithaxe/certdeploy/issues/2)
+- Arbitrary file names for certs [#2](https://github.com/haxwithaxe/certdeploy/issues/2)
+- Lineage translations for systems that mangle lineage directories [#1](https://github.com/haxwithaxe/certdeploy/issues/1)
