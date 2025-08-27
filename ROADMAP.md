@@ -1,6 +1,9 @@
 # Plans are just informed wishful thinking.
 
-## Version 0.6.0 (beta?)
+## Version 0.6.0 (alpha)
+- Client daemon rewrite. Using a simpler transfer protocol.
+
+## Version 0.7.0 (beta?)
 - Notifications
    - Methods
       - Script
@@ -12,7 +15,7 @@
       - status - Same as error but with messages on success events like successful push queue completion and sucessful completion of all updates.
       - log - Follow logging at the configured logging level or maybe at the log level appended to this option. We'll see how masochistic haxwithaxe is when he gets to this.
 
-## Version 0.7.0 (beta)
+## Version 0.8.0 (beta)
 - Ordered service updates
 - Individually delayed service updates
    - Time delay after to allow for slow starting background tasks
@@ -20,3 +23,9 @@
       - Healthcheck
       - ``running`` state
 - Per service update on domain so that services that don't need to be updated for every lineage that gets pushed don't get disrupted.
+
+## Eventually
+These might get added to versions adhoc
+- Server side post renew hooks #2
+- Arbitrary file names for certs #2
+- Lineage translations for systems that mangle lineage directories #1
