@@ -345,11 +345,11 @@ Commandline options override environment variables.
       For example a week and 2 days would be ``1w2d``. The following unit
       suffixes can be used:
 
-  * `s`: second
-  * `m`: minute
-  * `h`: hour
-  * `d`: day
-  * `w`: week
+  * ``s`` - second
+  * ``m`` - minute
+  * ``h`` - hour
+  * ``d`` - day
+  * ``w`` - week
 
 * `source` (optional) - The directory the server uploads the certs to. Defaults to ``/var/cache/certdeploy``.  <!--DEFAULT FROM CODE - certdeploy.DEFAULT_CLIENT_SOURCE_DIR -->
 * `sftpd` (optional) - The SFTP server settings. See [Daemon Specific Settings](#daemon-specific-settings).
