@@ -340,9 +340,21 @@ Commandline options override environment variables.
 #### Client Settings
 * `destination` - The path to dump the certs in. The certs will be placed in "lineage" directories within this directory as seen in ``/etc/letsencrypt/live`` in a certbot installation.
 * `update_sevices` - A list of definitions of services to reload/restart/run after deploying the certs. See [Service Definitions](#service-definitions).
+* `update_delay` (optional) - The interval to delay before running the updates. Defaults to ``1h``.
+      The format is `<multiplier><unit>` with one or more multiplier-unit pairs.
+      For example a week and 2 days would be ``1w2d``. The following unit
+      suffixes can be used:
+
+            * `s`: second
+            * `m`: minute
+            * `h`: hour
+            * `d`: day
+            * `w`: week
+
 * `source` (optional) - The directory the server uploads the certs to. Defaults to ``/var/cache/certdeploy``.  <!--DEFAULT FROM CODE - certdeploy.DEFAULT_CLIENT_SOURCE_DIR -->
 * `sftpd` (optional) - The SFTP server settings. See [Daemon Specific Settings](#daemon-specific-settings).
-*  `script_timeout` - The timeout in seconds for executing script type service updaters. Defaults to ``null`` (wait indefinitely). <!--DEFAULT FROM CODE - certdeploy.client.config.client.Config.script_timeout -->
+* `init_timeout` (optional) - The timeout for executing the init system's ``service`` or ``systemctl``. Defaults to ``null`` (wait indefinitely). <!--DEFAULT FROM CODE certdeploy.client.config.client.Config.init_timeout-->
+* `script_timeout` - The timeout in seconds for executing script type service updaters. Defaults to ``null`` (wait indefinitely). <!--DEFAULT FROM CODE - certdeploy.client.config.client.Config.script_timeout -->
 * `systemd_exec` (optional) - The path to the ``systemctl`` executable for restarting/reloading Systemd units.  Defaults to the ``systemctl`` in `$PATH`. <!--DEFAULT FROM CODE - certdeploy.client.config.client.Config.systemd_exec -->
 * `rc_service_exec` (optional) - The path to the ``service`` executable for restarting/reloading tradional init system services. Defaults to the ``service`` executable in `$PATH`. <!--DEFAULT FROM CODE - certdeploy.client.config.client.Config.rc_service_exec -->
 * `init_timeout` (optional) - The timeout in seconds for executing systemctl commands. Defaults to ``null`` (wait indefinitely).  <!--DEFAULT FROM CODE - certdeploy.client.config.client.Config.init_timeout -->
