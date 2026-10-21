@@ -16,7 +16,7 @@ from fixtures.logging import ClientRefLogMessages as RefMsgs
 @pytest.mark.certdeploy_docker
 @pytest.mark.docker
 def test_starts_daemon_by_default(
-    client_docker_container: Callable[[...], ClientContainer]
+    client_docker_container: Callable[[...], ClientContainer],
 ):
     """Verify that the daemon starts by default."""
     # Setup the client container
@@ -32,7 +32,7 @@ def test_starts_daemon_by_default(
 @pytest.mark.certdeploy_docker
 @pytest.mark.docker
 def test_passes_args_to_client(
-    client_docker_container: Callable[[...], ClientContainer]
+    client_docker_container: Callable[[...], ClientContainer],
 ):
     """Verify that args are passed to the client."""
     # Setup the client container

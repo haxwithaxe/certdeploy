@@ -87,7 +87,7 @@ def test_fails_null_name_values(
 
 
 def test_fails_missing_name_values(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify ConfigError is thrown for `name` values that are missing."""
     context = tmp_client_config_file(update_services=[dict(type='systemd')])

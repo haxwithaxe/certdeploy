@@ -360,7 +360,7 @@ class PushWorker(Thread):
             log.info('Pushing %s to %s', self._lineage, self._client)
             for self._attempt in range(self._retries + 1):
                 attempt_str = f'{self._attempt + 1}'
-                tries_str = f'{ self._retries + 1 }'
+                tries_str = f'{self._retries + 1}'
                 log.debug(
                     'Attempt #%s of %s tries.',
                     attempt_str,

@@ -63,7 +63,7 @@ def test_accepts_relative_name_values(
 
 
 def test_accepts_valid_name_values(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify the `script` update service type `name` is parsed.
 
@@ -171,7 +171,7 @@ def test_overrides_timeout_with_int(
 
 
 def test_fails_invalid_name_values(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify the `script` update service type `name` is parsed.
 
@@ -198,7 +198,7 @@ def test_fails_invalid_name_values(
 
 
 def test_fails_missing_name_values(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify the `script` update service type `name` is parsed.
 

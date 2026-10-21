@@ -23,7 +23,7 @@ def test_fails_invalid_key(
 
 
 def test_fails_nonexistent_privkey(
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify a nonexistent `privkey_filename` causes an error."""
     bad_privkey_filename = '/nonexistent/privkey'
@@ -39,7 +39,7 @@ def test_fails_nonexistent_privkey(
 
 
 def test_fails_missing_client_configs(
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify an empty `client_configs` causes an error."""
     context = tmp_server_config_file(client_configs=[])
@@ -103,7 +103,7 @@ def test_fails_invalid_client_pubkey(
 
 
 def test_fails_invalid_push_mode(
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify an invalid `push_mode` causes an error."""
     bad_push_mode = 'Invalid push_mode'
@@ -115,7 +115,7 @@ def test_fails_invalid_push_mode(
 
 
 def test_fails_invalid_push_interval(
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify an invalid `push_interval` causes an error."""
     bad_push_interval = -1
@@ -130,7 +130,7 @@ def test_fails_invalid_push_interval(
 
 
 def test_fails_invalid_push_retries(
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify an invalid `push_retries` causes an error."""
     bad_push_retries = -1
@@ -145,7 +145,7 @@ def test_fails_invalid_push_retries(
 
 
 def test_fails_invalid_push_retry_interval(
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify an invalid `push_retry_interval` causes an error."""
     bad_push_retry_interval = -1
@@ -162,7 +162,7 @@ def test_fails_invalid_push_retry_interval(
 
 
 def test_fails_invalid_join_timeout(
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify an invalid `join_timeout` causes an error."""
     bad_join_timeout = -1

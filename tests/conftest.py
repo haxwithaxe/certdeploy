@@ -5,7 +5,6 @@ Read more about conftest.py under:
 - https://docs.pytest.org/en/stable/writing_plugins.html
 """
 
-
 import pytest  # noqa: F401
 from fixtures.client_config import (  # noqa: F401
     tmp_client_config,

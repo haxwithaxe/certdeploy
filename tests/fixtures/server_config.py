@@ -33,7 +33,7 @@ def client_conn_config(client_keypair: KeyPair, **conf: Any) -> dict:
 
 @pytest.fixture(scope='function')
 def client_conn_config_factory(
-    keypairgen: Callable[[], KeyPair]
+    keypairgen: Callable[[], KeyPair],
 ) -> Callable[[KeyPair, ...], dict]:
     """Generate dicts to go into the `client_configs` section."""
 

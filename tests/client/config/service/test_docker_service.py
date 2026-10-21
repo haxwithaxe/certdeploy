@@ -11,7 +11,7 @@ from certdeploy.client.config.service import DockerService
 
 @pytest.mark.skip(reason='broken by https://github.com/moby/moby/issues/46341')
 def test_accepts_and_transforms_valid_name(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify the `docker_service` update service type `name` is parsed.
 

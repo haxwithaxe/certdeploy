@@ -8,7 +8,7 @@ from certdeploy.client.config import ClientConfig
 
 
 def test_accepts_valid_timeout_int(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify an `int` value for the `timeout` config is parsed."""
     name = 'timeout-test.service'
@@ -24,7 +24,7 @@ def test_accepts_valid_timeout_int(
 
 
 def test_accepts_valid_timeout_float(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify an `float` value for the `timeout` config is parsed."""
     name = 'timeout-test.service'
@@ -57,7 +57,7 @@ def test_gets_default_timeout(
 
 
 def test_overrides_default_timeout_with_none(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify an `int` value for the `timeout` config is parsed."""
     name = 'timeout-test.service'
@@ -73,7 +73,7 @@ def test_overrides_default_timeout_with_none(
 
 
 def test_overrides_default_timeout_with_int(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify an `int` value for the `timeout` config is parsed."""
     name = 'timeout-test.service'
