@@ -1,4 +1,5 @@
 """Check that the various logging configs do what they say they do."""
+
 import pathlib
 from typing import Callable
 

@@ -40,7 +40,7 @@ def test_loads_valid_server(
 
 
 def test_loads_valid_server_push_mode_serial(
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify the `push_mode` ``serial`` is translated correctly."""
     context = tmp_server_config_file(push_mode='serial')
@@ -49,7 +49,7 @@ def test_loads_valid_server_push_mode_serial(
 
 
 def test_loads_valid_server_push_mode_parallel(
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify the `push_mode` ``parallel`` is translated correctly."""
     context = tmp_server_config_file(push_mode='parallel')
@@ -58,7 +58,7 @@ def test_loads_valid_server_push_mode_parallel(
 
 
 def test_loads_valid_server_push_interval_zero(
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify that a valid `push_interval` is accepted."""
     context = tmp_server_config_file(push_interval=0)
@@ -67,7 +67,7 @@ def test_loads_valid_server_push_interval_zero(
 
 
 def test_loads_valid_server_push_retries_zero(
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify that a valid `push_retries` is accepted."""
     context = tmp_server_config_file(push_retries=0)
@@ -76,7 +76,7 @@ def test_loads_valid_server_push_retries_zero(
 
 
 def test_loads_valid_server_push_retry_interval_zero(
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify that a valid `push_retry_interval` is accepted."""
     context = tmp_server_config_file(push_retry_interval=0)
@@ -85,7 +85,7 @@ def test_loads_valid_server_push_retry_interval_zero(
 
 
 def test_loads_valid_server_join_timeout_none(
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify that a valid `join_timeout` (`None`) is accepted."""
     context = tmp_server_config_file(join_timeout=None)
@@ -94,7 +94,7 @@ def test_loads_valid_server_join_timeout_none(
 
 
 def test_loads_valid_server_join_timeout_int(
-    tmp_server_config_file: Callable[[...], ConfigContext]
+    tmp_server_config_file: Callable[[...], ConfigContext],
 ):
     """Verify that a valid `join_timeout` (number) is accepted."""
     context = tmp_server_config_file(join_timeout=1)

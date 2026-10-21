@@ -9,7 +9,7 @@ from certdeploy.client.config.service import SystemdUnit
 
 
 def test_accepts_valid_action_reload(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify the `'reload'` value for the `action` config is parsed."""
     name = 'action-test.service'
@@ -25,7 +25,7 @@ def test_accepts_valid_action_reload(
 
 
 def test_accepts_valid_action_restart(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify the `'restart'` value for the `action` config is parsed."""
     name = 'action-test.service'
@@ -41,7 +41,7 @@ def test_accepts_valid_action_restart(
 
 
 def test_accepts_valid_action_none(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify the `None` value for the `action` config is translated.
 
@@ -61,7 +61,7 @@ def test_accepts_valid_action_none(
 
 
 def test_accepts_valid_action_empty(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify the `''` value for the `action` config is translated.
 

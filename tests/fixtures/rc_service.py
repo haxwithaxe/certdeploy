@@ -62,7 +62,7 @@ esac
 
 @pytest.fixture(scope='function')
 def tmp_rc_service(
-    tmp_script: Callable[[str, str, str, str], Script]
+    tmp_script: Callable[[str, str, str, str], Script],
 ) -> Callable[[str, bool], tuple[str, Script]]:
     """Return a factory for temporary openrc-style `service`."""
 

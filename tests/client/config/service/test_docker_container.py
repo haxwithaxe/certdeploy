@@ -9,7 +9,7 @@ from certdeploy.client.config.service import DockerContainer
 
 
 def test_accepts_and_transforms_valid_name(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify the `docker_container` update service type `name` is parsed.
 
@@ -30,7 +30,7 @@ def test_accepts_and_transforms_valid_name(
 
 
 def test_config_update_services_docker_container_filters(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify the `docker_container` update service type `filters` is parsed.
 
@@ -87,7 +87,7 @@ def test_gets_default_timeout(
 
 
 def test_overrides_default_timeout_with_none(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify the `docker_container` overrides the default.
 
@@ -109,7 +109,7 @@ def test_overrides_default_timeout_with_none(
 
 
 def test_overrides_default_timeout_with_int(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify the `docker_container` overrides the default.
 

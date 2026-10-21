@@ -8,7 +8,7 @@ from certdeploy.client.config import ClientConfig
 
 
 def test_accepts_valid_name_slice_service(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify a service slice with an unusual name is validated.
 
@@ -29,7 +29,7 @@ def test_accepts_valid_name_slice_service(
 
 
 def test_accepts_valid_name_socket(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify a service with an unusual name is validated.
 
@@ -49,7 +49,7 @@ def test_accepts_valid_name_socket(
 
 
 def test_accepts_valid_name_device(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify a '.device' unit name is validated."""
     name = 're-test.device'
@@ -65,7 +65,7 @@ def test_accepts_valid_name_device(
 
 
 def test_accepts_valid_name_mount(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify a '.mount' unit name is validated."""
     name = 're-test.mount'
@@ -81,7 +81,7 @@ def test_accepts_valid_name_mount(
 
 
 def test_accepts_valid_name_automount(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify a '.automount' unit name is validated."""
     name = 're-test.automount'
@@ -97,7 +97,7 @@ def test_accepts_valid_name_automount(
 
 
 def test_accepts_valid_name_swap(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify a '.swap' unit name is validated."""
     name = 're-test.swap'
@@ -113,7 +113,7 @@ def test_accepts_valid_name_swap(
 
 
 def test_accepts_valid_name_target(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify a '.target' unit name is validated."""
     name = 're-test.target'
@@ -129,7 +129,7 @@ def test_accepts_valid_name_target(
 
 
 def test_accepts_valid_name_path(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify a '.path' unit name is validated."""
     name = 're-test.path'
@@ -145,7 +145,7 @@ def test_accepts_valid_name_path(
 
 
 def test_accepts_valid_name_timer(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify a '.timer' unit name is validated."""
     name = 're-test.timer'
@@ -161,7 +161,7 @@ def test_accepts_valid_name_timer(
 
 
 def test_accepts_valid_name_slice(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify a '.slice' unit name is validated."""
     name = 're-test.slice'
@@ -177,7 +177,7 @@ def test_accepts_valid_name_slice(
 
 
 def test_accepts_valid_name_scope(
-    tmp_client_config_file: Callable[[...], ConfigContext]
+    tmp_client_config_file: Callable[[...], ConfigContext],
 ):
     """Verify a '.scope' unit name is validated."""
     name = 're-test.scope'
