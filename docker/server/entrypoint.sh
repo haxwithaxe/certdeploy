@@ -9,10 +9,10 @@ if [[ "$CERTDEPLOY_SERVER_RENEW_ONLY" == "true" ]]; then
 elif [[ -n "$1" ]]; then
 	if [[ "$1" == "certdeploy-server" ]]; then
 		# This case is mostly for testing
-		$@
+		"$@"
 	else
 		# Emulate the certbot docker image interface as much as possible.
-		certbot $@
+		certbot "$@"
 	fi
 else
 	certdeploy-server --daemon
